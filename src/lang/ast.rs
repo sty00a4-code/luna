@@ -19,7 +19,7 @@ pub enum Statement {
         path: Located<Path>,
         params: Vec<Located<String>>,
         var_args: Located<String>,
-        body: Located<Block>
+        body: Located<Block>,
     },
     If {
         cond: Located<Expression>,
@@ -50,7 +50,7 @@ pub enum Expression {
     Unary {
         op: UnaryOperator,
         right: Box<Located<Self>>,
-    }
+    },
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum BinaryOperator {
@@ -92,7 +92,7 @@ pub enum Atom {
     Fn {
         params: Vec<Located<String>>,
         var_args: Located<String>,
-        body: Located<Block>
+        body: Located<Block>,
     },
 }
 #[derive(Debug, Clone, PartialEq)]
@@ -104,6 +104,6 @@ pub enum Path {
     },
     Index {
         head: Box<Located<Self>>,
-        index: Box<Located<Expression>>
-    }
+        index: Box<Located<Expression>>,
+    },
 }

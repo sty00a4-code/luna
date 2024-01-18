@@ -1,4 +1,7 @@
-use std::{ops::Range, fmt::{Debug, Display}};
+use std::{
+    fmt::{Debug, Display},
+    ops::Range,
+};
 
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Position {
@@ -7,7 +10,7 @@ pub struct Position {
 }
 pub struct Located<T> {
     value: T,
-    pos: Position
+    pos: Position,
 }
 
 impl Position {
@@ -15,7 +18,10 @@ impl Position {
         Self { ln, col }
     }
     pub fn single(ln: usize, col: usize) -> Self {
-        Self { ln: ln..ln+1, col: col..col+1 }
+        Self {
+            ln: ln..ln + 1,
+            col: col..col + 1,
+        }
     }
     pub fn extend(&mut self, other: &Self) {
         self.ln.end = other.ln.end;
@@ -27,12 +33,18 @@ impl<T> Located<T> {
         Self { value, pos }
     }
     pub fn map<U, F: FnOnce(T) -> U>(self, f: F) -> Located<U> {
-        Located { value: f(self.value), pos: self.pos }
+        Located {
+            value: f(self.value),
+            pos: self.pos,
+        }
     }
 }
 impl<T: Clone> Clone for Located<T> {
     fn clone(&self) -> Self {
-        Self { value: self.value.clone(), pos: self.pos.clone() }
+        Self {
+            value: self.value.clone(),
+            pos: self.pos.clone(),
+        }
     }
 }
 impl<T: PartialEq> PartialEq for Located<T> {
@@ -42,7 +54,10 @@ impl<T: PartialEq> PartialEq for Located<T> {
 }
 impl<T: Default> Default for Located<T> {
     fn default() -> Self {
-        Self { value: T::default(), pos: Position::default() }
+        Self {
+            value: T::default(),
+            pos: Position::default(),
+        }
     }
 }
 impl<T: Debug> Debug for Located<T> {

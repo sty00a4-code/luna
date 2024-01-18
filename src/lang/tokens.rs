@@ -21,5 +21,5 @@ pub enum Token {
     In,
     Return,
     Break,
-    Continue
+    Continue,
 }

@@ -5,14 +5,19 @@ use super::value::Value;
 pub enum ByteCode {
     #[default]
     None,
-    
+
     Jump {
-        addr: usize
+        addr: usize,
     },
     JumpIf {
         negative: bool,
         cond: Source,
-        addr: usize
+        addr: usize,
+    },
+    JumpNull {
+        negative: bool,
+        cond: Source,
+        addr: usize,
     },
 
     Call {
@@ -22,29 +27,29 @@ pub enum ByteCode {
         amount: usize,
     },
     Return {
-        src: Option<Source>
+        src: Option<Source>,
     },
 
     Move {
         dst: Location,
-        src: Source
+        src: Source,
     },
     Field {
         dst: Location,
         head: Source,
         field: Source,
     },
-    
+
     Binary {
         op: BinaryOperation,
         dst: Location,
         left: Source,
-        right: Source
+        right: Source,
     },
     Unary {
         op: UnaryOperation,
         dst: Location,
-        src: Source
+        src: Source,
     },
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -85,7 +90,7 @@ pub enum UnaryOperation {
     Len,
 }
 
-#[derive(Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct Closure {
     code: Vec<ByteCode>,
     parent: Option<Rc<Self>>,
@@ -93,8 +98,8 @@ pub struct Closure {
     upvalues: Vec<Upvalue>,
     consts: Vec<Value>,
 }
-#[derive(Clone, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct Upvalue {
     register: usize,
-    in_stack: bool
+    in_stack: bool,
 }
