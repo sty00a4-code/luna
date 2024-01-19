@@ -40,6 +40,17 @@ pub enum ByteCode {
         field: Source,
     },
 
+    Vector {
+        dst: Location,
+        start: usize,
+        amount: usize
+    },
+    Object {
+        dst: Location,
+        start: usize,
+        amount: usize
+    },
+
     Binary {
         op: BinaryOperation,
         dst: Location,

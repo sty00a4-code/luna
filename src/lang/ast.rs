@@ -15,6 +15,10 @@ pub enum Statement {
         paths: Vec<Located<Path>>,
         exprs: Vec<Located<Expression>>,
     },
+    Call {
+        path: Located<Path>,
+        args: Vec<Located<Expression>>,
+    },
     Fn {
         path: Located<Path>,
         params: Vec<Located<String>>,
@@ -50,6 +54,10 @@ pub enum Expression {
     Unary {
         op: UnaryOperator,
         right: Box<Located<Self>>,
+    },
+    Call {
+        path: Located<Atom>,
+        args: Vec<Located<Expression>>,
     },
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

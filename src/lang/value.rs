@@ -42,7 +42,9 @@ pub trait UserObject {
         None
     }
     #[allow(unused_variables)]
-    fn set(&mut self, key: &str, value: Value) {}
+    fn set(&mut self, key: &str, value: Value) -> Result<(), UserObjectError> {
+        Err(UserObjectError::InvalidField(key.into()))
+    }
     #[allow(unused_variables)]
     fn call(&self, key: &str, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
         Err(Box::new(UserObjectError::CannotCallNull))
@@ -56,6 +58,7 @@ pub trait UserObject {
 pub enum UserObjectError {
     ExpectedSelf(&'static str),
     CannotCallNull,
+    InvalidField(String),
 }
 #[derive(Clone)]
 pub enum FunctionKind {
@@ -156,6 +159,9 @@ impl Display for UserObjectError {
             Self::CannotCallNull => {
                 write!(f, "can not call null")
             }
+            Self::InvalidField(field) => {
+                write!(f, "invalid field {field:?}")
+            }
         }
     }
 }
@@ -221,7 +227,7 @@ impl<'a> ObjectIterator<'a> {
         };
         if let Value::UserObject(_self) = _self {
             let mut _self = _self.borrow_mut();
-            _self.call_mut("next", args)
+            Ok(_self.call_mut("next", args)?)
         } else {
             Err(Box::new(UserObjectError::ExpectedSelf(_self.typ())))
         }
