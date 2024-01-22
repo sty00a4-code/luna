@@ -1,8 +1,5 @@
 use std::{
-    fmt::Display,
-    iter::Peekable,
-    num::{ParseFloatError, ParseIntError},
-    str::Chars,
+    error::Error, fmt::Display, iter::Peekable, num::{ParseFloatError, ParseIntError}, str::Chars
 };
 
 use crate::lang::tokens::Token;
@@ -327,3 +324,4 @@ impl Display for LexError {
         }
     }
 }
+impl Error for LexError {}

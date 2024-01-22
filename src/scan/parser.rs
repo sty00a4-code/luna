@@ -1,6 +1,6 @@
 use super::position::{Located, Position};
 use crate::lang::{ast::*, tokens::Token};
-use std::{fmt::Display, iter::Peekable, vec::IntoIter};
+use std::{error::Error, fmt::Display, iter::Peekable, vec::IntoIter};
 
 pub type Parser = Peekable<IntoIter<Located<Token>>>;
 pub trait Parsable
@@ -26,6 +26,7 @@ impl Display for ParseError {
         }
     }
 }
+impl Error for ParseError {}
 
 impl Parsable for Chunk {
     fn parse(parser: &mut Parser) -> Result<Located<Self>, Located<ParseError>> {
