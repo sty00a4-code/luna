@@ -5,12 +5,12 @@ use std::{
 
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Position {
-    ln: Range<usize>,
-    col: Range<usize>,
+    pub ln: Range<usize>,
+    pub col: Range<usize>,
 }
 pub struct Located<T> {
-    value: T,
-    pos: Position,
+    pub value: T,
+    pub pos: Position,
 }
 
 impl Position {

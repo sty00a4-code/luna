@@ -1,4 +1,6 @@
-use crate::position::Located;
+use crate::scan::position::Located;
+
+use super::tokens::Token;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Chunk(pub Vec<Located<Statement>>);
@@ -56,7 +58,7 @@ pub enum Expression {
         right: Box<Located<Self>>,
     },
     Call {
-        path: Located<Atom>,
+        path: Located<Path>,
         args: Vec<Located<Expression>>,
     },
 }
@@ -68,19 +70,18 @@ pub enum BinaryOperator {
     Slash,
     Exponent,
     Percent,
-    EQ,
-    NE,
-    LT,
-    GT,
-    LE,
-    GE,
-    And,
-    Or,
+    EqualEqual,
+    ExclamationEqual,
+    Less,
+    Greater,
+    LessEqual,
+    GreaterEqual,
+    Ampersand,
+    Pipe,
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum UnaryOperator {
     Minus,
-    Hashtag,
     Exclamation,
 }
 #[derive(Debug, Clone, PartialEq)]
@@ -92,6 +93,9 @@ pub enum Atom {
     Bool(bool),
     Char(char),
     String(String),
+    Expression(Box<Located<Expression>>),
+    Vector(Vec<Located<Expression>>),
+    Object(Vec<(Located<String>, Located<Expression>)>),
     If {
         cond: Box<Located<Expression>>,
         case: Box<Located<Expression>>,
@@ -114,4 +118,58 @@ pub enum Path {
         head: Box<Located<Self>>,
         index: Box<Located<Expression>>,
     },
+}
+
+impl BinaryOperator {
+    pub const LAYERS: &'static [&'static [Self]] = &[
+        &[Self::Ampersand, Self::Pipe],
+        &[Self::EqualEqual, Self::ExclamationEqual, Self::Less, Self::Greater, Self::LessEqual, Self::GreaterEqual],
+        &[Self::Plus, Self::Minus],
+        &[Self::Star, Self::Slash, Self::Percent],
+        &[Self::Exponent],
+    ];
+    pub fn layer(layer: usize) -> Option<&'static [Self]> {
+        Self::LAYERS.get(layer).cloned()
+    }
+}
+impl TryFrom<&Token> for BinaryOperator {
+    type Error = ();
+    fn try_from(value: &Token) -> Result<Self, Self::Error> {
+        match value {
+            Token::Ampersand => Ok(Self::Ampersand),
+            Token::Pipe => Ok(Self::Pipe),
+            Token::Plus => Ok(Self::Plus),
+            Token::Minus => Ok(Self::Minus),
+            Token::Star => Ok(Self::Star),
+            Token::Slash => Ok(Self::Slash),
+            Token::Percent => Ok(Self::Percent),
+            Token::Exponent => Ok(Self::Exponent),
+            Token::EqualEqual => Ok(Self::EqualEqual),
+            Token::ExclamationEqual => Ok(Self::ExclamationEqual),
+            Token::Less => Ok(Self::Less),
+            Token::Greater => Ok(Self::Greater),
+            Token::LessEqual => Ok(Self::LessEqual),
+            Token::GreaterEqual => Ok(Self::GreaterEqual),
+            _ => Err(())
+        }
+    }
+}
+impl UnaryOperator {
+    pub const LAYERS: &'static [&'static [Self]] = &[
+        &[Self::Exclamation],
+        &[Self::Minus],
+    ];
+    pub fn layer(layer: usize) -> Option<&'static [Self]> {
+        Self::LAYERS.get(layer).cloned()
+    }
+}
+impl TryFrom<&Token> for UnaryOperator {
+    type Error = ();
+    fn try_from(value: &Token) -> Result<Self, Self::Error> {
+        match value {
+            Token::Exclamation => Ok(Self::Exclamation),
+            Token::Minus => Ok(Self::Minus),
+            _ => Err(())
+        }
+    }
 }
