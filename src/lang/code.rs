@@ -1,4 +1,10 @@
-use std::rc::Rc;
+use std::fmt::Display;
+// use std::{
+//     cell::RefCell,
+//     rc::Rc
+// };
+
+use crate::scan::position::Located;
 
 use super::value::Value;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -63,11 +69,12 @@ pub enum ByteCode {
         src: Source,
     },
 }
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum Source {
     Register(usize),
     Upvalue(usize),
     Constant(usize),
+    #[default]
     Null,
     Bool(bool),
     Char(char),
@@ -103,14 +110,79 @@ pub enum UnaryOperation {
 
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct Closure {
-    code: Vec<ByteCode>,
-    parent: Option<Rc<Self>>,
-    children: Option<Vec<Rc<Self>>>,
-    upvalues: Vec<Upvalue>,
-    consts: Vec<Value>,
+    pub code: Vec<Located<ByteCode>>,
+    pub registers: usize,
+    // pub parent: Option<Rc<RefCell<Self>>>,
+    // pub children: Vec<Rc<RefCell<Self>>>,
+    pub upvalues: Vec<Upvalue>,
+    pub consts: Vec<Value>,
 }
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Upvalue {
-    register: usize,
-    in_stack: bool,
+    pub register: usize,
+    pub in_stack: bool,
+}
+
+impl Display for Source {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Register(reg) => write!(f, "@{reg}"),
+            Self::Upvalue(addr) => write!(f, "@u{addr}"),
+            Self::Constant(addr) => write!(f, "#{addr}"),
+            Self::Null => write!(f, "null"),
+            Self::Bool(v) => write!(f, "{v:?}"),
+            Self::Char(v) => write!(f, "{v:?}"),
+        }
+    }
+}
+impl Display for Location {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Register(reg) => write!(f, "!{reg}"),
+            Self::Upvalue(addr) => write!(f, "!u{addr}"),
+        }
+    }
+}
+impl Display for ByteCode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::None => write!(f, "none"),
+            Self::Jump { addr } => write!(f, "jump {addr:04x?}"),
+            Self::JumpIf { negative, cond, addr } => if *negative {
+                write!(f, "jumpifnot {cond} *{addr:?}")
+            } else {
+                write!(f, "jumpif {cond} *{addr:?}")
+            },
+            Self::JumpNull { negative, cond, addr } => if *negative {
+                write!(f, "jumpnullnot {cond} *{addr:?}")
+            } else {
+                write!(f, "jumpnull {cond} *{addr:?}")
+            },
+            Self::Call { dst, func, offset, amount } => if let Some(dst) = dst {
+                write!(f, "call {func} @{offset}..+@{amount} -> {dst}")
+            } else {
+                write!(f, "call {func} @{offset}..+@{amount}")
+            },
+            Self::Return { src } => if let Some(src) = src {
+                write!(f, "return {src}")
+            } else {
+                write!(f, "return")
+            },
+            Self::Move { dst, src } => write!(f, "move {dst} = {src}"),
+            Self::Field { dst, head, field } => write!(f, "field {dst} = {head} . {field}"),
+            Self::Vector { dst, start, amount } => write!(f, "vector {dst} = @{start}..+@{amount}"),
+            Self::Object { dst, start, amount } => write!(f, "object {dst} = @{start}..+@{amount}"),
+            Self::Binary { op, dst, left, right } => write!(f, "binary {dst} = {left} {} {right}", format!("{op:?}").to_lowercase()),
+            Self::Unary { op, dst, src } => write!(f, "unary {dst} = {} {src}", format!("{op:?}").to_lowercase()),
+        }
+    }
+}
+
+impl From<Location> for Source {
+    fn from(value: Location) -> Self {
+        match value {
+            Location::Register(register) => Self::Register(register),
+            Location::Upvalue(addr) => Self::Upvalue(addr),
+        }
+    }
 }

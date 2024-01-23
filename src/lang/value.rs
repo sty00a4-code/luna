@@ -30,7 +30,7 @@ pub enum Value {
     UserObject(Rc<RefCell<Box<dyn UserObject>>>),
     Function(FunctionKind),
 }
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Object {
     pub fields: HashMap<String, Value>,
     pub meta: Option<Rc<RefCell<Self>>>,
@@ -62,8 +62,13 @@ pub enum UserObjectError {
 }
 #[derive(Clone)]
 pub enum FunctionKind {
-    Function(Rc<Closure>),
+    Function(Rc<Function>),
     UserFunction(Rc<UserFunction>),
+}
+#[derive(Debug, Clone)]
+pub struct Function {
+    pub(crate) closure: Rc<Closure>,
+    pub(crate) upvalues: Vec<Rc<RefCell<Value>>>
 }
 pub type UserFunction = Box<dyn Fn(Vec<Value>) -> Result<Value, Box<dyn Error>>>;
 
@@ -95,8 +100,8 @@ impl Debug for Value {
             Value::Vector(v) => write!(f, "{v:?}"),
             Value::Object(v) => write!(f, "object:{:08x?}", v.as_ptr()),
             Value::UserObject(v) => write!(f, "{}:{:08x?}", v.borrow().typ(), v.as_ptr()),
-            Value::Function(FunctionKind::Function(closure)) => {
-                write!(f, "fn:{:08x?}", Rc::as_ptr(closure))
+            Value::Function(FunctionKind::Function(function)) => {
+                write!(f, "fn:{:08x?}", Rc::as_ptr(function))
             }
             Value::Function(FunctionKind::UserFunction(func)) => {
                 write!(f, "fn:{:08x?}", Rc::as_ptr(func))
@@ -139,6 +144,22 @@ impl PartialEq for Value {
                 Self::Function(FunctionKind::UserFunction(b)),
             ) => Rc::as_ptr(a) == Rc::as_ptr(b),
             _ => false,
+        }
+    }
+}
+impl From<Value> for bool {
+    fn from(value: Value) -> Self {
+        match value {
+            Value::Null => false,
+            Value::Int(v) => v != 0,
+            Value::Float(v) => v != 0.,
+            Value::Bool(v) => v,
+            Value::Char(v) => v != 0 as char,
+            Value::String(string) => !string.is_empty(),
+            Value::Vector(vector) => !vector.borrow().is_empty(),
+            Value::Object(_) => true,
+            Value::UserObject(_) => true,
+            Value::Function(_) => true,
         }
     }
 }

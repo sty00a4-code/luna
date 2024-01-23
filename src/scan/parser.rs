@@ -131,36 +131,25 @@ impl Parsable for Statement {
                         break;
                     }
                 }
-                let Some(Located {
-                    value: token,
-                    pos: token_pos,
-                }) = parser.next()
-                else {
-                    return Err(Located::new(ParseError::UnexpectedEOF, Position::default()));
-                };
-                if token != Token::Equal {
-                    return Err(Located::new(
-                        ParseError::ExpectedToken {
-                            expected: Token::Equal,
-                            got: token,
-                        },
-                        token_pos,
-                    ));
-                }
-                let expr = Expression::parse(parser)?;
-                pos.extend(&expr.pos);
-                exprs.push(expr);
-                while matches!(
-                    parser.peek(),
-                    Some(Located {
-                        value: Token::Comma,
-                        pos: _
-                    })
-                ) {
-                    parser.next();
+                if let Some(Located {
+                    value: Token::Equal,
+                    pos: _,
+                }) = parser.next() {
                     let expr = Expression::parse(parser)?;
                     pos.extend(&expr.pos);
                     exprs.push(expr);
+                    while matches!(
+                        parser.peek(),
+                        Some(Located {
+                            value: Token::Comma,
+                            pos: _
+                        })
+                    ) {
+                        parser.next();
+                        let expr = Expression::parse(parser)?;
+                        pos.extend(&expr.pos);
+                        exprs.push(expr);
+                    }
                 }
                 Ok(Located::new(Self::LetBinding { idents, exprs }, pos))
             }
