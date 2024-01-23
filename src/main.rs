@@ -25,7 +25,8 @@ fn main() {
                 process::exit(1);
             })
             .unwrap();
-        let ast = parse(&text).map_err(|Located { value: err, pos }| {
+        let ast = parse(&text)
+            .map_err(|Located { value: err, pos }| {
                 eprintln!(
                     "ERROR {path}:{}:{}: {err}",
                     pos.ln.start + 1,

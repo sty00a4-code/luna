@@ -315,10 +315,18 @@ impl Path {
 }
 impl Parsable for Atom {
     fn parse(parser: &mut Parser) -> Result<Located<Self>, Located<ParseError>> {
-        if let Some(Located { value: Token::Ident(_), pos: _ }) = parser.peek() {
-            return Ok(Path::parse(parser)?.map(Self::Path))
+        if let Some(Located {
+            value: Token::Ident(_),
+            pos: _,
+        }) = parser.peek()
+        {
+            return Ok(Path::parse(parser)?.map(Self::Path));
         }
-        let Some(Located { value: token, mut pos }) = parser.next() else {
+        let Some(Located {
+            value: token,
+            mut pos,
+        }) = parser.next()
+        else {
             return Err(Located::new(ParseError::UnexpectedEOF, Position::default()));
         };
         match token {
@@ -330,16 +338,26 @@ impl Parsable for Atom {
             Token::String(v) => Ok(Located::new(Self::String(v), pos)),
             Token::ParanLeft => {
                 let expr = Expression::parse(parser)?;
-                let Some(Located { value: end_token, pos: end_pos }) = parser.next() else {
+                let Some(Located {
+                    value: end_token,
+                    pos: end_pos,
+                }) = parser.next()
+                else {
                     return Err(Located::new(ParseError::UnexpectedEOF, Position::default()));
                 };
                 if end_token != Token::ParanRight {
-                    return Err(Located::new(ParseError::ExpectedToken { expected: Token::ParanRight, got: end_token }, end_pos));
+                    return Err(Located::new(
+                        ParseError::ExpectedToken {
+                            expected: Token::ParanRight,
+                            got: end_token,
+                        },
+                        end_pos,
+                    ));
                 }
                 pos.extend(&end_pos);
                 Ok(Located::new(Self::Expression(Box::new(expr)), pos))
             }
-            token => Err(Located::new(ParseError::UnexpectedToken(token), pos))
+            token => Err(Located::new(ParseError::UnexpectedToken(token), pos)),
         }
     }
 }

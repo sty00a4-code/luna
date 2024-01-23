@@ -123,7 +123,14 @@ pub enum Path {
 impl BinaryOperator {
     pub const LAYERS: &'static [&'static [Self]] = &[
         &[Self::Ampersand, Self::Pipe],
-        &[Self::EqualEqual, Self::ExclamationEqual, Self::Less, Self::Greater, Self::LessEqual, Self::GreaterEqual],
+        &[
+            Self::EqualEqual,
+            Self::ExclamationEqual,
+            Self::Less,
+            Self::Greater,
+            Self::LessEqual,
+            Self::GreaterEqual,
+        ],
         &[Self::Plus, Self::Minus],
         &[Self::Star, Self::Slash, Self::Percent],
         &[Self::Exponent],
@@ -150,15 +157,12 @@ impl TryFrom<&Token> for BinaryOperator {
             Token::Greater => Ok(Self::Greater),
             Token::LessEqual => Ok(Self::LessEqual),
             Token::GreaterEqual => Ok(Self::GreaterEqual),
-            _ => Err(())
+            _ => Err(()),
         }
     }
 }
 impl UnaryOperator {
-    pub const LAYERS: &'static [&'static [Self]] = &[
-        &[Self::Exclamation],
-        &[Self::Minus],
-    ];
+    pub const LAYERS: &'static [&'static [Self]] = &[&[Self::Exclamation], &[Self::Minus]];
     pub fn layer(layer: usize) -> Option<&'static [Self]> {
         Self::LAYERS.get(layer).cloned()
     }
@@ -169,7 +173,7 @@ impl TryFrom<&Token> for UnaryOperator {
         match value {
             Token::Exclamation => Ok(Self::Exclamation),
             Token::Minus => Ok(Self::Minus),
-            _ => Err(())
+            _ => Err(()),
         }
     }
 }
