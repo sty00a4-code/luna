@@ -561,7 +561,12 @@ impl CallFrame {
                     .get(*addr)
                     .expect("constant not found")
                 {
-                    Some(self.globals.borrow().get(ident).cloned().unwrap_or_default())
+                    if let Some(value) = self.globals.borrow().get(ident).cloned() {
+                        Some(value)
+                    } else {
+                        self.globals.borrow_mut().insert(ident.clone(), Rc::new(RefCell::new(Value::default())));
+                        self.globals.borrow().get(ident).cloned()
+                    }
                 } else {
                     panic!("expected a string for the global")
                 }
