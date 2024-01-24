@@ -21,7 +21,7 @@ pub fn compile(text: &str) -> Result<Rc<RefCell<Closure>>, Located<Box<dyn Error
 }
 pub fn run(text: &str) -> Result<Option<Value>, Located<Box<dyn Error>>> {
     let closure = compile(text)?;
-    dbg!(&closure);
+    // dbg!(&closure);
     let function = Rc::new(Function {
         closure,
         upvalues: vec![]
@@ -50,6 +50,8 @@ fn main() {
                 process::exit(1);
             })
             .unwrap();
-        dbg!(value);
+        if let Some(value) = value {
+            println!("{value}");
+        }
     }
 }

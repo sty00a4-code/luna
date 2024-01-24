@@ -21,6 +21,11 @@ pub enum Statement {
         path: Located<Path>,
         args: Vec<Located<Expression>>,
     },
+    SelfCall {
+        head: Located<Path>,
+        field: Located<String>,
+        args: Vec<Located<Expression>>,
+    },
     Fn {
         path: Located<Path>,
         params: Vec<Located<String>>,
@@ -59,6 +64,11 @@ pub enum Expression {
     },
     Call {
         path: Located<Path>,
+        args: Vec<Located<Expression>>,
+    },
+    SelfCall {
+        head: Located<Path>,
+        field: Located<String>,
         args: Vec<Located<Expression>>,
     },
 }
