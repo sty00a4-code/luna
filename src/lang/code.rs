@@ -4,7 +4,7 @@ use std::fmt::Display;
 //     rc::Rc
 // };
 
-use crate::scan::position::Located;
+use crate::luna_impl::position::Located;
 
 use super::{
     ast::{BinaryOperator, UnaryOperator},

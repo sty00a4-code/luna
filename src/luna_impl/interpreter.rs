@@ -1,14 +1,18 @@
-use super::position::Located;
+use super::{
+    position::Located,
+    std::globals,
+};
 use crate::lang::{
     code::{BinaryOperation, ByteCode, Location, Source, UnaryOperation},
-    value::{Function, FunctionKind, Object, Value},
+    value::{Function, FunctionKind, Object, Value}
 };
 use std::{cell::RefCell, collections::HashMap, error::Error, fmt::Display, rc::Rc};
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct Interpreter {
     pub call_frames: Vec<CallFrame>,
     pub globals: Rc<RefCell<HashMap<String, Rc<RefCell<Value>>>>>,
+    pub global_path: Option<String>
 }
 #[derive(Debug, Clone)]
 pub struct CallFrame {
@@ -38,6 +42,17 @@ pub enum RunTimeError {
     Custom(String),
 }
 
+impl Default for Interpreter {
+    fn default() -> Self {
+        Self { call_frames: vec![], globals: Rc::new(RefCell::new(globals())), global_path: None }
+    }
+}
+impl Interpreter {
+    pub fn with_global_path(mut self, path: Option<String>) -> Self {
+        self.global_path = path;
+        self
+    }
+}
 impl Interpreter {
     pub fn call(&mut self, function: &Rc<Function>, dst: Option<Location>) {
         let mut stack = vec![];

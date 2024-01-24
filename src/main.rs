@@ -3,7 +3,7 @@ use lang::{
     code::Closure,
     value::{Function, Value},
 };
-use scan::{
+use luna_impl::{
     compiler::{Compilable, Compiler},
     interpreter::Interpreter,
     lexer::Lexer,
@@ -13,7 +13,7 @@ use scan::{
 use std::{cell::RefCell, env, error::Error, fs, process, rc::Rc};
 
 pub mod lang;
-pub mod scan;
+pub mod luna_impl;
 
 pub fn parse(text: &str) -> Result<Located<Chunk>, Located<Box<dyn Error>>> {
     Chunk::parse(
@@ -36,7 +36,7 @@ pub fn run(text: &str) -> Result<Option<Value>, Located<Box<dyn Error>>> {
         closure,
         upvalues: vec![],
     });
-    let mut interpreter = Interpreter::default();
+    let mut interpreter = Interpreter::default().with_global_path(env::var("LUNA_PATH").ok());
     interpreter.call(&function, None);
     interpreter.run().map_err(|err| err.map(|err| err.into()))
 }

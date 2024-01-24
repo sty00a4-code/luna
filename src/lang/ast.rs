@@ -1,4 +1,4 @@
-use crate::scan::position::Located;
+use crate::luna_impl::position::Located;
 
 use super::tokens::Token;
 

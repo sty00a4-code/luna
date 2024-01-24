@@ -70,7 +70,7 @@ pub struct Function {
     pub(crate) closure: Rc<RefCell<Closure>>,
     pub(crate) upvalues: Vec<Rc<RefCell<Value>>>
 }
-pub type UserFunction = Box<dyn Fn(Vec<Value>) -> Result<Value, Box<dyn Error>>>;
+pub type UserFunction = dyn Fn(Vec<Value>) -> Result<Value, Box<dyn Error>>;
 
 impl Value {
     pub fn typ(&self) -> &'static str {
@@ -142,7 +142,7 @@ impl PartialEq for Value {
             (
                 Self::Function(FunctionKind::UserFunction(a)),
                 Self::Function(FunctionKind::UserFunction(b)),
-            ) => Rc::as_ptr(a) == Rc::as_ptr(b),
+            ) => std::ptr::eq(a, b),
             _ => false,
         }
     }
