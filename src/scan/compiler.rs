@@ -3,7 +3,6 @@ use std::{
     cell::RefCell,
     collections::{HashMap, HashSet},
     error::Error,
-    fmt::Display,
     rc::Rc,
 };
 
@@ -32,13 +31,9 @@ pub struct Scope {
     pub(crate) breaks: HashSet<usize>,
     pub(crate) continues: HashSet<usize>,
 }
-#[derive(Debug, Clone, PartialEq)]
-pub enum CompileError {
-    UndefinedIdent(String),
-}
 pub trait Compilable {
     type Output;
-    fn compile(self, compiler: &mut Compiler) -> Result<Self::Output, Located<CompileError>>;
+    fn compile(self, compiler: &mut Compiler) -> Result<Self::Output, Located<Box<dyn Error>>>;
 }
 
 impl Compiler {
@@ -160,18 +155,10 @@ impl Scope {
         self.locals.get(ident).cloned()
     }
 }
-impl Display for CompileError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            CompileError::UndefinedIdent(ident) => write!(f, "can not find {ident:?}"),
-        }
-    }
-}
-impl Error for CompileError {}
 
 impl Compilable for Located<Chunk> {
     type Output = Rc<RefCell<Closure>>;
-    fn compile(self, compiler: &mut Compiler) -> Result<Self::Output, Located<CompileError>> {
+    fn compile(self, compiler: &mut Compiler) -> Result<Self::Output, Located<Box<dyn Error>>> {
         let Located {
             value: chunk,
             pos: _,
@@ -192,7 +179,7 @@ impl Compilable for Located<Chunk> {
 }
 impl Compilable for Located<Block> {
     type Output = Option<Source>;
-    fn compile(self, compiler: &mut Compiler) -> Result<Self::Output, Located<CompileError>> {
+    fn compile(self, compiler: &mut Compiler) -> Result<Self::Output, Located<Box<dyn Error>>> {
         let Located {
             value: block,
             pos: _,
@@ -213,7 +200,7 @@ impl Compilable for Located<Block> {
 }
 impl Compilable for Located<Statement> {
     type Output = Option<Source>;
-    fn compile(self, compiler: &mut Compiler) -> Result<Self::Output, Located<CompileError>> {
+    fn compile(self, compiler: &mut Compiler) -> Result<Self::Output, Located<Box<dyn Error>>> {
         let Located { value: stat, pos } = self;
         match stat {
             Statement::Block(block) => Located::new(block, pos).compile(compiler),
@@ -449,7 +436,7 @@ impl Compilable for Located<Statement> {
 }
 impl Compilable for Located<Expression> {
     type Output = Source;
-    fn compile(self, compiler: &mut Compiler) -> Result<Self::Output, Located<CompileError>> {
+    fn compile(self, compiler: &mut Compiler) -> Result<Self::Output, Located<Box<dyn Error>>> {
         let Located { value: expr, pos } = self;
         match expr {
             Expression::Atom(atom) => Located::new(atom, pos).compile(compiler),
@@ -644,7 +631,7 @@ impl Compilable for Located<Expression> {
 }
 impl Compilable for Located<Atom> {
     type Output = Source;
-    fn compile(self, compiler: &mut Compiler) -> Result<Self::Output, Located<CompileError>> {
+    fn compile(self, compiler: &mut Compiler) -> Result<Self::Output, Located<Box<dyn Error>>> {
         let Located { value: atom, pos } = self;
         match atom {
             Atom::Path(path) => Ok(Located::new(path, pos).compile(compiler)?.into()),
@@ -693,14 +680,18 @@ impl Compilable for Located<Atom> {
 }
 impl Compilable for Located<Path> {
     type Output = Location;
-    fn compile(self, compiler: &mut Compiler) -> Result<Self::Output, Located<CompileError>> {
+    fn compile(self, compiler: &mut Compiler) -> Result<Self::Output, Located<Box<dyn Error>>> {
         let Located { value: atom, pos } = self;
         match atom {
             Path::Ident(ident) => {
                 if let Some(location) = compiler.get_variable_location(&ident) {
                     Ok(location)
                 } else {
-                    Err(Located::new(CompileError::UndefinedIdent(ident), pos))
+                    let addr = compiler
+                        .frame_mut()
+                        .expect("no compiler frame on stack")
+                        .new_const(Value::String(ident));
+                    Ok(Location::Global(addr))
                 }
             }
             Path::Field { head, field } => todo!(),

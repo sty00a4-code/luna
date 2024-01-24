@@ -3,11 +3,12 @@ use crate::lang::{
     code::{BinaryOperation, ByteCode, Location, Source, UnaryOperation},
     value::{Function, FunctionKind, Object, Value},
 };
-use std::{cell::RefCell, error::Error, fmt::Display, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, error::Error, fmt::Display, rc::Rc};
 
 #[derive(Debug, Clone, Default)]
 pub struct Interpreter {
     pub call_frames: Vec<CallFrame>,
+    pub globals: Rc<RefCell<HashMap<String, Rc<RefCell<Value>>>>>,
 }
 #[derive(Debug, Clone)]
 pub struct CallFrame {
@@ -15,6 +16,7 @@ pub struct CallFrame {
     pub stack: Vec<Rc<RefCell<Value>>>,
     pub idx: usize,
     pub dst: Option<Location>,
+    pub globals: Rc<RefCell<HashMap<String, Rc<RefCell<Value>>>>>,
 }
 #[derive(Debug, Clone, PartialEq)]
 pub enum RunTimeError {
@@ -47,6 +49,7 @@ impl Interpreter {
             stack,
             idx: 0,
             dst,
+            globals: Rc::clone(&self.globals)
         });
     }
     pub fn return_call(&mut self, src: Option<Source>) -> Option<Value> {
@@ -525,6 +528,20 @@ impl CallFrame {
                 .upvalues
                 .get(*addr)
                 .map(|value| value.borrow().clone()),
+            Source::Global(addr) => {
+                if let Value::String(ident) = self
+                    .function
+                    .closure
+                    .borrow()
+                    .consts
+                    .get(*addr)
+                    .expect("constant not found")
+                {
+                    self.globals.borrow().get(ident).map(|value| value.borrow().clone())
+                } else {
+                    panic!("expected a string for the global")
+                }
+            }
             Source::Constant(addr) => self.function.closure.borrow().consts.get(*addr).cloned(),
             Source::Null => Some(Value::default()),
             Source::Bool(v) => Some(Value::Bool(*v)),
@@ -535,6 +552,20 @@ impl CallFrame {
         match location {
             Location::Register(register) => self.register(*register),
             Location::Upvalue(addr) => self.function.upvalues.get(*addr).map(Rc::clone),
+            Location::Global(addr) => {
+                if let Value::String(ident) = self
+                    .function
+                    .closure
+                    .borrow()
+                    .consts
+                    .get(*addr)
+                    .expect("constant not found")
+                {
+                    self.globals.borrow().get(ident).cloned()
+                } else {
+                    panic!("expected a string for the global")
+                }
+            }
         }
     }
 }

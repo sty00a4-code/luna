@@ -1,5 +1,15 @@
-use lang::{ast::Chunk, code::Closure, value::{Function, Value}};
-use scan::{compiler::{Compilable, Compiler}, interpreter::Interpreter, lexer::Lexer, parser::Parsable, position::Located};
+use lang::{
+    ast::Chunk,
+    code::Closure,
+    value::{Function, Value},
+};
+use scan::{
+    compiler::{Compilable, Compiler},
+    interpreter::Interpreter,
+    lexer::Lexer,
+    parser::Parsable,
+    position::Located,
+};
 use std::{cell::RefCell, env, error::Error, fs, process, rc::Rc};
 
 pub mod lang;
@@ -17,14 +27,14 @@ pub fn parse(text: &str) -> Result<Located<Chunk>, Located<Box<dyn Error>>> {
 }
 pub fn compile(text: &str) -> Result<Rc<RefCell<Closure>>, Located<Box<dyn Error>>> {
     let ast = parse(text)?;
-    ast.compile(&mut Compiler::default()).map_err(|err| err.map(|err| err.into()))
+    ast.compile(&mut Compiler::default())
 }
 pub fn run(text: &str) -> Result<Option<Value>, Located<Box<dyn Error>>> {
     let closure = compile(text)?;
     // dbg!(&closure);
     let function = Rc::new(Function {
         closure,
-        upvalues: vec![]
+        upvalues: vec![],
     });
     let mut interpreter = Interpreter::default();
     interpreter.call(&function, None);

@@ -76,6 +76,7 @@ pub enum ByteCode {
 pub enum Source {
     Register(usize),
     Upvalue(usize),
+    Global(usize),
     Constant(usize),
     #[default]
     Null,
@@ -86,6 +87,7 @@ pub enum Source {
 pub enum Location {
     Register(usize),
     Upvalue(usize),
+    Global(usize),
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BinaryOperation {
@@ -139,6 +141,7 @@ impl Display for Source {
         match self {
             Self::Register(reg) => write!(f, "@{reg}"),
             Self::Upvalue(addr) => write!(f, "@u{addr}"),
+            Self::Global(addr) => write!(f, "@g{addr}"),
             Self::Constant(addr) => write!(f, "#{addr}"),
             Self::Null => write!(f, "null"),
             Self::Bool(v) => write!(f, "{v:?}"),
@@ -151,6 +154,7 @@ impl Display for Location {
         match self {
             Self::Register(reg) => write!(f, "!{reg}"),
             Self::Upvalue(addr) => write!(f, "!u{addr}"),
+            Self::Global(addr) => write!(f, "!g{addr}"),
         }
     }
 }
@@ -228,6 +232,7 @@ impl From<Location> for Source {
         match value {
             Location::Register(register) => Self::Register(register),
             Location::Upvalue(addr) => Self::Upvalue(addr),
+            Location::Global(addr) => Self::Global(addr),
         }
     }
 }
