@@ -41,7 +41,7 @@ pub enum Statement {
         iter: Located<Expression>,
         body: Located<Block>,
     },
-    Return(Located<Expression>),
+    Return(Option<Located<Expression>>),
     Break,
     Continue,
 }

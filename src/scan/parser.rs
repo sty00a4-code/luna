@@ -103,38 +103,26 @@ impl Parsable for Statement {
                 let Located { value: _, mut pos } = parser.next().unwrap();
                 let mut idents = vec![];
                 let mut exprs = vec![];
+                let ident = Path::ident(parser)?;
+                pos.extend(&ident.pos);
+                idents.push(ident);
                 while matches!(
                     parser.peek(),
                     Some(Located {
-                        value: Token::Ident(_),
+                        value: Token::Comma,
                         pos: _
                     })
                 ) {
+                    parser.next();
                     let ident = Path::ident(parser)?;
                     pos.extend(&ident.pos);
                     idents.push(ident);
-                    if matches!(
-                        parser.peek(),
-                        Some(Located {
-                            value: Token::Comma,
-                            pos: _
-                        })
-                    ) {
-                        parser.next();
-                    } else if matches!(
-                        parser.peek(),
-                        Some(Located {
-                            value: Token::Equal,
-                            pos: _
-                        })
-                    ) {
-                        break;
-                    }
                 }
                 if let Some(Located {
                     value: Token::Equal,
                     pos: _,
-                }) = parser.next() {
+                }) = parser.next()
+                {
                     let expr = Expression::parse(parser)?;
                     pos.extend(&expr.pos);
                     exprs.push(expr);
@@ -152,6 +140,12 @@ impl Parsable for Statement {
                     }
                 }
                 Ok(Located::new(Self::LetBinding { idents, exprs }, pos))
+            }
+            Token::Return => {
+                let Located { value: _, mut pos } = parser.next().unwrap();
+                let expr = Expression::parse(parser)?;
+                pos.extend(&expr.pos);
+                Ok(Located::new(Self::Return(Some(expr)), pos))
             }
             _ => Err(Located::new(
                 ParseError::UnexpectedToken(token.clone()),

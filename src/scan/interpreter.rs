@@ -39,7 +39,7 @@ pub enum RunTimeError {
 impl Interpreter {
     pub fn call(&mut self, function: &Rc<Function>, dst: Option<Location>) {
         let mut stack = vec![];
-        for _ in 0..function.closure.registers {
+        for _ in 0..function.closure.borrow().registers {
             stack.push(Rc::new(RefCell::new(Value::default())));
         }
         self.call_frames.push(CallFrame {
@@ -72,6 +72,7 @@ impl Interpreter {
         } = frame
             .function
             .closure
+            .borrow()
             .code
             .get(frame.idx)
             .cloned()
@@ -146,10 +147,13 @@ impl Interpreter {
                     Value::Object(object) => match field {
                         Value::String(key) => object.borrow_mut().fields.get(&key).cloned(),
                         field => {
-                            return Err(Located::new(RunTimeError::CannotFieldInto {
-                                head: Value::Object(Default::default()).typ(),
-                                field: field.typ(),
-                            }, pos))
+                            return Err(Located::new(
+                                RunTimeError::CannotFieldInto {
+                                    head: Value::Object(Default::default()).typ(),
+                                    field: field.typ(),
+                                },
+                                pos,
+                            ))
                         }
                     },
                     Value::Vector(vector) => match field {
@@ -169,10 +173,13 @@ impl Interpreter {
                             vector.get(index).cloned()
                         }
                         field => {
-                            return Err(Located::new(RunTimeError::CannotFieldInto {
-                                head: Value::Vector(Default::default()).typ(),
-                                field: field.typ(),
-                            }, pos))
+                            return Err(Located::new(
+                                RunTimeError::CannotFieldInto {
+                                    head: Value::Vector(Default::default()).typ(),
+                                    field: field.typ(),
+                                },
+                                pos,
+                            ))
                         }
                     },
                     Value::String(string) => match field {
@@ -194,10 +201,13 @@ impl Interpreter {
                                 .map(Value::Char)
                         }
                         field => {
-                            return Err(Located::new(RunTimeError::CannotFieldInto {
-                                head: Value::String(Default::default()).typ(),
-                                field: field.typ(),
-                            }, pos))
+                            return Err(Located::new(
+                                RunTimeError::CannotFieldInto {
+                                    head: Value::String(Default::default()).typ(),
+                                    field: field.typ(),
+                                },
+                                pos,
+                            ))
                         }
                     },
                     head => return Err(Located::new(RunTimeError::CannotField(head.typ()), pos)),
@@ -259,11 +269,14 @@ impl Interpreter {
                             Value::Float(left + right as f64)
                         }
                         (left, right) => {
-                            return Err(Located::new(RunTimeError::InvalidBinary {
-                                op,
-                                left: left.typ(),
-                                right: right.typ(),
-                            }, pos))
+                            return Err(Located::new(
+                                RunTimeError::InvalidBinary {
+                                    op,
+                                    left: left.typ(),
+                                    right: right.typ(),
+                                },
+                                pos,
+                            ))
                         }
                     },
                     BinaryOperation::Sub => match (left, right) {
@@ -276,11 +289,14 @@ impl Interpreter {
                             Value::Float(left - right as f64)
                         }
                         (left, right) => {
-                            return Err(Located::new(RunTimeError::InvalidBinary {
-                                op,
-                                left: left.typ(),
-                                right: right.typ(),
-                            }, pos))
+                            return Err(Located::new(
+                                RunTimeError::InvalidBinary {
+                                    op,
+                                    left: left.typ(),
+                                    right: right.typ(),
+                                },
+                                pos,
+                            ))
                         }
                     },
                     BinaryOperation::Mul => match (left, right) {
@@ -293,11 +309,14 @@ impl Interpreter {
                             Value::Float(left * right as f64)
                         }
                         (left, right) => {
-                            return Err(Located::new(RunTimeError::InvalidBinary {
-                                op,
-                                left: left.typ(),
-                                right: right.typ(),
-                            }, pos))
+                            return Err(Located::new(
+                                RunTimeError::InvalidBinary {
+                                    op,
+                                    left: left.typ(),
+                                    right: right.typ(),
+                                },
+                                pos,
+                            ))
                         }
                     },
                     BinaryOperation::Div => match (left, right) {
@@ -312,11 +331,14 @@ impl Interpreter {
                             Value::Float(left / right as f64)
                         }
                         (left, right) => {
-                            return Err(Located::new(RunTimeError::InvalidBinary {
-                                op,
-                                left: left.typ(),
-                                right: right.typ(),
-                            }, pos))
+                            return Err(Located::new(
+                                RunTimeError::InvalidBinary {
+                                    op,
+                                    left: left.typ(),
+                                    right: right.typ(),
+                                },
+                                pos,
+                            ))
                         }
                     },
                     BinaryOperation::Pow => match (left, right) {
@@ -331,11 +353,14 @@ impl Interpreter {
                             Value::Float(left.powf(right as f64))
                         }
                         (left, right) => {
-                            return Err(Located::new(RunTimeError::InvalidBinary {
-                                op,
-                                left: left.typ(),
-                                right: right.typ(),
-                            }, pos))
+                            return Err(Located::new(
+                                RunTimeError::InvalidBinary {
+                                    op,
+                                    left: left.typ(),
+                                    right: right.typ(),
+                                },
+                                pos,
+                            ))
                         }
                     },
                     BinaryOperation::Mod => match (left, right) {
@@ -348,11 +373,14 @@ impl Interpreter {
                             Value::Float(left % right as f64)
                         }
                         (left, right) => {
-                            return Err(Located::new(RunTimeError::InvalidBinary {
-                                op,
-                                left: left.typ(),
-                                right: right.typ(),
-                            }, pos))
+                            return Err(Located::new(
+                                RunTimeError::InvalidBinary {
+                                    op,
+                                    left: left.typ(),
+                                    right: right.typ(),
+                                },
+                                pos,
+                            ))
                         }
                     },
                     BinaryOperation::EQ => Value::Bool(left == right),
@@ -365,11 +393,14 @@ impl Interpreter {
                         }
                         (Value::Float(left), Value::Int(right)) => Value::Bool(left < right as f64),
                         (left, right) => {
-                            return Err(Located::new(RunTimeError::InvalidBinary {
-                                op,
-                                left: left.typ(),
-                                right: right.typ(),
-                            }, pos))
+                            return Err(Located::new(
+                                RunTimeError::InvalidBinary {
+                                    op,
+                                    left: left.typ(),
+                                    right: right.typ(),
+                                },
+                                pos,
+                            ))
                         }
                     },
                     BinaryOperation::GT => match (left, right) {
@@ -378,11 +409,14 @@ impl Interpreter {
                         (Value::Int(left), Value::Float(right)) => Value::Bool(left as f64 > right),
                         (Value::Float(left), Value::Int(right)) => Value::Bool(left > right as f64),
                         (left, right) => {
-                            return Err(Located::new(RunTimeError::InvalidBinary {
-                                op,
-                                left: left.typ(),
-                                right: right.typ(),
-                            }, pos))
+                            return Err(Located::new(
+                                RunTimeError::InvalidBinary {
+                                    op,
+                                    left: left.typ(),
+                                    right: right.typ(),
+                                },
+                                pos,
+                            ))
                         }
                     },
                     BinaryOperation::LE => match (left, right) {
@@ -395,11 +429,14 @@ impl Interpreter {
                             Value::Bool(left <= right as f64)
                         }
                         (left, right) => {
-                            return Err(Located::new(RunTimeError::InvalidBinary {
-                                op,
-                                left: left.typ(),
-                                right: right.typ(),
-                            }, pos))
+                            return Err(Located::new(
+                                RunTimeError::InvalidBinary {
+                                    op,
+                                    left: left.typ(),
+                                    right: right.typ(),
+                                },
+                                pos,
+                            ))
                         }
                     },
                     BinaryOperation::GE => match (left, right) {
@@ -412,11 +449,14 @@ impl Interpreter {
                             Value::Bool(left >= right as f64)
                         }
                         (left, right) => {
-                            return Err(Located::new(RunTimeError::InvalidBinary {
-                                op,
-                                left: left.typ(),
-                                right: right.typ(),
-                            }, pos))
+                            return Err(Located::new(
+                                RunTimeError::InvalidBinary {
+                                    op,
+                                    left: left.typ(),
+                                    right: right.typ(),
+                                },
+                                pos,
+                            ))
                         }
                     },
                     BinaryOperation::And => Value::Bool(left.into() && right.into()),
@@ -431,10 +471,13 @@ impl Interpreter {
                         Value::Int(v) => Value::Int(-v),
                         Value::Float(v) => Value::Float(-v),
                         src => {
-                            return Err(Located::new(RunTimeError::InvalidUnary {
-                                op,
-                                right: src.typ(),
-                            }, pos))
+                            return Err(Located::new(
+                                RunTimeError::InvalidUnary {
+                                    op,
+                                    right: src.typ(),
+                                },
+                                pos,
+                            ))
                         }
                     },
                     UnaryOperation::Not => Value::Bool(!bool::from(src)),
@@ -442,10 +485,13 @@ impl Interpreter {
                         Value::String(v) => Value::Int(v.len() as i64),
                         Value::Vector(v) => Value::Int(v.borrow().len() as i64),
                         src => {
-                            return Err(Located::new(RunTimeError::InvalidUnary {
-                                op,
-                                right: src.typ(),
-                            }, pos))
+                            return Err(Located::new(
+                                RunTimeError::InvalidUnary {
+                                    op,
+                                    right: src.typ(),
+                                },
+                                pos,
+                            ))
                         }
                     },
                 };
@@ -479,7 +525,7 @@ impl CallFrame {
                 .upvalues
                 .get(*addr)
                 .map(|value| value.borrow().clone()),
-            Source::Constant(addr) => self.function.closure.consts.get(*addr).cloned(),
+            Source::Constant(addr) => self.function.closure.borrow().consts.get(*addr).cloned(),
             Source::Null => Some(Value::default()),
             Source::Bool(v) => Some(Value::Bool(*v)),
             Source::Char(v) => Some(Value::Char(*v)),

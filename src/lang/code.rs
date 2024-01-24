@@ -6,7 +6,10 @@ use std::fmt::Display;
 
 use crate::scan::position::Located;
 
-use super::value::Value;
+use super::{
+    ast::{BinaryOperator, UnaryOperator},
+    value::Value,
+};
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum ByteCode {
     #[default]
@@ -49,12 +52,12 @@ pub enum ByteCode {
     Vector {
         dst: Location,
         start: usize,
-        amount: usize
+        amount: usize,
     },
     Object {
         dst: Location,
         start: usize,
-        amount: usize
+        amount: usize,
     },
 
     Binary {
@@ -123,6 +126,14 @@ pub struct Upvalue {
     pub in_stack: bool,
 }
 
+impl Closure {
+    pub fn new_const(&mut self, value: Value) -> usize {
+        let addr = self.consts.len();
+        self.consts.push(value);
+        addr
+    }
+}
+
 impl Display for Source {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -148,32 +159,66 @@ impl Display for ByteCode {
         match self {
             Self::None => write!(f, "none"),
             Self::Jump { addr } => write!(f, "jump {addr:04x?}"),
-            Self::JumpIf { negative, cond, addr } => if *negative {
-                write!(f, "jumpifnot {cond} *{addr:?}")
-            } else {
-                write!(f, "jumpif {cond} *{addr:?}")
-            },
-            Self::JumpNull { negative, cond, addr } => if *negative {
-                write!(f, "jumpnullnot {cond} *{addr:?}")
-            } else {
-                write!(f, "jumpnull {cond} *{addr:?}")
-            },
-            Self::Call { dst, func, offset, amount } => if let Some(dst) = dst {
-                write!(f, "call {func} @{offset}..+@{amount} -> {dst}")
-            } else {
-                write!(f, "call {func} @{offset}..+@{amount}")
-            },
-            Self::Return { src } => if let Some(src) = src {
-                write!(f, "return {src}")
-            } else {
-                write!(f, "return")
-            },
+            Self::JumpIf {
+                negative,
+                cond,
+                addr,
+            } => {
+                if *negative {
+                    write!(f, "jumpifnot {cond} *{addr:?}")
+                } else {
+                    write!(f, "jumpif {cond} *{addr:?}")
+                }
+            }
+            Self::JumpNull {
+                negative,
+                cond,
+                addr,
+            } => {
+                if *negative {
+                    write!(f, "jumpnullnot {cond} *{addr:?}")
+                } else {
+                    write!(f, "jumpnull {cond} *{addr:?}")
+                }
+            }
+            Self::Call {
+                dst,
+                func,
+                offset,
+                amount,
+            } => {
+                if let Some(dst) = dst {
+                    write!(f, "call {func} @{offset}..+@{amount} -> {dst}")
+                } else {
+                    write!(f, "call {func} @{offset}..+@{amount}")
+                }
+            }
+            Self::Return { src } => {
+                if let Some(src) = src {
+                    write!(f, "return {src}")
+                } else {
+                    write!(f, "return")
+                }
+            }
             Self::Move { dst, src } => write!(f, "move {dst} = {src}"),
             Self::Field { dst, head, field } => write!(f, "field {dst} = {head} . {field}"),
             Self::Vector { dst, start, amount } => write!(f, "vector {dst} = @{start}..+@{amount}"),
             Self::Object { dst, start, amount } => write!(f, "object {dst} = @{start}..+@{amount}"),
-            Self::Binary { op, dst, left, right } => write!(f, "binary {dst} = {left} {} {right}", format!("{op:?}").to_lowercase()),
-            Self::Unary { op, dst, src } => write!(f, "unary {dst} = {} {src}", format!("{op:?}").to_lowercase()),
+            Self::Binary {
+                op,
+                dst,
+                left,
+                right,
+            } => write!(
+                f,
+                "binary {dst} = {left} {} {right}",
+                format!("{op:?}").to_lowercase()
+            ),
+            Self::Unary { op, dst, src } => write!(
+                f,
+                "unary {dst} = {} {src}",
+                format!("{op:?}").to_lowercase()
+            ),
         }
     }
 }
@@ -183,6 +228,35 @@ impl From<Location> for Source {
         match value {
             Location::Register(register) => Self::Register(register),
             Location::Upvalue(addr) => Self::Upvalue(addr),
+        }
+    }
+}
+
+impl From<BinaryOperator> for BinaryOperation {
+    fn from(value: BinaryOperator) -> Self {
+        match value {
+            BinaryOperator::Plus => Self::Add,
+            BinaryOperator::Minus => Self::Sub,
+            BinaryOperator::Star => Self::Mul,
+            BinaryOperator::Slash => Self::Div,
+            BinaryOperator::Exponent => Self::Pow,
+            BinaryOperator::Percent => Self::Mod,
+            BinaryOperator::EqualEqual => Self::EQ,
+            BinaryOperator::ExclamationEqual => Self::NE,
+            BinaryOperator::Less => Self::LT,
+            BinaryOperator::Greater => Self::GT,
+            BinaryOperator::LessEqual => Self::LE,
+            BinaryOperator::GreaterEqual => Self::GE,
+            BinaryOperator::Ampersand => Self::And,
+            BinaryOperator::Pipe => Self::Or,
+        }
+    }
+}
+impl From<UnaryOperator> for UnaryOperation {
+    fn from(value: UnaryOperator) -> Self {
+        match value {
+            UnaryOperator::Minus => Self::Neg,
+            UnaryOperator::Exclamation => Self::Not,
         }
     }
 }
