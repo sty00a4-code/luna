@@ -537,7 +537,7 @@ impl CallFrame {
                     .get(*addr)
                     .expect("constant not found")
                 {
-                    self.globals.borrow().get(ident).map(|value| value.borrow().clone())
+                    Some(self.globals.borrow().get(ident).map(|value| value.borrow().clone()).unwrap_or_default())
                 } else {
                     panic!("expected a string for the global")
                 }
@@ -561,7 +561,7 @@ impl CallFrame {
                     .get(*addr)
                     .expect("constant not found")
                 {
-                    self.globals.borrow().get(ident).cloned()
+                    Some(self.globals.borrow().get(ident).cloned().unwrap_or_default())
                 } else {
                     panic!("expected a string for the global")
                 }
