@@ -161,7 +161,7 @@ impl Compilable for Located<Chunk> {
     fn compile(self, compiler: &mut Compiler) -> Result<Self::Output, Located<Box<dyn Error>>> {
         let Located {
             value: chunk,
-            pos: _,
+            pos,
         } = self;
         compiler.push_frame(CompilerFrame {
             closure: Rc::new(RefCell::new(Closure::default())),
@@ -171,6 +171,10 @@ impl Compilable for Located<Chunk> {
         for stat in chunk.0 {
             stat.compile(compiler)?;
         }
+        compiler
+            .frame_mut()
+            .expect("no compiler frame on stack")
+            .write(ByteCode::Return { src: None }, pos);
         Ok(compiler
             .pop_frame()
             .expect("no compiler frame on stack")
@@ -484,8 +488,8 @@ impl Compilable for Located<Expression> {
                     );
                 Ok(dst.into())
             }
-            Expression::Call { path, args } => {
-                let path_location = path.compile(compiler)?;
+            Expression::Call { head, args } => {
+                let head = head.compile(compiler)?;
                 let amount = args.len();
                 let offset = compiler
                     .frame_mut()
@@ -524,7 +528,7 @@ impl Compilable for Located<Expression> {
                     .write(
                         ByteCode::Call {
                             dst: Some(Location::Register(dst)),
-                            func: path_location.into(),
+                            func: head,
                             offset,
                             amount,
                         },
@@ -542,9 +546,8 @@ impl Compilable for Located<Expression> {
                 args,
             } => {
                 let head_pos = head.pos.clone();
-                let head_location = head.compile(compiler)?;
+                let head = head.compile(compiler)?;
                 let func = {
-                    let head: Source = head_location.into();
                     let dst = compiler
                         .frame_mut()
                         .expect("no compiler frame on stack")
@@ -581,7 +584,7 @@ impl Compilable for Located<Expression> {
                     .write(
                         ByteCode::Move {
                             dst: Location::Register(head_register),
-                            src: head_location.into(),
+                            src: head,
                         },
                         head_pos,
                     );

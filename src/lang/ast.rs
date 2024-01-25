@@ -63,11 +63,11 @@ pub enum Expression {
         right: Box<Located<Self>>,
     },
     Call {
-        path: Located<Path>,
+        head: Box<Located<Self>>,
         args: Vec<Located<Expression>>,
     },
     SelfCall {
-        head: Located<Path>,
+        head: Box<Located<Self>>,
         field: Located<String>,
         args: Vec<Located<Expression>>,
     },

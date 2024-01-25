@@ -1,10 +1,7 @@
-use super::{
-    position::Located,
-    std::globals,
-};
+use super::{position::Located, std::globals};
 use crate::lang::{
     code::{BinaryOperation, ByteCode, Location, Source, UnaryOperation},
-    value::{Function, FunctionKind, Object, Value}
+    value::{Function, FunctionKind, Object, Value},
 };
 use std::{cell::RefCell, collections::HashMap, error::Error, fmt::Display, rc::Rc};
 
@@ -12,7 +9,7 @@ use std::{cell::RefCell, collections::HashMap, error::Error, fmt::Display, rc::R
 pub struct Interpreter {
     pub call_frames: Vec<CallFrame>,
     pub globals: Rc<RefCell<HashMap<String, Rc<RefCell<Value>>>>>,
-    pub global_path: Option<String>
+    pub global_path: Option<String>,
 }
 #[derive(Debug, Clone)]
 pub struct CallFrame {
@@ -44,7 +41,11 @@ pub enum RunTimeError {
 
 impl Default for Interpreter {
     fn default() -> Self {
-        Self { call_frames: vec![], globals: Rc::new(RefCell::new(globals())), global_path: None }
+        Self {
+            call_frames: vec![],
+            globals: Rc::new(RefCell::new(globals())),
+            global_path: None,
+        }
     }
 }
 impl Interpreter {
@@ -64,7 +65,7 @@ impl Interpreter {
             stack,
             idx: 0,
             dst,
-            globals: Rc::clone(&self.globals)
+            globals: Rc::clone(&self.globals),
         });
     }
     pub fn return_call(&mut self, src: Option<Source>) -> Option<Value> {
@@ -140,11 +141,12 @@ impl Interpreter {
                     Value::Function(kind) => match kind {
                         FunctionKind::Function(function) => self.call(&function, dst),
                         FunctionKind::UserFunction(func) => {
-                            let value = func(args).map_err(|err| {
+                            let dst = dst.map(|dst| frame.location(&dst).expect("dst not found"));
+                            let value = func(self, args).map_err(|err| {
                                 Located::new(RunTimeError::Custom(err.to_string()), pos)
                             })?;
                             if let Some(dst) = dst {
-                                *frame.location(&dst).expect("dst not found").borrow_mut() = value;
+                                *dst.borrow_mut() = value;
                             }
                         }
                     },
@@ -286,6 +288,7 @@ impl Interpreter {
                         (Value::Float(left), Value::Int(right)) => {
                             Value::Float(left + right as f64)
                         }
+                        (Value::String(left), Value::String(right)) => Value::String(left + &right),
                         (left, right) => {
                             return Err(Located::new(
                                 RunTimeError::InvalidBinary {
@@ -552,7 +555,13 @@ impl CallFrame {
                     .get(*addr)
                     .expect("constant not found")
                 {
-                    Some(self.globals.borrow().get(ident).map(|value| value.borrow().clone()).unwrap_or_default())
+                    Some(
+                        self.globals
+                            .borrow()
+                            .get(ident)
+                            .map(|value| value.borrow().clone())
+                            .unwrap_or_default(),
+                    )
                 } else {
                     panic!("expected a string for the global")
                 }
@@ -576,11 +585,13 @@ impl CallFrame {
                     .get(*addr)
                     .expect("constant not found")
                 {
-                    if let Some(value) = self.globals.borrow().get(ident).cloned() {
+                    let mut globals = self.globals.borrow_mut();
+                    if let Some(value) = globals.get(ident).cloned() {
                         Some(value)
                     } else {
-                        self.globals.borrow_mut().insert(ident.clone(), Rc::new(RefCell::new(Value::default())));
-                        self.globals.borrow().get(ident).cloned()
+                        globals
+                            .insert(ident.clone(), Rc::new(RefCell::new(Value::default())));
+                        globals.get(ident).cloned()
                     }
                 } else {
                     panic!("expected a string for the global")

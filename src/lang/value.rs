@@ -1,3 +1,5 @@
+use crate::luna_impl::interpreter::Interpreter;
+
 use super::code::Closure;
 use std::{
     cell::RefCell,
@@ -70,7 +72,7 @@ pub struct Function {
     pub(crate) closure: Rc<RefCell<Closure>>,
     pub(crate) upvalues: Vec<Rc<RefCell<Value>>>
 }
-pub type UserFunction = dyn Fn(Vec<Value>) -> Result<Value, Box<dyn Error>>;
+pub type UserFunction = dyn Fn(&mut Interpreter, Vec<Value>) -> Result<Value, Box<dyn Error>>;
 
 impl Value {
     pub fn typ(&self) -> &'static str {
@@ -207,7 +209,7 @@ impl<'a> UserObject for VectorIterator<'a> {
     }
 }
 impl<'a> VectorIterator<'a> {
-    pub fn _next(args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    pub fn _next(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
         let Some(_self) = args.first().cloned() else {
             return Err(Box::new(UserObjectError::ExpectedSelf("null")));
         };
@@ -228,9 +230,7 @@ impl<'a> UserObject for ObjectIterator<'a> {
     }
     fn get(&self, key: &str) -> Option<Value> {
         match key {
-            "next" => Some(Value::Function(FunctionKind::UserFunction(Rc::new(
-                Box::new(Self::_next),
-            )))),
+            "next" => Some(Value::Function(FunctionKind::UserFunction(Rc::new(Box::new(Self::_next))))),
             _ => None,
         }
     }
@@ -242,7 +242,7 @@ impl<'a> UserObject for ObjectIterator<'a> {
     }
 }
 impl<'a> ObjectIterator<'a> {
-    pub fn _next(args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    pub fn _next(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
         let Some(_self) = args.first().cloned() else {
             return Err(Box::new(UserObjectError::ExpectedSelf("null")));
         };
@@ -282,7 +282,7 @@ impl<'a> UserObject for StringIterator<'a> {
     }
 }
 impl<'a> StringIterator<'a> {
-    pub fn _next(args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    pub fn _next(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
         let Some(_self) = args.first().cloned() else {
             return Err(Box::new(UserObjectError::ExpectedSelf("null")));
         };
