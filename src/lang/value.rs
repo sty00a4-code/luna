@@ -70,10 +70,15 @@ pub enum FunctionKind {
 #[derive(Debug, Clone)]
 pub struct Function {
     pub(crate) closure: Rc<RefCell<Closure>>,
-    pub(crate) upvalues: Vec<Rc<RefCell<Value>>>
+    pub(crate) upvalues: Vec<Rc<RefCell<Value>>>,
 }
 pub type UserFunction = dyn Fn(&mut Interpreter, Vec<Value>) -> Result<Value, Box<dyn Error>>;
 
+impl Object {
+    pub fn new(fields: HashMap<String, Value>) -> Self {
+        Self { fields, meta: None }
+    }
+}
 impl Value {
     pub fn typ(&self) -> &'static str {
         match self {
@@ -99,7 +104,7 @@ impl Debug for Value {
             Value::Bool(v) => write!(f, "{v:?}"),
             Value::Char(v) => write!(f, "{v:?}"),
             Value::String(v) => write!(f, "{v:?}"),
-            Value::Vector(v) => write!(f, "{v:?}"),
+            Value::Vector(v) => write!(f, "{:?}", v.borrow()),
             Value::Object(v) => write!(f, "object:{:08x?}", v.as_ptr()),
             Value::UserObject(v) => write!(f, "{}:{:08x?}", v.borrow().typ(), v.as_ptr()),
             Value::Function(FunctionKind::Function(function)) => {
@@ -230,7 +235,9 @@ impl<'a> UserObject for ObjectIterator<'a> {
     }
     fn get(&self, key: &str) -> Option<Value> {
         match key {
-            "next" => Some(Value::Function(FunctionKind::UserFunction(Rc::new(Box::new(Self::_next))))),
+            "next" => Some(Value::Function(FunctionKind::UserFunction(Rc::new(
+                Box::new(Self::_next),
+            )))),
             _ => None,
         }
     }
@@ -295,5 +302,110 @@ impl<'a> StringIterator<'a> {
     }
     pub fn call_next(&mut self) -> Result<Value, Box<dyn Error>> {
         Ok(self.0.next().map(Value::Char).unwrap_or_default())
+    }
+}
+
+impl From<u8> for Value {
+    fn from(value: u8) -> Self {
+        Self::Int(value as i64)
+    }
+}
+impl From<u16> for Value {
+    fn from(value: u16) -> Self {
+        Self::Int(value as i64)
+    }
+}
+impl From<u32> for Value {
+    fn from(value: u32) -> Self {
+        Self::Int(value as i64)
+    }
+}
+impl From<u64> for Value {
+    fn from(value: u64) -> Self {
+        Self::Int(value as i64)
+    }
+}
+impl From<u128> for Value {
+    fn from(value: u128) -> Self {
+        Self::Int(value as i64)
+    }
+}
+impl From<i8> for Value {
+    fn from(value: i8) -> Self {
+        Self::Int(value as i64)
+    }
+}
+impl From<i16> for Value {
+    fn from(value: i16) -> Self {
+        Self::Int(value as i64)
+    }
+}
+impl From<i32> for Value {
+    fn from(value: i32) -> Self {
+        Self::Int(value as i64)
+    }
+}
+impl From<i64> for Value {
+    fn from(value: i64) -> Self {
+        Self::Int(value)
+    }
+}
+impl From<i128> for Value {
+    fn from(value: i128) -> Self {
+        Self::Int(value as i64)
+    }
+}
+impl From<f32> for Value {
+    fn from(value: f32) -> Self {
+        Self::Float(value as f64)
+    }
+}
+impl From<f64> for Value {
+    fn from(value: f64) -> Self {
+        Self::Float(value)
+    }
+}
+impl From<bool> for Value {
+    fn from(value: bool) -> Self {
+        Self::Bool(value)
+    }
+}
+impl From<char> for Value {
+    fn from(value: char) -> Self {
+        Self::Char(value)
+    }
+}
+impl From<String> for Value {
+    fn from(value: String) -> Self {
+        Self::String(value)
+    }
+}
+impl From<&str> for Value {
+    fn from(value: &str) -> Self {
+        Self::String(value.to_string())
+    }
+}
+impl<V: Into<Value>> From<Vec<V>> for Value {
+    fn from(value: Vec<V>) -> Self {
+        Self::Vector(Rc::new(RefCell::new(
+            value.into_iter().map(|v| v.into()).collect(),
+        )))
+    }
+}
+impl<V: Into<Value>> From<HashMap<String, V>> for Value {
+    fn from(value: HashMap<String, V>) -> Self {
+        Self::Object(Rc::new(RefCell::new(Object::new(
+            value.into_iter().map(|(k, v)| (k, v.into())).collect(),
+        ))))
+    }
+}
+impl From<Rc<UserFunction>> for Value {
+    fn from(value: Rc<UserFunction>) -> Self {
+        Self::Function(FunctionKind::UserFunction(value))
+    }
+}
+impl From<Box<UserFunction>> for Value {
+    fn from(value: Box<UserFunction>) -> Self {
+        Self::Function(FunctionKind::UserFunction(Rc::new(value)))
     }
 }

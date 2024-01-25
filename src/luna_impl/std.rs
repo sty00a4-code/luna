@@ -1,12 +1,49 @@
 #![allow(unused_macros)]
-use crate::lang::value::{FunctionKind, Value};
+use crate::lang::value::{FunctionKind, Object, Value};
 use std::{cell::RefCell, collections::HashMap, error::Error, fmt::Display, io::Write, rc::Rc};
 
 use super::interpreter::Interpreter;
 
+macro_rules! int {
+    ($v:literal) => {
+        Value::Int($v.into())
+    };
+}
+macro_rules! float {
+    ($v:literal) => {
+        Value::Float($v.into())
+    };
+}
+macro_rules! bool {
+    ($v:literal) => {
+        Value::Bool($v.into())
+    };
+}
+macro_rules! char {
+    ($v:literal) => {
+        Value::Char($v.into())
+    };
+}
 macro_rules! string {
     ($v:literal) => {
         Value::String($v.to_string())
+    };
+}
+macro_rules! vector {
+    [$($v:literal),*] => {
+        Value::Vector(Rc::new(RefCell::new(vec![$($v.into()),*])))
+    };
+}
+macro_rules! object {
+    {$($k:literal = $v:expr),*} => {
+        {
+            #[allow(unused_variables, unused_mut)]
+            let mut map = HashMap::new();
+            $(
+                map.insert($k.into(), $v.into());
+            ) *
+            Value::Object(Rc::new(RefCell::new(Object::new(map))))
+        }
     };
 }
 macro_rules! function {
@@ -27,93 +64,137 @@ pub struct ExpectedType {
 }
 impl Display for ExpectedType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "expected {} for argument #{}, got {}", self.expected, self.idx, self.got)
+        write!(
+            f,
+            "expected {} for argument #{}, got {}",
+            self.expected, self.idx, self.got
+        )
     }
 }
 impl Error for ExpectedType {}
 macro_rules! typed {
-    ($args:ident : $type:ident $param:ident) => {
-        {
-            let (idx, arg) = $args.next().unwrap_or_default();
-            if let Value::$type($param) = arg {
-                $param
+    ($args:ident : $type:ident) => {{
+        let (idx, arg) = $args.next().unwrap_or(($args.len(), Value::default()));
+        if let Value::$type(value) = arg {
+            value
+        } else {
+            return Err(ExpectedType {
+                idx,
+                expected: Value::$type(Default::default()).typ(),
+                got: arg.typ(),
+            }
+            .into());
+        }
+    }};
+    ($args:ident : $type:ident ?) => {{
+        let (idx, arg) = $args.next().unwrap_or(($args.len(), Value::default()));
+        if arg == Value::default() {
+            None
+        } else {
+            if let Value::$type(value) = arg {
+                Some(value)
             } else {
                 return Err(ExpectedType {
                     idx,
                     expected: Value::$type(Default::default()).typ(),
-                    got: arg.typ()
-                }.into())
+                    got: arg.typ(),
+                }
+                .into());
             }
         }
-    };
-    ($args:ident : $type:ident $param:ident => $value:expr) => {
-        {
-            let (idx, arg) = $args.next().unwrap_or_default();
+    }};
+    ($args:ident : $type:ident $param:ident) => {{
+        let (idx, arg) = $args.next().unwrap_or(($args.len(), Value::default()));
+        if let Value::$type($param) = arg {
+            $param
+        } else {
+            return Err(ExpectedType {
+                idx,
+                expected: Value::$type(Default::default()).typ(),
+                got: arg.typ(),
+            }
+            .into());
+        }
+    }};
+    ($args:ident : $type:ident $param:ident => $value:expr) => {{
+        let (idx, arg) = $args.next().unwrap_or(($args.len(), Value::default()));
+        if let Value::$type($param) = arg {
+            $value
+        } else {
+            return Err(ExpectedType {
+                idx,
+                expected: Value::$type(Default::default()).typ(),
+                got: arg.typ(),
+            }
+            .into());
+        }
+    }};
+    ($args:ident : $type:ident ? $param:ident) => {{
+        let (idx, arg) = $args.next().unwrap_or(($args.len(), Value::default()));
+        if arg == Value::default() {
+            None
+        } else {
             if let Value::$type($param) = arg {
-                $value
+                Some($param)
             } else {
                 return Err(ExpectedType {
                     idx,
                     expected: Value::$type(Default::default()).typ(),
-                    got: arg.typ()
-                }.into())
-            }
-        }
-    };
-    ($args:ident : $type:ident ? $param:ident) => {
-        {
-            let (idx, arg) = $args.next().unwrap_or_default();
-            if arg == Value::default() {
-                None
-            } else {
-                if let Value::$type($param) = arg {
-                    Some($param)
-                } else {
-                    return Err(ExpectedType {
-                        idx,
-                        expected: Value::$type(Default::default()).typ(),
-                        got: arg.typ()
-                    }.into())
+                    got: arg.typ(),
                 }
+                .into());
             }
         }
-    };
-    ($args:ident : $type:ident ? $param:ident => $value:expr) => {
-        {
-            let (idx, arg) = $args.next().unwrap_or_default();
-            if arg == Value::default() {
-                None
+    }};
+    ($args:ident : $type:ident ? $param:ident => $value:expr) => {{
+        let (idx, arg) = $args.next().unwrap_or(($args.len(), Value::default()));
+        if arg == Value::default() {
+            None
+        } else {
+            if let Value::$type($param) = arg {
+                Some($value)
             } else {
-                if let Value::$type($param) = arg {
-                    Some($value)
-                } else {
-                    return Err(ExpectedType {
-                        idx,
-                        expected: Value::$type(Default::default()).typ(),
-                        got: arg.typ()
-                    }.into())
+                return Err(ExpectedType {
+                    idx,
+                    expected: Value::$type(Default::default()).typ(),
+                    got: arg.typ(),
                 }
+                .into());
             }
         }
-    };
+    }};
 }
 
 pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
     let mut globals = HashMap::new();
     set_field!(globals."print" = function!(_print));
     set_field!(globals."input" = function!(_input));
+    set_field!(globals."string" = object! {
+        "lowercase" = ('a'..='z').collect::<Vec<char>>(),
+        "uppercase" = ('A'..='Z').collect::<Vec<char>>(),
+        "letters" = ('a'..='z').chain('A'..='Z').collect::<Vec<char>>(),
+        "get" = function!(_string_get),
+        "sub" = function!(_string_sub),
+        "sep" = function!(_string_sep),
+        "format" = function!(_string_format)
+    });
     globals
 }
 
 pub fn _print(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let args = args.into_iter();
-    
-    println!("{}", args.map(|v| v.to_string()).collect::<Vec<String>>().join(" "));
+
+    println!(
+        "{}",
+        args.map(|v| v.to_string())
+            .collect::<Vec<String>>()
+            .join(" ")
+    );
     Ok(Value::default())
 }
 pub fn _input(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let mut args = args.into_iter().enumerate();
-    let perfix = typed!(args: String? string);
+    let perfix = typed!(args: String?);
 
     let mut input = String::new();
     if let Some(prefix) = perfix {
@@ -123,4 +204,44 @@ pub fn _input(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Er
     std::io::stdin().read_line(&mut input)?;
     let input = input.trim_end();
     Ok(Value::String(input.to_string()))
+}
+pub fn _string_get(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let string = typed!(args: String);
+    let index = typed!(args: Int);
+    let default = typed!(args: Char?);
+
+    Ok(string
+        .chars()
+        .nth(index.unsigned_abs() as usize)
+        .map(Value::Char)
+        .or(default.map(Value::Char))
+        .unwrap_or_default())
+}
+pub fn _string_sub(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let string = typed!(args: String);
+    let start = typed!(args: Int).unsigned_abs() as usize;
+    let stop = typed!(args: Int?)
+        .map(|idx| idx.unsigned_abs() as usize)
+        .unwrap_or(string.len() - 1);
+    let default = typed!(args: String?);
+
+    Ok(string
+        .get(start..=stop)
+        .map(|slice| Value::String(slice.to_string()))
+        .unwrap_or(default.map(Value::String).unwrap_or_default()))
+}
+pub fn _string_sep(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let string = typed!(args: String);
+    let sep = typed!(args: String);
+
+    todo!("string.sep")
+}
+pub fn _string_format(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let string = typed!(args: String);
+
+    todo!("string.format")
 }

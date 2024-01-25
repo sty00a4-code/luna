@@ -589,8 +589,7 @@ impl CallFrame {
                     if let Some(value) = globals.get(ident).cloned() {
                         Some(value)
                     } else {
-                        globals
-                            .insert(ident.clone(), Rc::new(RefCell::new(Value::default())));
+                        globals.insert(ident.clone(), Rc::new(RefCell::new(Value::default())));
                         globals.get(ident).cloned()
                     }
                 } else {

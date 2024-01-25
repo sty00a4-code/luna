@@ -144,7 +144,11 @@ impl Parsable for Statement {
             Token::Ident(_) => {
                 let path = Path::parse(parser)?;
                 let mut pos = path.pos.clone();
-                let Some(Located { value: token, pos: _ }) = parser.next() else {
+                let Some(Located {
+                    value: token,
+                    pos: _,
+                }) = parser.next()
+                else {
                     return Err(Located::new(ParseError::UnexpectedEOF, Position::default()));
                 };
                 match token {
@@ -209,24 +213,37 @@ impl Parsable for Statement {
                             }
                             let expr = Expression::parse(parser)?;
                             args.push(expr);
-                            if matches!(parser.peek(), Some(Located { value: Token::Comma, pos: _ })) {
+                            if matches!(
+                                parser.peek(),
+                                Some(Located {
+                                    value: Token::Comma,
+                                    pos: _
+                                })
+                            ) {
                                 parser.next();
                             }
                         }
-                        let Some(Located { value: end_token, pos: end_pos }) = parser.next() else {
-                            return Err(Located::new(ParseError::UnexpectedEOF, Position::default()));
+                        let Some(Located {
+                            value: end_token,
+                            pos: end_pos,
+                        }) = parser.next()
+                        else {
+                            return Err(Located::new(
+                                ParseError::UnexpectedEOF,
+                                Position::default(),
+                            ));
                         };
                         if end_token != Token::ParanRight {
-                            return Err(Located::new(ParseError::ExpectedToken { expected: Token::ParanRight, got: end_token }, end_pos));
+                            return Err(Located::new(
+                                ParseError::ExpectedToken {
+                                    expected: Token::ParanRight,
+                                    got: end_token,
+                                },
+                                end_pos,
+                            ));
                         }
                         pos.extend(&end_pos);
-                        Ok(Located::new(
-                            Self::Call {
-                                path,
-                                args,
-                            },
-                            pos,
-                        ))
+                        Ok(Located::new(Self::Call { path, args }, pos))
                     }
                     token => Err(Located::new(ParseError::UnexpectedToken(token), pos)),
                 }
@@ -309,7 +326,11 @@ impl Expression {
     }
     pub fn call(parser: &mut Parser) -> Result<Located<Self>, Located<ParseError>> {
         let mut head = Atom::parse(parser)?.map(Self::Atom);
-        while let Some(Located { value: token, pos: _ }) = parser.peek() {
+        while let Some(Located {
+            value: token,
+            pos: _,
+        }) = parser.peek()
+        {
             match token {
                 Token::ParanLeft => {
                     parser.next();
@@ -325,15 +346,31 @@ impl Expression {
                         }
                         let expr = Expression::parse(parser)?;
                         args.push(expr);
-                        if matches!(parser.peek(), Some(Located { value: Token::Comma, pos: _ })) {
+                        if matches!(
+                            parser.peek(),
+                            Some(Located {
+                                value: Token::Comma,
+                                pos: _
+                            })
+                        ) {
                             parser.next();
                         }
                     }
-                    let Some(Located { value: end_token, pos: end_pos }) = parser.next() else {
+                    let Some(Located {
+                        value: end_token,
+                        pos: end_pos,
+                    }) = parser.next()
+                    else {
                         return Err(Located::new(ParseError::UnexpectedEOF, Position::default()));
                     };
                     if end_token != Token::ParanRight {
-                        return Err(Located::new(ParseError::ExpectedToken { expected: Token::ParanRight, got: end_token }, end_pos));
+                        return Err(Located::new(
+                            ParseError::ExpectedToken {
+                                expected: Token::ParanRight,
+                                got: end_token,
+                            },
+                            end_pos,
+                        ));
                     }
                     pos.extend(&end_pos);
                     head = Located::new(
@@ -344,7 +381,7 @@ impl Expression {
                         pos,
                     );
                 }
-                _ => break
+                _ => break,
             }
         }
         Ok(head)

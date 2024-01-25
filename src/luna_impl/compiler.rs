@@ -159,10 +159,7 @@ impl Scope {
 impl Compilable for Located<Chunk> {
     type Output = Rc<RefCell<Closure>>;
     fn compile(self, compiler: &mut Compiler) -> Result<Self::Output, Located<Box<dyn Error>>> {
-        let Located {
-            value: chunk,
-            pos,
-        } = self;
+        let Located { value: chunk, pos } = self;
         compiler.push_frame(CompilerFrame {
             closure: Rc::new(RefCell::new(Closure::default())),
             scopes: vec![Scope::default()],
@@ -697,7 +694,40 @@ impl Compilable for Located<Path> {
                     Ok(Location::Global(addr))
                 }
             }
-            Path::Field { head, field } => todo!(),
+            Path::Field {
+                head,
+                field:
+                    Located {
+                        value: field,
+                        pos: field_pos,
+                    },
+            } => {
+                let head = head.compile(compiler)?;
+                let field = Source::Constant(
+                    compiler
+                        .frame_mut()
+                        .expect("no compiler frame on stack")
+                        .closure
+                        .borrow_mut()
+                        .new_const(Value::String(field)),
+                );
+                let dst = compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .new_register();
+                compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .write(
+                        ByteCode::Field {
+                            dst: Location::Register(dst),
+                            head: head.into(),
+                            field,
+                        },
+                        pos,
+                    );
+                Ok(Location::Register(dst))
+            }
             Path::Index { head, index } => todo!(),
         }
     }
