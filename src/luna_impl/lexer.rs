@@ -49,8 +49,9 @@ impl<'source> Lexer<'source> {
 impl<'source> Iterator for Lexer<'source> {
     type Item = Result<Located<Token>, Located<LexError>>;
     fn next(&mut self) -> Option<Self::Item> {
-        while self.source.next_if(|c| c.is_ascii_whitespace()).is_some() {
+        while self.source.peek().map(|c| c.is_ascii_whitespace()).unwrap_or_default() {
             self.advance();
+            self.source.next();
         }
         let mut pos = self.pos();
         self.advance();
