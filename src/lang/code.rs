@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{cell::RefCell, fmt::Display, rc::Rc};
 // use std::{
 //     cell::RefCell,
 //     rc::Rc
@@ -59,6 +59,10 @@ pub enum ByteCode {
         start: usize,
         amount: usize,
     },
+    Function {
+        dst: Location,
+        addr: usize,
+    },
 
     Binary {
         op: BinaryOperation,
@@ -113,12 +117,11 @@ pub enum UnaryOperation {
     Len,
 }
 
-#[derive(Debug, Clone, Default, PartialEq)]
+#[derive(Debug, Clone, Default)]
 pub struct Closure {
     pub code: Vec<Located<ByteCode>>,
     pub registers: usize,
-    // pub parent: Option<Rc<RefCell<Self>>>,
-    // pub children: Vec<Rc<RefCell<Self>>>,
+    pub closures: Vec<Rc<RefCell<Self>>>,
     pub upvalues: Vec<Upvalue>,
     pub consts: Vec<Value>,
 }
@@ -126,14 +129,6 @@ pub struct Closure {
 pub struct Upvalue {
     pub register: usize,
     pub in_stack: bool,
-}
-
-impl Closure {
-    pub fn new_const(&mut self, value: Value) -> usize {
-        let addr = self.consts.len();
-        self.consts.push(value);
-        addr
-    }
 }
 
 impl Display for Source {
@@ -208,6 +203,7 @@ impl Display for ByteCode {
             Self::Field { dst, head, field } => write!(f, "field {dst} = {head} . {field}"),
             Self::Vector { dst, start, amount } => write!(f, "vector {dst} = @{start}..+@{amount}"),
             Self::Object { dst, start, amount } => write!(f, "object {dst} = @{start}..+@{amount}"),
+            Self::Function { dst, addr } => write!(f, "func {dst} = #f{addr:?}"),
             Self::Binary {
                 op,
                 dst,

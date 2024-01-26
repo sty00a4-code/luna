@@ -269,6 +269,36 @@ impl Interpreter {
                 }
                 *dst.borrow_mut() = Value::Object(Rc::new(RefCell::new(object)));
             }
+            ByteCode::Function { dst, addr } => {
+                let dst = frame.location(&dst).expect("location not found");
+                let closure = Rc::clone(
+                    &frame
+                        .function
+                        .closure
+                        .borrow()
+                        .closures
+                        .get(addr)
+                        .expect("closure not found"),
+                );
+                let upvalues = closure
+                    .borrow()
+                    .upvalues
+                    .iter()
+                    .map(|upvalue| {
+                        if upvalue.in_stack {
+                            frame
+                                .register(upvalue.register)
+                                .expect("register not found")
+                        } else {
+                            todo!("upvalue of upvalue")
+                        }
+                    })
+                    .collect();
+                *dst.borrow_mut() = Value::Function(FunctionKind::Function(Rc::new(Function {
+                    upvalues,
+                    closure,
+                })));
+            }
             ByteCode::Binary {
                 op,
                 dst,

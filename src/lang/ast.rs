@@ -29,7 +29,7 @@ pub enum Statement {
     Fn {
         path: Located<Path>,
         params: Vec<Located<String>>,
-        var_args: Located<String>,
+        var_args: Option<Located<String>>,
         body: Located<Block>,
     },
     If {
@@ -113,7 +113,7 @@ pub enum Atom {
     },
     Fn {
         params: Vec<Located<String>>,
-        var_args: Located<String>,
+        var_args: Option<Located<String>>,
         body: Located<Block>,
     },
 }

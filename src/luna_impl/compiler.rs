@@ -107,6 +107,12 @@ impl CompilerFrame {
         consts.push(value);
         addr
     }
+    pub fn new_closure(&mut self, value: Rc<RefCell<Closure>>) -> usize {
+        let closures = &mut self.closure.borrow_mut().closures;
+        let addr = closures.len();
+        closures.push(value);
+        addr
+    }
     pub fn new_register(&mut self) -> usize {
         let addr = self.registers;
         self.registers += 1;
@@ -380,7 +386,32 @@ impl Compilable for Located<Statement> {
                 params,
                 var_args,
                 body,
-            } => todo!(),
+            } => {
+                let dst = path.compile(compiler)?;
+                let registers = params.len() + if var_args.is_some() { 1 } else { 0 };
+                compiler.push_frame(CompilerFrame {
+                    closure: Rc::new(RefCell::new(Closure::default())),
+                    scopes: vec![Scope::default()],
+                    registers
+                });
+                for Located { value: param, pos: param_pos } in params {
+                    compiler
+                        .frame_mut()
+                        .expect("no compiler frame on stack")
+                        .new_local(param);
+                }
+                body.compile(compiler)?;
+                let closure = compiler.pop_frame().expect("no compiler frame on stack").closure;
+                let addr = compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .new_closure(closure);
+                compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .write(ByteCode::Function { dst, addr }, pos);
+                Ok(None)
+            }
             Statement::If {
                 cond,
                 case,
@@ -640,16 +671,12 @@ impl Compilable for Located<Atom> {
                 compiler
                     .frame_mut()
                     .expect("no compiler frame on stack")
-                    .closure
-                    .borrow_mut()
                     .new_const(Value::Int(v)),
             )),
             Atom::Float(v) => Ok(Source::Constant(
                 compiler
                     .frame_mut()
                     .expect("no compiler frame on stack")
-                    .closure
-                    .borrow_mut()
                     .new_const(Value::Float(v)),
             )),
             Atom::Bool(v) => Ok(Source::Bool(v)),
@@ -658,8 +685,6 @@ impl Compilable for Located<Atom> {
                 compiler
                     .frame_mut()
                     .expect("no compiler frame on stack")
-                    .closure
-                    .borrow_mut()
                     .new_const(Value::String(v)),
             )),
             Atom::Expression(expr) => expr.compile(compiler),
@@ -707,8 +732,6 @@ impl Compilable for Located<Path> {
                     compiler
                         .frame_mut()
                         .expect("no compiler frame on stack")
-                        .closure
-                        .borrow_mut()
                         .new_const(Value::String(field)),
                 );
                 let dst = compiler
