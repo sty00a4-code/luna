@@ -55,9 +55,13 @@ impl Interpreter {
     }
 }
 impl Interpreter {
-    pub fn call(&mut self, function: &Rc<Function>, dst: Option<Location>) {
+    pub fn call(&mut self, function: &Rc<Function>, args: Vec<Value>, dst: Option<Location>) {
         let mut stack = vec![];
-        for _ in 0..function.closure.borrow().registers {
+        let len = args.len();
+        for value in args {
+            stack.push(Rc::new(RefCell::new(value)));
+        }
+        for _ in 0..function.closure.borrow().registers - len {
             stack.push(Rc::new(RefCell::new(Value::default())));
         }
         self.call_frames.push(CallFrame {
@@ -71,7 +75,7 @@ impl Interpreter {
     pub fn return_call(&mut self, src: Option<Source>) -> Option<Value> {
         let top_frame = self.call_frames.pop().expect("no frame on stack");
         if let Some(prev_frame) = self.call_frames.last_mut() {
-            if let Some(dst) = prev_frame.dst {
+            if let Some(dst) = top_frame.dst {
                 let value = top_frame
                     .source(&src.unwrap_or_default())
                     .expect("source not found");
@@ -139,7 +143,7 @@ impl Interpreter {
                 }
                 match func {
                     Value::Function(kind) => match kind {
-                        FunctionKind::Function(function) => self.call(&function, dst),
+                        FunctionKind::Function(function) => self.call(&function, args, dst),
                         FunctionKind::UserFunction(func) => {
                             let dst = dst.map(|dst| frame.location(&dst).expect("dst not found"));
                             let value = func(self, args).map_err(|err| {

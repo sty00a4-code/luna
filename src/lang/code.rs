@@ -187,9 +187,9 @@ impl Display for ByteCode {
                 amount,
             } => {
                 if let Some(dst) = dst {
-                    write!(f, "call {func} @{offset}..+@{amount} -> {dst}")
+                    write!(f, "call {func} @{offset}..+{amount} -> {dst}")
                 } else {
-                    write!(f, "call {func} @{offset}..+@{amount}")
+                    write!(f, "call {func} @{offset}..+{amount}")
                 }
             }
             Self::Return { src } => {
@@ -220,6 +220,37 @@ impl Display for ByteCode {
                 format!("{op:?}").to_lowercase()
             ),
         }
+    }
+}
+impl Display for Closure {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "closure {:08x?}", self as *const Closure)?;
+        writeln!(f, "registers: {}", self.registers)?;
+        writeln!(f, "code, #{} instructions:", self.code.len())?;
+        for (addr, bytecode) in self.code.iter().enumerate() {
+            writeln!(f, "\t[{addr:04}] {bytecode}")?;
+        }
+        writeln!(f, "upvalues:")?;
+        for (addr, upvalue) in self.upvalues.iter().enumerate() {
+            writeln!(
+                f,
+                "\t[{addr}] register: {}, in_stack: {}",
+                upvalue.register, upvalue.in_stack
+            )?;
+        }
+        writeln!(f, "constants:")?;
+        for (addr, value) in self.consts.iter().enumerate() {
+            writeln!(f, "\t[{addr}] {}: {:?}", value.typ(), value)?;
+        }
+        writeln!(f, "closures:")?;
+        for (addr, closure) in self.closures.iter().enumerate() {
+            writeln!(f, "\t[{addr}] {:08x?}", closure.as_ptr())?;
+        }
+        writeln!(f, "")?;
+        for closure in self.closures.iter() {
+            write!(f, "{}", closure.borrow())?;
+        }
+        Ok(())
     }
 }
 

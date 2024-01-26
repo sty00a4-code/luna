@@ -32,6 +32,12 @@ pub enum Statement {
         var_args: Option<Located<String>>,
         body: Located<Block>,
     },
+    LetFn {
+        ident: Located<String>,
+        params: Vec<Located<String>>,
+        var_args: Option<Located<String>>,
+        body: Located<Block>,
+    },
     If {
         cond: Located<Expression>,
         case: Located<Block>,

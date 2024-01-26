@@ -31,13 +31,13 @@ pub fn compile(text: &str) -> Result<Rc<RefCell<Closure>>, Located<Box<dyn Error
 }
 pub fn run(text: &str) -> Result<Option<Value>, Located<Box<dyn Error>>> {
     let closure = compile(text)?;
-    // dbg!(&closure);
+    // println!("{}", closure.borrow());
     let function = Rc::new(Function {
         closure,
         upvalues: vec![],
     });
     let mut interpreter = Interpreter::default().with_global_path(env::var("LUNA_PATH").ok());
-    interpreter.call(&function, None);
+    interpreter.call(&function, vec![], None);
     interpreter.run().map_err(|err| err.map(|err| err.into()))
 }
 

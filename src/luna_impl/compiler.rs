@@ -67,16 +67,16 @@ impl Compiler {
         self.frames.last_mut()
     }
     pub fn get_variable_location(&mut self, ident: &str) -> Option<Location> {
-        let frame = self.frame_mut().expect("no frame");
-        if let Some(register) = frame.get_local(ident) {
+        if let Some(register) = self.frame_mut().expect("no frame").get_local(ident) {
             return Some(Location::Register(register));
         }
-        for (depth, frame) in self.frames.iter_mut().rev().skip(1).enumerate() {
-            if let Some(register) = frame.get_local(ident) {
+        for (depth, other_frame) in self.frames.iter().rev().skip(1).enumerate() {
+            if let Some(register) = other_frame.get_local(ident) {
+                let frame = self.frame_mut().expect("no frame");
                 let addr = frame.closure.borrow().upvalues.len();
                 frame.closure.borrow_mut().upvalues.push(Upvalue {
                     register,
-                    in_stack: depth > 0,
+                    in_stack: depth == 0,
                 });
                 return Some(Location::Upvalue(addr));
             }
@@ -388,20 +388,68 @@ impl Compilable for Located<Statement> {
                 body,
             } => {
                 let dst = path.compile(compiler)?;
-                let registers = params.len() + if var_args.is_some() { 1 } else { 0 };
                 compiler.push_frame(CompilerFrame {
                     closure: Rc::new(RefCell::new(Closure::default())),
                     scopes: vec![Scope::default()],
-                    registers
+                    registers: 0,
                 });
-                for Located { value: param, pos: param_pos } in params {
+                for Located {
+                    value: param,
+                    pos: param_pos,
+                } in params
+                {
                     compiler
                         .frame_mut()
                         .expect("no compiler frame on stack")
                         .new_local(param);
                 }
                 body.compile(compiler)?;
-                let closure = compiler.pop_frame().expect("no compiler frame on stack").closure;
+                let closure = compiler
+                    .pop_frame()
+                    .expect("no compiler frame on stack")
+                    .closure;
+                let addr = compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .new_closure(closure);
+                compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .write(ByteCode::Function { dst, addr }, pos);
+                Ok(None)
+            }
+            Statement::LetFn {
+                ident: Located { value: ident, pos: ident_pos },
+                params,
+                var_args,
+                body,
+            } => {
+                let dst = Location::Register(
+                    compiler
+                        .frame_mut()
+                        .expect("no compiler frame on stack")
+                        .new_local(ident),
+                );
+                compiler.push_frame(CompilerFrame {
+                    closure: Rc::new(RefCell::new(Closure::default())),
+                    scopes: vec![Scope::default()],
+                    registers: 0,
+                });
+                for Located {
+                    value: param,
+                    pos: param_pos,
+                } in params
+                {
+                    compiler
+                        .frame_mut()
+                        .expect("no compiler frame on stack")
+                        .new_local(param);
+                }
+                body.compile(compiler)?;
+                let closure = compiler
+                    .pop_frame()
+                    .expect("no compiler frame on stack")
+                    .closure;
                 let addr = compiler
                     .frame_mut()
                     .expect("no compiler frame on stack")
