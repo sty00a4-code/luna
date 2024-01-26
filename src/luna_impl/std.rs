@@ -175,8 +175,13 @@ pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
         "letters" = ('a'..='z').chain('A'..='Z').collect::<Vec<char>>(),
         "get" = function!(_string_get),
         "sub" = function!(_string_sub),
-        "sep" = function!(_string_sep),
-        "format" = function!(_string_format)
+        "sep" = function!(_string_sep)
+    });
+    set_field!(globals."vector" = object! {
+        "get" = function!(_vector_get),
+        "contains" = function!(_vector_contains),
+        "push" = function!(_vector_push),
+        "pop" = function!(_vector_pop)
     });
     globals
 }
@@ -237,11 +242,58 @@ pub fn _string_sep(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<d
     let string = typed!(args: String);
     let sep = typed!(args: String);
 
-    todo!("string.sep")
+    Ok(string
+        .split(&sep)
+        .map(|s| s.to_string())
+        .collect::<Vec<String>>()
+        .into())
 }
-pub fn _string_format(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
-    let mut args = args.into_iter().enumerate();
-    let string = typed!(args: String);
 
-    todo!("string.format")
+pub fn _vector_get(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let vector = typed!(args: Vector);
+    let vector = vector.borrow();
+    let index = typed!(args: Int);
+    let default = args.next().map(|(_, v)| v);
+
+    Ok(vector
+        .get(index.unsigned_abs() as usize)
+        .cloned()
+        .unwrap_or(default.unwrap_or_default()))
+}
+pub fn _vector_contains(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let vector = typed!(args: Vector);
+    let vector = vector.borrow();
+    let value = args.next().map(|(_, v)| v).unwrap_or_default();
+
+    Ok(vector
+        .contains(&value)
+        .into())
+}
+pub fn _vector_push(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let vector = typed!(args: Vector);
+    let mut vector = vector.borrow_mut();
+    let value = args.next().map(|(_, v)| v).unwrap_or_default();
+    
+    vector.push(value);
+    Ok(Value::default())
+}
+pub fn _vector_pop(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let vector = typed!(args: Vector);
+    let mut vector = vector.borrow_mut();
+    let index = typed!(args: Int?);
+
+    if let Some(index) = index {
+        let index = index.unsigned_abs() as usize;
+        if vector.get(index).is_some() {
+            Ok(vector.remove(index))
+        } else {
+            Ok(Value::default())
+        }
+    } else {
+        Ok(vector.pop().unwrap_or_default())
+    }
 }
