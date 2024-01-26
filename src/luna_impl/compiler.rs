@@ -747,7 +747,41 @@ impl Compilable for Located<Atom> {
                 params,
                 var_args,
                 body,
-            } => todo!(),
+            } => {
+                compiler.push_frame(CompilerFrame {
+                    closure: Rc::new(RefCell::new(Closure::default())),
+                    scopes: vec![Scope::default()],
+                    registers: 0,
+                });
+                for Located {
+                    value: param,
+                    pos: param_pos,
+                } in params
+                {
+                    compiler
+                        .frame_mut()
+                        .expect("no compiler frame on stack")
+                        .new_local(param);
+                }
+                body.compile(compiler)?;
+                let closure = compiler
+                    .pop_frame()
+                    .expect("no compiler frame on stack")
+                    .closure;
+                let addr = compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .new_closure(closure);
+                let register: usize = compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .new_register();
+                compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .write(ByteCode::Function { dst: Location::Register(register), addr }, pos);
+                Ok(Source::Register(register))
+            }
         }
     }
 }
