@@ -781,20 +781,6 @@ impl Compilable for Located<Statement> {
                 // exit:    ...
 
                 let iter = iter.compile(compiler)?;
-                let iter_register = compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .new_register();
-                compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .write(
-                        ByteCode::Iter {
-                            dst: Location::Register(iter_register),
-                            src: iter,
-                        },
-                        Position::default(),
-                    );
                 let register = compiler
                     .frame_mut()
                     .expect("no compiler frame on stack")
@@ -805,7 +791,7 @@ impl Compilable for Located<Statement> {
                     .write(
                         ByteCode::Next {
                             dst: Location::Register(register),
-                            src: Source::Register(iter_register),
+                            src: iter,
                         },
                         pos.clone(),
                     );

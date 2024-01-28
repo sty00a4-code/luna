@@ -173,7 +173,9 @@ impl From<Value> for bool {
 #[derive(Debug, Clone)]
 pub struct VectorIterator(pub IntoIter<Value>);
 #[derive(Debug, Clone)]
-pub struct ObjectIterator(pub IntoIter<String>);
+pub struct ObjectKeysIterator(pub IntoIter<String>);
+#[derive(Debug, Clone)]
+pub struct ObjectValuesIterator(pub IntoIter<Value>);
 #[derive(Debug, Clone)]
 pub struct StringIterator(pub IntoIter<char>);
 
@@ -228,9 +230,9 @@ impl VectorIterator {
         Ok(self.0.next().unwrap_or_default())
     }
 }
-impl UserObject for ObjectIterator {
+impl UserObject for ObjectKeysIterator {
     fn typ(&self) -> &'static str {
-        "object-iter"
+        "object-keys"
     }
     fn get(&self, key: &str) -> Option<Value> {
         match key {
@@ -247,7 +249,7 @@ impl UserObject for ObjectIterator {
         }
     }
 }
-impl ObjectIterator {
+impl ObjectKeysIterator {
     pub fn _next(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
         let Some(_self) = args.first().cloned() else {
             return Err(Box::new(UserObjectError::ExpectedSelf("null")));
@@ -261,6 +263,41 @@ impl ObjectIterator {
     }
     pub fn call_next(&mut self) -> Result<Value, Box<dyn Error>> {
         Ok(self.0.next().map(Value::String).unwrap_or_default())
+    }
+}
+impl UserObject for ObjectValuesIterator {
+    fn typ(&self) -> &'static str {
+        "object-keys"
+    }
+    fn get(&self, key: &str) -> Option<Value> {
+        match key {
+            "next" => Some(Value::Function(FunctionKind::UserFunction(Rc::new(
+                Box::new(Self::_next),
+            )))),
+            _ => None,
+        }
+    }
+    fn call_mut(&mut self, key: &str, _: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+        match key {
+            "next" => self.call_next(),
+            _ => Err(Box::new(UserObjectError::CannotCallNull)),
+        }
+    }
+}
+impl ObjectValuesIterator {
+    pub fn _next(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+        let Some(_self) = args.first().cloned() else {
+            return Err(Box::new(UserObjectError::ExpectedSelf("null")));
+        };
+        if let Value::UserObject(_self) = _self {
+            let mut _self = _self.borrow_mut();
+            Ok(_self.call_mut("next", args)?)
+        } else {
+            Err(Box::new(UserObjectError::ExpectedSelf(_self.typ())))
+        }
+    }
+    pub fn call_next(&mut self) -> Result<Value, Box<dyn Error>> {
+        Ok(self.0.next().unwrap_or_default())
     }
 }
 impl UserObject for StringIterator {

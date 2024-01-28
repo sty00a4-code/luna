@@ -1,5 +1,5 @@
 #![allow(unused_macros)]
-use crate::lang::value::{FunctionKind, Object, Value};
+use crate::lang::value::{FunctionKind, Object, ObjectKeysIterator, ObjectValuesIterator, StringIterator, Value, VectorIterator};
 use std::{cell::RefCell, collections::HashMap, error::Error, fmt::Display, io::Write, rc::Rc};
 
 use super::interpreter::Interpreter;
@@ -173,16 +173,24 @@ pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
         "lowercase" = ('a'..='z').collect::<Vec<char>>(),
         "uppercase" = ('A'..='Z').collect::<Vec<char>>(),
         "letters" = ('a'..='z').chain('A'..='Z').collect::<Vec<char>>(),
+        "iter" = function!(_string_iter),
         "get" = function!(_string_get),
         "sub" = function!(_string_sub),
         "sep" = function!(_string_sep)
     });
     set_field!(globals."vector" = object! {
+        "iter" = function!(_vector_iter),
         "get" = function!(_vector_get),
         "contains" = function!(_vector_contains),
         "push" = function!(_vector_push),
         "pop" = function!(_vector_pop)
     });
+    set_field!(globals."object" = object! {
+        "keys" = function!(_object_keys),
+        "values" = function!(_object_values)
+    });
+    set_field!(globals."keys" = function!(_object_keys));
+    set_field!(globals."values" = function!(_object_values));
     globals
 }
 
@@ -209,6 +217,14 @@ pub fn _input(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Er
     std::io::stdin().read_line(&mut input)?;
     let input = input.trim_end();
     Ok(Value::String(input.to_string()))
+}
+pub fn _string_iter(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let string = typed!(args: String);
+
+    Ok(Value::UserObject(Rc::new(RefCell::new(Box::new(
+        StringIterator(string.chars().collect::<Vec<char>>().into_iter()),
+    )))))
 }
 pub fn _string_get(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let mut args = args.into_iter().enumerate();
@@ -249,6 +265,15 @@ pub fn _string_sep(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<d
         .into())
 }
 
+pub fn _vector_iter(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let vector = typed!(args: Vector);
+    let vector = vector.borrow();
+
+    Ok(Value::UserObject(Rc::new(RefCell::new(Box::new(
+        VectorIterator(vector.clone().into_iter()),
+    )))))
+}
 pub fn _vector_get(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let mut args = args.into_iter().enumerate();
     let vector = typed!(args: Vector);
@@ -294,4 +319,23 @@ pub fn _vector_pop(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<d
     } else {
         Ok(vector.pop().unwrap_or_default())
     }
+}
+
+pub fn _object_keys(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let object = typed!(args: Object);
+    let object = object.borrow();
+
+    Ok(Value::UserObject(Rc::new(RefCell::new(Box::new(
+        ObjectKeysIterator(object.fields.iter().map(|(k, _)| k.clone()).collect::<Vec<String>>().into_iter()),
+    )))))
+}
+pub fn _object_values(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let object = typed!(args: Object);
+    let object = object.borrow();
+
+    Ok(Value::UserObject(Rc::new(RefCell::new(Box::new(
+        ObjectValuesIterator(object.fields.iter().map(|(_, v)| v.clone()).collect::<Vec<Value>>().into_iter()),
+    )))))
 }

@@ -27,10 +27,6 @@ pub enum ByteCode {
         cond: Source,
         addr: usize,
     },
-    Iter {
-        dst: Location,
-        src: Source,
-    },
     Next {
         dst: Location,
         src: Source,
@@ -184,7 +180,6 @@ impl Display for ByteCode {
             Self::JumpNull { cond, addr } => {
                 write!(f, "jumpnull {cond} *{addr:?}")
             }
-            Self::Iter { dst, src } => write!(f, "iter {dst} = {src}"),
             Self::Next { dst, src } => write!(f, "next {dst} = {src}"),
             Self::Call {
                 dst,

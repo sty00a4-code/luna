@@ -2,7 +2,7 @@ use super::{position::Located, std::globals};
 use crate::lang::{
     code::{BinaryOperation, ByteCode, Location, Source, UnaryOperation},
     value::{
-        Function, FunctionKind, Object, ObjectIterator, StringIterator, Value, VectorIterator,
+        Function, FunctionKind, Object, Value,
     },
 };
 use std::{cell::RefCell, collections::HashMap, error::Error, fmt::Display, rc::Rc};
@@ -137,30 +137,6 @@ impl Interpreter {
                 if frame.source(&cond).expect("cond not found") == Value::default() {
                     frame.idx = addr;
                 }
-            }
-            ByteCode::Iter { dst, src } => {
-                let iter = frame.source(&src).expect("source not found");
-                let dst = frame.location(&dst).expect("location not found");
-                *dst.borrow_mut() = match iter {
-                    Value::Vector(vector) => Value::UserObject(Rc::new(RefCell::new(Box::new(
-                        VectorIterator(vector.borrow().clone().into_iter()),
-                    )))),
-                    Value::String(string) => Value::UserObject(Rc::new(RefCell::new(Box::new(
-                        StringIterator(string.chars().collect::<Vec<char>>().into_iter()),
-                    )))),
-                    Value::Object(object) => {
-                        Value::UserObject(Rc::new(RefCell::new(Box::new(ObjectIterator(
-                            object
-                                .borrow()
-                                .fields
-                                .iter()
-                                .map(|(key, _)| key.clone())
-                                .collect::<Vec<String>>()
-                                .into_iter(),
-                        )))))
-                    }
-                    iter => return Err(Located::new(RunTimeError::CannotIter(iter.typ()), pos)),
-                };
             }
             ByteCode::Next { dst, src } => {
                 let iter = frame.source(&src).expect("source not found");
