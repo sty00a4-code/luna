@@ -672,7 +672,7 @@ impl StringIterator {
 }
 impl UserObject for RangeIterator {
     fn typ(&self) -> &'static str {
-        "string-iter"
+        "range-iter"
     }
     fn get(&self, key: &str) -> Option<Value> {
         match key {
