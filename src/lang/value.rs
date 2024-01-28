@@ -2,7 +2,12 @@ use crate::luna_impl::interpreter::Interpreter;
 
 use super::code::Closure;
 use std::{
-    cell::RefCell, collections::HashMap, error::Error, fmt::{Debug, Display}, rc::Rc, vec::IntoIter
+    cell::RefCell,
+    collections::HashMap,
+    error::Error,
+    fmt::{Debug, Display},
+    rc::Rc,
+    vec::IntoIter,
 };
 
 pub const META_NAME: &str = "__name";
@@ -255,11 +260,7 @@ impl ObjectIterator {
         }
     }
     pub fn call_next(&mut self) -> Result<Value, Box<dyn Error>> {
-        Ok(self
-            .0
-            .next()
-            .map(Value::String)
-            .unwrap_or_default())
+        Ok(self.0.next().map(Value::String).unwrap_or_default())
     }
 }
 impl UserObject for StringIterator {

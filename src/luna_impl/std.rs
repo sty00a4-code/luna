@@ -267,16 +267,14 @@ pub fn _vector_contains(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, 
     let vector = vector.borrow();
     let value = args.next().map(|(_, v)| v).unwrap_or_default();
 
-    Ok(vector
-        .contains(&value)
-        .into())
+    Ok(vector.contains(&value).into())
 }
 pub fn _vector_push(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let mut args = args.into_iter().enumerate();
     let vector = typed!(args: Vector);
     let mut vector = vector.borrow_mut();
     let value = args.next().map(|(_, v)| v).unwrap_or_default();
-    
+
     vector.push(value);
     Ok(Value::default())
 }
