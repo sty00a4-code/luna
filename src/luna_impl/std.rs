@@ -169,11 +169,33 @@ pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
     let mut globals = HashMap::new();
     set_field!(globals."print" = function!(_print));
     set_field!(globals."input" = function!(_input));
-    set_field!(globals."tostring" = function!(_tostring));
+    set_field!(globals."int" = object! {
+        "from" = function!(_int_from)
+    });
+    set_field!(globals."float" = object! {
+        "from" = function!(_float_from)
+    });
+    set_field!(globals."bool" = object! {
+        "from" = function!(_bool_from)
+    });
+    set_field!(globals."char" = object! {
+        "from" = function!(_char_from),
+        "byte" = function!(_char_byte),
+        "is_whitespace" = function!(_char_is_whitespace),
+        "is_alphabetic" = function!(_char_is_alphabetic),
+        "is_alphanumeric" = function!(_char_is_alphanumeric),
+        "is_control" = function!(_char_is_control),
+        "is_digit" = function!(_char_is_digit),
+        "is_graphic" = function!(_char_is_graphic),
+        "is_hex" = function!(_char_is_hex),
+        "is_lower" = function!(_char_is_lower),
+        "is_upper" = function!(_char_is_upper)
+    });
     set_field!(globals."string" = object! {
         "lowercase" = ('a'..='z').collect::<Vec<char>>(),
         "uppercase" = ('A'..='Z').collect::<Vec<char>>(),
         "letters" = ('a'..='z').chain('A'..='Z').collect::<Vec<char>>(),
+        "from" = function!(_string_from),
         "iter" = function!(_string_iter),
         "get" = function!(_string_get),
         "sub" = function!(_string_sub),
@@ -223,10 +245,110 @@ pub fn _input(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Er
     let input = input.trim_end();
     Ok(Value::String(input.to_string()))
 }
-pub fn _tostring(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+
+pub fn _int_from(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let mut args = args.into_iter().enumerate();
     let (_, value) = args.next().unwrap_or_default();
-    Ok(Value::String(value.to_string()))
+    Ok(Value::Int(match value {
+        Value::Int(v) => v,
+        Value::Float(v) => v as i64,
+        Value::Bool(v) => if v { 1 } else { 0 },
+        Value::Char(v) => v as i64,
+        Value::String(v) => if let Ok(v) = v.parse() {
+            v
+        } else {
+            return Ok(Value::default())
+        },
+        _ => return Ok(Value::default())
+    }))
+}
+
+pub fn _float_from(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let (_, value) = args.next().unwrap_or_default();
+    Ok(Value::Float(match value {
+        Value::Int(v) => v as f64,
+        Value::Float(v) => v,
+        Value::Bool(v) => if v { 1. } else { 0. },
+        Value::String(v) => if let Ok(v) = v.parse() {
+            v
+        } else {
+            return Ok(Value::default())
+        },
+        _ => return Ok(Value::default())
+    }))
+}
+
+pub fn _bool_from(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let (_, value) = args.next().unwrap_or_default();
+    Ok(Value::Bool(value.into()))
+}
+
+pub fn _char_from(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let value = typed!(args: Int);
+    Ok(if let Ok(v) = u8::try_from(value) {
+        Value::Char(v as char)
+    } else {
+        Value::default()
+    })
+}
+pub fn _char_byte(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let value = typed!(args: Char);
+    Ok(Value::Int(value as u8 as i64))
+}
+pub fn _char_is_whitespace(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let value = typed!(args: Char);
+    Ok(Value::Bool(value.is_ascii_whitespace()))
+}
+pub fn _char_is_alphabetic(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let value = typed!(args: Char);
+    Ok(Value::Bool(value.is_ascii_alphabetic()))
+}
+pub fn _char_is_alphanumeric(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let value = typed!(args: Char);
+    Ok(Value::Bool(value.is_ascii_alphanumeric()))
+}
+pub fn _char_is_digit(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let value = typed!(args: Char);
+    let radix = typed!(args: Int?).and_then(|v| u32::try_from(v).ok());
+    Ok(Value::Bool(value.is_digit(radix.unwrap_or(10))))
+}
+pub fn _char_is_control(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let value = typed!(args: Char);
+    Ok(Value::Bool(value.is_ascii_control()))
+}
+pub fn _char_is_graphic(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let value = typed!(args: Char);
+    Ok(Value::Bool(value.is_ascii_graphic()))
+}
+pub fn _char_is_hex(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let value = typed!(args: Char);
+    Ok(Value::Bool(value.is_ascii_hexdigit()))
+}
+pub fn _char_is_lower(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let value = typed!(args: Char);
+    Ok(Value::Bool(value.is_ascii_lowercase()))
+}
+pub fn _char_is_upper(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let value = typed!(args: Char);
+    Ok(Value::Bool(value.is_ascii_uppercase()))
+}
+
+pub fn _string_from(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let args = args.into_iter().enumerate();
+    Ok(Value::String(args.map(|(_, value)| value.to_string()).collect::<Vec<String>>().join("")))
 }
 pub fn _string_iter(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let mut args = args.into_iter().enumerate();
