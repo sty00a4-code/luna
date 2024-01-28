@@ -169,6 +169,7 @@ pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
     let mut globals = HashMap::new();
     set_field!(globals."print" = function!(_print));
     set_field!(globals."input" = function!(_input));
+    set_field!(globals."tostring" = function!(_tostring));
     set_field!(globals."string" = object! {
         "lowercase" = ('a'..='z').collect::<Vec<char>>(),
         "uppercase" = ('A'..='Z').collect::<Vec<char>>(),
@@ -221,6 +222,11 @@ pub fn _input(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Er
     std::io::stdin().read_line(&mut input)?;
     let input = input.trim_end();
     Ok(Value::String(input.to_string()))
+}
+pub fn _tostring(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let (_, value) = args.next().unwrap_or_default();
+    Ok(Value::String(value.to_string()))
 }
 pub fn _string_iter(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let mut args = args.into_iter().enumerate();
