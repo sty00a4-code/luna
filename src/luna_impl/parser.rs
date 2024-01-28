@@ -14,7 +14,7 @@ pub enum ParseError {
     UnexpectedEOF,
     UnexpectedToken(Token),
     ExpectedToken { expected: Token, got: Token },
-    ExpectedIdentNotPath
+    ExpectedIdentNotPath,
 }
 impl Display for ParseError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -24,7 +24,11 @@ impl Display for ParseError {
             ParseError::ExpectedToken { expected, got } => {
                 write!(f, "expected {}, got {}", expected.name(), got.name())
             }
-            ParseError::ExpectedIdentNotPath => write!(f, "expected {} not a path", Token::Ident(Default::default()).name()),
+            ParseError::ExpectedIdentNotPath => write!(
+                f,
+                "expected {} not a path",
+                Token::Ident(Default::default()).name()
+            ),
         }
     }
 }
@@ -97,8 +101,14 @@ impl Parsable for Block {
 impl Statement {
     pub fn parse_let(parser: &mut Parser) -> Result<Located<Self>, Located<ParseError>> {
         let Located { value: _, mut pos } = parser.next().unwrap();
-        if matches!(parser.peek(), Some(Located { value: Token::Fn, pos: _ })) {
-            return Self::parse_fn(parser, true)
+        if matches!(
+            parser.peek(),
+            Some(Located {
+                value: Token::Fn,
+                pos: _
+            })
+        ) {
+            return Self::parse_fn(parser, true);
         }
         let mut idents = vec![];
         let mut exprs = vec![];
@@ -140,7 +150,10 @@ impl Statement {
         }
         Ok(Located::new(Self::LetBinding { idents, exprs }, pos))
     }
-    fn parse_fn(parser: &mut Parser, local: bool) -> Result<Located<Self>, Located<ParseError>> {
+    pub fn parse_fn(
+        parser: &mut Parser,
+        local: bool,
+    ) -> Result<Located<Self>, Located<ParseError>> {
         let Located { value: _, mut pos } = parser.next().unwrap();
         let path = Path::parse(parser)?;
         let mut params = vec![];
@@ -202,7 +215,10 @@ impl Statement {
         let body = Block::parse(parser)?;
         pos.extend(&body.pos);
         if local {
-            let Located { value: path, pos: path_pos } = path;
+            let Located {
+                value: path,
+                pos: path_pos,
+            } = path;
             if let Path::Ident(ident) = path {
                 Ok(Located::new(
                     Self::LetFn {
@@ -214,7 +230,7 @@ impl Statement {
                     pos,
                 ))
             } else {
-                return Err(Located::new(ParseError::ExpectedIdentNotPath, path_pos))
+                return Err(Located::new(ParseError::ExpectedIdentNotPath, path_pos));
             }
         } else {
             Ok(Located::new(
@@ -228,6 +244,75 @@ impl Statement {
             ))
         }
     }
+    pub fn parse_if(parser: &mut Parser) -> Result<Located<Self>, Located<ParseError>> {
+        let Located { value: _, mut pos } = parser.next().unwrap();
+        let cond = Expression::parse(parser)?;
+        let case = Block::parse(parser)?;
+        pos.extend(&case.pos);
+        let mut else_case = None;
+        if let Some(Located {
+            value: Token::Else,
+            pos: _,
+        }) = parser.peek()
+        {
+            parser.next().unwrap();
+            else_case = Some(
+                if let Some(Located {
+                    value: Token::If,
+                    pos: _,
+                }) = parser.peek()
+                {
+                    let stat = Self::parse_if(parser)?;
+                    pos.extend(&stat.pos);
+                    let pos = stat.pos.clone();
+                    Located::new(Block(vec![stat]), pos)
+                } else {
+                    let block = Block::parse(parser)?;
+                    pos.extend(&block.pos);
+                    block
+                },
+            );
+        }
+        Ok(Located::new(
+            Self::If {
+                cond,
+                case,
+                else_case,
+            },
+            pos,
+        ))
+    }
+    pub fn parse_while(parser: &mut Parser) -> Result<Located<Self>, Located<ParseError>> {
+        let Located { value: _, mut pos } = parser.next().unwrap();
+        let cond = Expression::parse(parser)?;
+        let body = Block::parse(parser)?;
+        pos.extend(&body.pos);
+        Ok(Located::new(Self::While { cond, body }, pos))
+    }
+    pub fn parse_for(parser: &mut Parser) -> Result<Located<Self>, Located<ParseError>> {
+        let Located { value: _, mut pos } = parser.next().unwrap();
+        let ident = Path::ident(parser)?;
+        let Some(Located {
+            value: token,
+            pos: token_pos,
+        }) = parser.next()
+        else {
+            return Err(Located::new(ParseError::UnexpectedEOF, Position::default()));
+        };
+        if token != Token::In {
+            return Err(Located::new(
+                ParseError::ExpectedToken {
+                    expected: Token::In,
+                    got: token,
+                },
+                token_pos,
+            ));
+        }
+        let iter = Expression::parse(parser)?;
+        let body = Block::parse(parser)?;
+        pos.extend(&body.pos);
+        Ok(Located::new(Self::For { ident, iter, body }, pos))
+    }
 }
 impl Parsable for Statement {
     fn parse(parser: &mut Parser) -> Result<Located<Self>, Located<ParseError>> {
@@ -238,6 +323,9 @@ impl Parsable for Statement {
             Token::BraceLeft => Ok(Block::parse(parser)?.map(Self::Block)),
             Token::Let => Self::parse_let(parser),
             Token::Fn => Self::parse_fn(parser, false),
+            Token::If => Self::parse_if(parser),
+            Token::While => Self::parse_while(parser),
+            Token::For => Self::parse_for(parser),
             Token::Ident(_) => {
                 let path = Path::parse(parser)?;
                 let mut pos = path.pos.clone();
@@ -759,10 +847,17 @@ impl Parsable for Atom {
                         end_pos,
                     ));
                 }
-        
+
                 let body = Block::parse(parser)?;
                 pos.extend(&body.pos);
-                Ok(Located::new(Self::Fn { params, var_args, body }, pos))
+                Ok(Located::new(
+                    Self::Fn {
+                        params,
+                        var_args,
+                        body,
+                    },
+                    pos,
+                ))
             }
             token => Err(Located::new(ParseError::UnexpectedToken(token), pos)),
         }

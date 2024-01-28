@@ -48,7 +48,7 @@ pub enum Statement {
         body: Located<Block>,
     },
     For {
-        idents: Vec<Located<String>>,
+        ident: Located<String>,
         iter: Located<Expression>,
         body: Located<Block>,
     },

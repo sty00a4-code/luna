@@ -24,9 +24,16 @@ pub enum ByteCode {
         addr: usize,
     },
     JumpNull {
-        negative: bool,
         cond: Source,
         addr: usize,
+    },
+    Iter {
+        dst: Location,
+        src: Source
+    },
+    Next {
+        dst: Location,
+        src: Source
     },
 
     Call {
@@ -162,7 +169,7 @@ impl Display for ByteCode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::None => write!(f, "none"),
-            Self::Jump { addr } => write!(f, "jump {addr:04x?}"),
+            Self::Jump { addr } => write!(f, "jump *{addr:?}"),
             Self::JumpIf {
                 negative,
                 cond,
@@ -175,16 +182,13 @@ impl Display for ByteCode {
                 }
             }
             Self::JumpNull {
-                negative,
                 cond,
                 addr,
             } => {
-                if *negative {
-                    write!(f, "jumpnullnot {cond} *{addr:?}")
-                } else {
-                    write!(f, "jumpnull {cond} *{addr:?}")
-                }
+                write!(f, "jumpnull {cond} *{addr:?}")
             }
+            Self::Iter { dst, src } => write!(f, "iter {dst} = {src}"),
+            Self::Next { dst, src } => write!(f, "next {dst} = {src}"),
             Self::Call {
                 dst,
                 func,

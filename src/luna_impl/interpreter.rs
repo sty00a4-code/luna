@@ -1,7 +1,9 @@
 use super::{position::Located, std::globals};
 use crate::lang::{
     code::{BinaryOperation, ByteCode, Location, Source, UnaryOperation},
-    value::{Function, FunctionKind, Object, Value},
+    value::{
+        Function, FunctionKind, Object, ObjectIterator, StringIterator, Value, VectorIterator,
+    },
 };
 use std::{cell::RefCell, collections::HashMap, error::Error, fmt::Display, rc::Rc};
 
@@ -22,6 +24,7 @@ pub struct CallFrame {
 #[derive(Debug, Clone, PartialEq)]
 pub enum RunTimeError {
     CannotCall(&'static str),
+    CannotIter(&'static str),
     CannotFieldInto {
         head: &'static str,
         field: &'static str,
@@ -113,22 +116,66 @@ impl Interpreter {
                 frame.idx = addr;
             }
             ByteCode::JumpIf {
-                negative,
+                negative: false,
                 cond,
                 addr,
             } => {
-                if frame.source(&cond).expect("cond not found").into() && !negative {
+                if frame.source(&cond).expect("cond not found").into() {
                     frame.idx = addr;
                 }
             }
-            ByteCode::JumpNull {
-                negative,
+            ByteCode::JumpIf {
+                negative: true,
                 cond,
                 addr,
             } => {
-                if frame.source(&cond).expect("cond not found") == Value::default() && !negative {
+                if !bool::from(frame.source(&cond).expect("cond not found")) {
                     frame.idx = addr;
                 }
+            }
+            ByteCode::JumpNull { cond, addr } => {
+                if frame.source(&cond).expect("cond not found") == Value::default() {
+                    frame.idx = addr;
+                }
+            }
+            ByteCode::Iter { dst, src } => {
+                let iter = frame.source(&src).expect("source not found");
+                let dst = frame.location(&dst).expect("location not found");
+                *dst.borrow_mut() = match iter {
+                    Value::Vector(vector) => Value::UserObject(Rc::new(RefCell::new(Box::new(
+                        VectorIterator(vector.borrow().clone().into_iter()),
+                    )))),
+                    Value::String(string) => Value::UserObject(Rc::new(RefCell::new(Box::new(
+                        StringIterator(string.chars().collect::<Vec<char>>().into_iter()),
+                    )))),
+                    Value::Object(object) => {
+                        Value::UserObject(Rc::new(RefCell::new(Box::new(ObjectIterator(
+                            object
+                                .borrow()
+                                .fields
+                                .iter()
+                                .map(|(key, _)| key.clone())
+                                .collect::<Vec<String>>()
+                                .into_iter(),
+                        )))))
+                    }
+                    iter => return Err(Located::new(RunTimeError::CannotIter(iter.typ()), pos)),
+                };
+            }
+            ByteCode::Next { dst, src } => {
+                let iter = frame.source(&src).expect("source not found");
+                let dst = frame.location(&dst).expect("location not found");
+                *dst.borrow_mut() = match &iter {
+                    Value::UserObject(object) => {
+                        let object = Rc::clone(object);
+                        let mut object = object.borrow_mut();
+                        object
+                            .call_mut("next", vec![iter])
+                            .map_err(|err| RunTimeError::Custom(err.to_string()))
+                            .map_err(|err| Located::new(err, pos))?
+                    }
+                    iter => return Err(Located::new(RunTimeError::CannotIter(iter.typ()), pos)),
+                };
             }
             ByteCode::Call {
                 dst,
@@ -252,11 +299,13 @@ impl Interpreter {
                     Value::Object(object) => {
                         let mut object = object.borrow_mut();
                         let old_value = match field {
-                            Value::String(key) => if let Some(value) = object.fields.get_mut(&key) {
-                                value
-                            } else {
-                                object.fields.insert(key.clone(), Value::default());
-                                object.fields.get_mut(&key).unwrap()
+                            Value::String(key) => {
+                                if let Some(value) = object.fields.get_mut(&key) {
+                                    value
+                                } else {
+                                    object.fields.insert(key.clone(), Value::default());
+                                    object.fields.get_mut(&key).unwrap()
+                                }
                             }
                             field => {
                                 return Err(Located::new(
@@ -269,7 +318,7 @@ impl Interpreter {
                             }
                         };
                         *old_value = value;
-                    },
+                    }
                     Value::Vector(vector) => {
                         let mut vector = vector.borrow_mut();
                         match field {
@@ -288,7 +337,10 @@ impl Interpreter {
                                 if let Some(old_value) = vector.get_mut(index) {
                                     *old_value = value;
                                 } else {
-                                    return Err(Located::new(RunTimeError::InvalidSetIndex(index), pos))
+                                    return Err(Located::new(
+                                        RunTimeError::InvalidSetIndex(index),
+                                        pos,
+                                    ));
                                 }
                             }
                             field => {
@@ -301,8 +353,10 @@ impl Interpreter {
                                 ))
                             }
                         }
-                    },
-                    head => return Err(Located::new(RunTimeError::CannotSetField(head.typ()), pos)),
+                    }
+                    head => {
+                        return Err(Located::new(RunTimeError::CannotSetField(head.typ()), pos))
+                    }
                 }
             }
             ByteCode::Vector { dst, start, amount } => {
@@ -704,13 +758,18 @@ impl Display for RunTimeError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             RunTimeError::CannotCall(typ) => write!(f, "can not call {typ}"),
+            RunTimeError::CannotIter(typ) => write!(f, "can not iterate over {typ}"),
             RunTimeError::CannotFieldInto { head, field } => {
                 write!(f, "can not field into {head} with {field}")
             }
             RunTimeError::CannotField(typ) => write!(f, "can not field into {typ}"),
-            RunTimeError::CannotSetFieldWith { head, field } => write!(f, "can not set field of {head} with {field}"),
+            RunTimeError::CannotSetFieldWith { head, field } => {
+                write!(f, "can not set field of {head} with {field}")
+            }
             RunTimeError::CannotSetField(head) => write!(f, "can not set field of {head}"),
-            RunTimeError::InvalidSetIndex(index) => write!(f, "invalid set index {index:?} (out of range)"),
+            RunTimeError::InvalidSetIndex(index) => {
+                write!(f, "invalid set index {index:?} (out of range)")
+            }
             RunTimeError::InvalidBinary { op, left, right } => write!(
                 f,
                 "attempt to perform binary operation {:?} on {left} with {right}",

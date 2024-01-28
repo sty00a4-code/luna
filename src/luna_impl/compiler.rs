@@ -1,4 +1,3 @@
-#![allow(unused_variables)]
 use std::{
     cell::RefCell,
     collections::{HashMap, HashSet},
@@ -264,7 +263,7 @@ impl Compilable for Located<Statement> {
                             field:
                                 Located {
                                     value: field,
-                                    pos: field_pos,
+                                    pos: _,
                                 },
                         } => {
                             let head = head.compile(compiler)?;
@@ -444,7 +443,7 @@ impl Compilable for Located<Statement> {
                         pos: path_pos,
                     },
                 params,
-                var_args,
+                var_args: _,
                 body,
             } => {
                 compiler.push_frame(CompilerFrame {
@@ -454,7 +453,7 @@ impl Compilable for Located<Statement> {
                 });
                 for Located {
                     value: param,
-                    pos: param_pos,
+                    pos: _,
                 } in params
                 {
                     compiler
@@ -490,7 +489,7 @@ impl Compilable for Located<Statement> {
                         field:
                             Located {
                                 value: field,
-                                pos: field_pos,
+                                pos: _,
                             },
                     } => {
                         let head = head.compile(compiler)?;
@@ -560,10 +559,10 @@ impl Compilable for Located<Statement> {
                 ident:
                     Located {
                         value: ident,
-                        pos: ident_pos,
+                        pos: _,
                     },
                 params,
-                var_args,
+                var_args: _,
                 body,
             } => {
                 let dst = Location::Register(
@@ -579,7 +578,7 @@ impl Compilable for Located<Statement> {
                 });
                 for Located {
                     value: param,
-                    pos: param_pos,
+                    pos: _,
                 } in params
                 {
                     compiler
@@ -606,9 +605,138 @@ impl Compilable for Located<Statement> {
                 cond,
                 case,
                 else_case,
-            } => todo!(),
-            Statement::While { cond, body } => todo!(),
-            Statement::For { idents, iter, body } => todo!(),
+            } => {
+                let cond = cond.compile(compiler)?;
+                let check_addr = compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .write(ByteCode::default(), Position::default());
+                case.compile(compiler)?;
+                let else_addr = compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .write(ByteCode::default(), Position::default());
+                if let Some(else_case) = else_case {
+                    else_case.compile(compiler)?;
+                }
+                let exit_addr = compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .addr();
+                compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .overwrite(
+                        check_addr,
+                        ByteCode::JumpIf {
+                            negative: true,
+                            cond,
+                            addr: else_addr + 1,
+                        },
+                        pos.clone(),
+                    );
+                compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .overwrite(else_addr, ByteCode::Jump { addr: exit_addr }, pos);
+                Ok(None)
+            }
+            Statement::While { cond, body } => {
+                let start_addr = compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .addr();
+                let cond = cond.compile(compiler)?;
+                let check_addr = compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .write(ByteCode::default(), Position::default());
+                body.compile(compiler)?;
+                let exit_addr = compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .write(ByteCode::Jump { addr: start_addr }, pos.clone());
+                compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .overwrite(
+                        check_addr,
+                        ByteCode::JumpIf {
+                            negative: true,
+                            cond,
+                            addr: exit_addr + 1,
+                        },
+                        pos,
+                    );
+                Ok(None)
+            }
+            Statement::For {
+                ident:
+                    Located {
+                        value: ident,
+                        pos: _,
+                    },
+                iter,
+                body,
+            } => {
+                //          iter !iter = [iter]
+                // start:   next !register = @iter
+                //          jumpnull @register *exit
+                //          [body]
+                //          jump *start
+                // exit:    ...
+
+                let iter = iter.compile(compiler)?;
+                let iter_register = compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .new_register();
+                compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .write(
+                        ByteCode::Iter {
+                            dst: Location::Register(iter_register),
+                            src: iter,
+                        },
+                        Position::default(),
+                    );
+                let register = compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .new_local(ident);
+                let start_addr = compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .write(
+                        ByteCode::Next {
+                            dst: Location::Register(register),
+                            src: Source::Register(iter_register),
+                        },
+                        pos.clone(),
+                    );
+                let check_addr = compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .write(ByteCode::default(), Position::default());
+                body.compile(compiler)?;
+                let exit_addr = compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .write(ByteCode::Jump { addr: start_addr }, pos.clone());
+                compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .overwrite(
+                        check_addr,
+                        ByteCode::JumpNull {
+                            cond: Source::Register(register),
+                            addr: exit_addr + 1,
+                        },
+                        pos,
+                    );
+                Ok(None)
+            }
             Statement::Return(expr) => {
                 if let Some(expr) = expr {
                     let src = expr.compile(compiler)?;
@@ -878,7 +1006,46 @@ impl Compilable for Located<Atom> {
                     .new_const(Value::String(v)),
             )),
             Atom::Expression(expr) => expr.compile(compiler),
-            Atom::Vector(exprs) => todo!(),
+            Atom::Vector(exprs) => {
+                let amount = exprs.len();
+                let dst = Location::Register(
+                    compiler
+                        .frame_mut()
+                        .expect("no compiler frame on stack")
+                        .new_register(),
+                );
+                let start = compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .registers;
+                let registers = (1..=amount)
+                    .map(|_| {
+                        compiler
+                            .frame_mut()
+                            .expect("no compiler frame on stack")
+                            .new_register()
+                    })
+                    .collect::<Vec<usize>>();
+                for (expr, register) in exprs.into_iter().zip(registers.into_iter()) {
+                    let expr_pos = expr.pos.clone();
+                    let src = expr.compile(compiler)?;
+                    compiler
+                        .frame_mut()
+                        .expect("no compiler frame on stack")
+                        .write(
+                            ByteCode::Move {
+                                dst: Location::Register(register),
+                                src,
+                            },
+                            expr_pos,
+                        );
+                }
+                compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .write(ByteCode::Vector { dst, start, amount }, pos);
+                Ok(dst.into())
+            }
             Atom::Object(entries) => {
                 let amount = entries.len();
                 let dst = Location::Register(
@@ -950,7 +1117,7 @@ impl Compilable for Located<Atom> {
             } => todo!(),
             Atom::Fn {
                 params,
-                var_args,
+                var_args: _,
                 body,
             } => {
                 compiler.push_frame(CompilerFrame {
@@ -960,7 +1127,7 @@ impl Compilable for Located<Atom> {
                 });
                 for Located {
                     value: param,
-                    pos: param_pos,
+                    pos: _,
                 } in params
                 {
                     compiler
@@ -1017,7 +1184,7 @@ impl Compilable for Located<Path> {
                 field:
                     Located {
                         value: field,
-                        pos: field_pos,
+                        pos: _,
                     },
             } => {
                 let head = head.compile(compiler)?;
@@ -1044,7 +1211,26 @@ impl Compilable for Located<Path> {
                     );
                 Ok(Location::Register(dst))
             }
-            Path::Index { head, index } => todo!(),
+            Path::Index { head, index } => {
+                let head = head.compile(compiler)?;
+                let field = index.compile(compiler)?;
+                let dst = compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .new_register();
+                compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .write(
+                        ByteCode::Field {
+                            dst: Location::Register(dst),
+                            head: head.into(),
+                            field,
+                        },
+                        pos,
+                    );
+                Ok(Location::Register(dst))
+            }
         }
     }
 }

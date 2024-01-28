@@ -2,13 +2,7 @@ use crate::luna_impl::interpreter::Interpreter;
 
 use super::code::Closure;
 use std::{
-    cell::RefCell,
-    collections::HashMap,
-    error::Error,
-    fmt::{Debug, Display},
-    rc::Rc,
-    slice::Iter,
-    str::Chars,
+    cell::RefCell, collections::HashMap, error::Error, fmt::{Debug, Display}, rc::Rc, vec::IntoIter
 };
 
 pub const META_NAME: &str = "__name";
@@ -172,11 +166,11 @@ impl From<Value> for bool {
 }
 
 #[derive(Debug, Clone)]
-pub struct VectorIterator<'a>(Iter<'a, Value>);
+pub struct VectorIterator(pub IntoIter<Value>);
 #[derive(Debug, Clone)]
-pub struct ObjectIterator<'a>(Iter<'a, String>);
+pub struct ObjectIterator(pub IntoIter<String>);
 #[derive(Debug, Clone)]
-pub struct StringIterator<'a>(Chars<'a>);
+pub struct StringIterator(pub IntoIter<char>);
 
 impl Display for UserObjectError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -194,7 +188,7 @@ impl Display for UserObjectError {
     }
 }
 impl Error for UserObjectError {}
-impl<'a> UserObject for VectorIterator<'a> {
+impl UserObject for VectorIterator {
     fn typ(&self) -> &'static str {
         "vector-iter"
     }
@@ -213,7 +207,7 @@ impl<'a> UserObject for VectorIterator<'a> {
         }
     }
 }
-impl<'a> VectorIterator<'a> {
+impl VectorIterator {
     pub fn _next(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
         let Some(_self) = args.first().cloned() else {
             return Err(Box::new(UserObjectError::ExpectedSelf("null")));
@@ -226,10 +220,10 @@ impl<'a> VectorIterator<'a> {
         }
     }
     pub fn call_next(&mut self) -> Result<Value, Box<dyn Error>> {
-        Ok(self.0.next().cloned().unwrap_or_default())
+        Ok(self.0.next().unwrap_or_default())
     }
 }
-impl<'a> UserObject for ObjectIterator<'a> {
+impl UserObject for ObjectIterator {
     fn typ(&self) -> &'static str {
         "object-iter"
     }
@@ -248,7 +242,7 @@ impl<'a> UserObject for ObjectIterator<'a> {
         }
     }
 }
-impl<'a> ObjectIterator<'a> {
+impl ObjectIterator {
     pub fn _next(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
         let Some(_self) = args.first().cloned() else {
             return Err(Box::new(UserObjectError::ExpectedSelf("null")));
@@ -264,12 +258,11 @@ impl<'a> ObjectIterator<'a> {
         Ok(self
             .0
             .next()
-            .cloned()
             .map(Value::String)
             .unwrap_or_default())
     }
 }
-impl<'a> UserObject for StringIterator<'a> {
+impl UserObject for StringIterator {
     fn typ(&self) -> &'static str {
         "string-iter"
     }
@@ -288,7 +281,7 @@ impl<'a> UserObject for StringIterator<'a> {
         }
     }
 }
-impl<'a> StringIterator<'a> {
+impl StringIterator {
     pub fn _next(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
         let Some(_self) = args.first().cloned() else {
             return Err(Box::new(UserObjectError::ExpectedSelf("null")));
