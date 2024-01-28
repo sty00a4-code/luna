@@ -27,6 +27,12 @@ pub enum RunTimeError {
         field: &'static str,
     },
     CannotField(&'static str),
+    CannotSetFieldWith {
+        head: &'static str,
+        field: &'static str,
+    },
+    CannotSetField(&'static str),
+    InvalidSetIndex(usize),
     InvalidBinary {
         op: BinaryOperation,
         left: &'static str,
@@ -154,7 +160,7 @@ impl Interpreter {
                             }
                         }
                     },
-                    _ => todo!(),
+                    value => return Err(Located::new(RunTimeError::CannotCall(value.typ()), pos)),
                 };
             }
             ByteCode::Return { src } => return Ok(self.return_call(src)),
@@ -237,6 +243,67 @@ impl Interpreter {
                     head => return Err(Located::new(RunTimeError::CannotField(head.typ()), pos)),
                 }
                 .unwrap_or_default();
+            }
+            ByteCode::SetField { head, field, src } => {
+                let value = frame.source(&src).expect("source not found");
+                let head = frame.source(&head).expect("source not found");
+                let field = frame.source(&field).expect("source not found");
+                match head {
+                    Value::Object(object) => {
+                        let mut object = object.borrow_mut();
+                        let old_value = match field {
+                            Value::String(key) => if let Some(value) = object.fields.get_mut(&key) {
+                                value
+                            } else {
+                                object.fields.insert(key.clone(), Value::default());
+                                object.fields.get_mut(&key).unwrap()
+                            }
+                            field => {
+                                return Err(Located::new(
+                                    RunTimeError::CannotSetFieldWith {
+                                        head: Value::Object(Default::default()).typ(),
+                                        field: field.typ(),
+                                    },
+                                    pos,
+                                ))
+                            }
+                        };
+                        *old_value = value;
+                    },
+                    Value::Vector(vector) => {
+                        let mut vector = vector.borrow_mut();
+                        match field {
+                            Value::Int(index) => {
+                                let length = vector.len();
+                                let index = if index < 0 {
+                                    let index = length as i64 + index;
+                                    if index < 0 {
+                                        length
+                                    } else {
+                                        index as usize
+                                    }
+                                } else {
+                                    index.unsigned_abs() as usize
+                                };
+                                if let Some(old_value) = vector.get_mut(index) {
+                                    *old_value = value;
+                                } else {
+                                    return Err(Located::new(RunTimeError::InvalidSetIndex(index), pos))
+                                }
+                            }
+                            field => {
+                                return Err(Located::new(
+                                    RunTimeError::CannotSetFieldWith {
+                                        head: Value::Vector(Default::default()).typ(),
+                                        field: field.typ(),
+                                    },
+                                    pos,
+                                ))
+                            }
+                        }
+                    },
+                    head => return Err(Located::new(RunTimeError::CannotSetField(head.typ()), pos)),
+                }
             }
             ByteCode::Vector { dst, start, amount } => {
                 let dst = frame.location(&dst).expect("location not found");
@@ -641,6 +708,9 @@ impl Display for RunTimeError {
                 write!(f, "can not field into {head} with {field}")
             }
             RunTimeError::CannotField(typ) => write!(f, "can not field into {typ}"),
+            RunTimeError::CannotSetFieldWith { head, field } => write!(f, "can not set field of {head} with {field}"),
+            RunTimeError::CannotSetField(head) => write!(f, "can not set field of {head}"),
+            RunTimeError::InvalidSetIndex(index) => write!(f, "invalid set index {index:?} (out of range)"),
             RunTimeError::InvalidBinary { op, left, right } => write!(
                 f,
                 "attempt to perform binary operation {:?} on {left} with {right}",

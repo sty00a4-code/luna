@@ -48,6 +48,11 @@ pub enum ByteCode {
         head: Source,
         field: Source,
     },
+    SetField {
+        head: Source,
+        field: Source,
+        src: Source
+    },
 
     Vector {
         dst: Location,
@@ -201,8 +206,9 @@ impl Display for ByteCode {
             }
             Self::Move { dst, src } => write!(f, "move {dst} = {src}"),
             Self::Field { dst, head, field } => write!(f, "field {dst} = {head} . {field}"),
-            Self::Vector { dst, start, amount } => write!(f, "vector {dst} = @{start}..+@{amount}"),
-            Self::Object { dst, start, amount } => write!(f, "object {dst} = @{start}..+@{amount}"),
+            Self::SetField { head, field, src } => write!(f, "setfield {head} . {field} = {src}"),
+            Self::Vector { dst, start, amount } => write!(f, "vector {dst} = @{start}..+{amount}"),
+            Self::Object { dst, start, amount } => write!(f, "object {dst} = @{start}..+{amount}"),
             Self::Function { dst, addr } => write!(f, "func {dst} = #f{addr:?}"),
             Self::Binary {
                 op,
