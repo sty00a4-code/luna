@@ -92,10 +92,10 @@ impl CompilerFrame {
             .push(Located::new(bytecode, pos));
         addr
     }
-    pub fn overwrite(&mut self, addr: usize, bytecode: ByteCode, pos: Position) {
+    pub fn overwrite(&mut self, addr: usize, bytecode: ByteCode, pos: Option<Position>) {
         let mut closure = self.closure.borrow_mut();
         let old = closure.code.get_mut(addr).expect("invalid addr");
-        *old = Located::new(bytecode, pos);
+        *old = Located::new(bytecode, pos.unwrap_or(old.pos.clone()));
     }
     pub fn addr(&self) -> usize {
         self.closure.borrow().code.len()
@@ -130,10 +130,12 @@ impl CompilerFrame {
             ..Default::default()
         });
     }
-    pub fn pop_scope(&mut self) {
+    pub fn pop_scope(&mut self) -> Option<Scope> {
         if let Some(scope) = self.scopes.pop() {
             self.registers = scope.register_offset;
+            return Some(scope);
         }
+        None
     }
     pub fn scope(&self) -> Option<&Scope> {
         self.scopes.last()
@@ -193,17 +195,9 @@ impl Compilable for Located<Block> {
             value: block,
             pos: _,
         } = self;
-        compiler
-            .frame_mut()
-            .expect("no compiler frame on stack")
-            .push_scope();
         for stat in block.0 {
             stat.compile(compiler)?;
         }
-        compiler
-            .frame_mut()
-            .expect("no compiler frame on stack")
-            .pop_scope();
         Ok(None)
     }
 }
@@ -212,7 +206,35 @@ impl Compilable for Located<Statement> {
     fn compile(self, compiler: &mut Compiler) -> Result<Self::Output, Located<Box<dyn Error>>> {
         let Located { value: stat, pos } = self;
         match stat {
-            Statement::Block(block) => Located::new(block, pos).compile(compiler),
+            Statement::Block(block) => {
+                compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .push_scope();
+                Located::new(block, pos).compile(compiler)?;
+                let scope = compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .pop_scope()
+                    .expect("no compiler frame on stack");
+                if scope.breaks.len() > 0 {
+                    if let Some(prev_scope) = compiler
+                        .frame_mut()
+                        .expect("no compiler frame on stack")
+                        .scope_mut() {
+                            prev_scope.breaks.extend(scope.breaks);
+                        }
+                }
+                if scope.continues.len() > 0 {
+                    if let Some(prev_scope) = compiler
+                        .frame_mut()
+                        .expect("no compiler frame on stack")
+                        .scope_mut() {
+                            prev_scope.continues.extend(scope.continues);
+                        }
+                }
+                Ok(None)
+            }
             Statement::LetBinding { idents, mut exprs } => {
                 for Located { value: ident, pos } in idents.into_iter() {
                     let dst = Location::Register(
@@ -611,13 +633,64 @@ impl Compilable for Located<Statement> {
                     .frame_mut()
                     .expect("no compiler frame on stack")
                     .write(ByteCode::default(), Position::default());
+
+                compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .push_scope();
                 case.compile(compiler)?;
+                let scope = compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .pop_scope()
+                    .expect("no compiler frame on stack");
+                if scope.breaks.len() > 0 {
+                    if let Some(prev_scope) = compiler
+                        .frame_mut()
+                        .expect("no compiler frame on stack")
+                        .scope_mut() {
+                            prev_scope.breaks.extend(scope.breaks);
+                        }
+                }
+                if scope.continues.len() > 0 {
+                    if let Some(prev_scope) = compiler
+                        .frame_mut()
+                        .expect("no compiler frame on stack")
+                        .scope_mut() {
+                            prev_scope.continues.extend(scope.continues);
+                        }
+                }
                 let else_addr = compiler
                     .frame_mut()
                     .expect("no compiler frame on stack")
                     .write(ByteCode::default(), Position::default());
                 if let Some(else_case) = else_case {
+                    compiler
+                        .frame_mut()
+                        .expect("no compiler frame on stack")
+                        .push_scope();
                     else_case.compile(compiler)?;
+                    let scope = compiler
+                        .frame_mut()
+                        .expect("no compiler frame on stack")
+                        .pop_scope()
+                        .expect("no compiler frame on stack");
+                    if scope.breaks.len() > 0 {
+                        if let Some(prev_scope) = compiler
+                            .frame_mut()
+                            .expect("no compiler frame on stack")
+                            .scope_mut() {
+                                prev_scope.breaks.extend(scope.breaks);
+                            }
+                    }
+                    if scope.continues.len() > 0 {
+                        if let Some(prev_scope) = compiler
+                            .frame_mut()
+                            .expect("no compiler frame on stack")
+                            .scope_mut() {
+                                prev_scope.continues.extend(scope.continues);
+                            }
+                    }
                 }
                 let exit_addr = compiler
                     .frame_mut()
@@ -633,12 +706,12 @@ impl Compilable for Located<Statement> {
                             cond,
                             addr: else_addr + 1,
                         },
-                        pos.clone(),
+                        Some(pos.clone()),
                     );
                 compiler
                     .frame_mut()
                     .expect("no compiler frame on stack")
-                    .overwrite(else_addr, ByteCode::Jump { addr: exit_addr }, pos);
+                    .overwrite(else_addr, ByteCode::Jump { addr: exit_addr }, Some(pos));
                 Ok(None)
             }
             Statement::While { cond, body } => {
@@ -651,11 +724,32 @@ impl Compilable for Located<Statement> {
                     .frame_mut()
                     .expect("no compiler frame on stack")
                     .write(ByteCode::default(), Position::default());
+                compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .push_scope();
                 body.compile(compiler)?;
+                let scope = compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .pop_scope()
+                    .expect("no scope on stack");
                 let exit_addr = compiler
                     .frame_mut()
                     .expect("no compiler frame on stack")
                     .write(ByteCode::Jump { addr: start_addr }, pos.clone());
+                for addr in scope.breaks {
+                    compiler
+                        .frame_mut()
+                        .expect("no compiler frame on stack")
+                        .overwrite(addr, ByteCode::Jump { addr: exit_addr + 1 }, None);
+                }
+                for addr in scope.continues {
+                    compiler
+                        .frame_mut()
+                        .expect("no compiler frame on stack")
+                        .overwrite(addr, ByteCode::Jump { addr: start_addr }, None);
+                }
                 compiler
                     .frame_mut()
                     .expect("no compiler frame on stack")
@@ -666,7 +760,7 @@ impl Compilable for Located<Statement> {
                             cond,
                             addr: exit_addr + 1,
                         },
-                        pos,
+                        Some(pos),
                     );
                 Ok(None)
             }
@@ -719,11 +813,32 @@ impl Compilable for Located<Statement> {
                     .frame_mut()
                     .expect("no compiler frame on stack")
                     .write(ByteCode::default(), Position::default());
+                compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .push_scope();
                 body.compile(compiler)?;
+                let scope = compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .pop_scope()
+                    .expect("no scope on stack");
                 let exit_addr = compiler
                     .frame_mut()
                     .expect("no compiler frame on stack")
                     .write(ByteCode::Jump { addr: start_addr }, pos.clone());
+                for addr in scope.breaks {
+                    compiler
+                        .frame_mut()
+                        .expect("no compiler frame on stack")
+                        .overwrite(addr, ByteCode::Jump { addr: exit_addr + 1 }, None);
+                }
+                for addr in scope.continues {
+                    compiler
+                        .frame_mut()
+                        .expect("no compiler frame on stack")
+                        .overwrite(addr, ByteCode::Jump { addr: start_addr }, None);
+                }
                 compiler
                     .frame_mut()
                     .expect("no compiler frame on stack")
@@ -733,7 +848,7 @@ impl Compilable for Located<Statement> {
                             cond: Source::Register(register),
                             addr: exit_addr + 1,
                         },
-                        pos,
+                        Some(pos),
                     );
                 Ok(None)
             }

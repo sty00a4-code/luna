@@ -326,6 +326,14 @@ impl Parsable for Statement {
             Token::If => Self::parse_if(parser),
             Token::While => Self::parse_while(parser),
             Token::For => Self::parse_for(parser),
+            Token::Break => {
+                let Located { value: _, pos } = parser.next().unwrap();
+                Ok(Located::new(Self::Break, pos))
+            }
+            Token::Continue => {
+                let Located { value: _, pos } = parser.next().unwrap();
+                Ok(Located::new(Self::Continue, pos))
+            }
             Token::Ident(_) => {
                 let path = Path::parse(parser)?;
                 let mut pos = path.pos.clone();
