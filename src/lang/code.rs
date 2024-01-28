@@ -29,11 +29,11 @@ pub enum ByteCode {
     },
     Iter {
         dst: Location,
-        src: Source
+        src: Source,
     },
     Next {
         dst: Location,
-        src: Source
+        src: Source,
     },
 
     Call {
@@ -58,7 +58,7 @@ pub enum ByteCode {
     SetField {
         head: Source,
         field: Source,
-        src: Source
+        src: Source,
     },
 
     Vector {
@@ -181,10 +181,7 @@ impl Display for ByteCode {
                     write!(f, "jumpif {cond} *{addr:?}")
                 }
             }
-            Self::JumpNull {
-                cond,
-                addr,
-            } => {
+            Self::JumpNull { cond, addr } => {
                 write!(f, "jumpnull {cond} *{addr:?}")
             }
             Self::Iter { dst, src } => write!(f, "iter {dst} = {src}"),
