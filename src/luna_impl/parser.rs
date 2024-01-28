@@ -799,6 +799,30 @@ impl Parsable for Atom {
                 }
                 Ok(Located::new(Self::Object(pairs), pos))
             }
+            Token::If => {
+                let cond = Expression::parse(parser)?;
+                let case = Expression::parse(parser)?;
+                let Some(Located {
+                    value: token,
+                    pos: _,
+                }) = parser.next()
+                else {
+                    return Err(Located::new(ParseError::UnexpectedEOF, Position::default()));
+                };
+                if token != Token::Else {
+                    return Err(Located::new(ParseError::ExpectedToken { expected: Token::Else, got: token }, pos));
+                }
+                let else_case = Expression::parse(parser)?;
+                pos.extend(&else_case.pos);
+                Ok(Located::new(
+                    Self::If {
+                        cond: Box::new(cond),
+                        case: Box::new(case),
+                        else_case: Box::new(else_case),
+                    },
+                    pos,
+                ))
+            }
             Token::Fn => {
                 let mut params = vec![];
                 let var_args = None;

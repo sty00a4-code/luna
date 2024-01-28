@@ -115,7 +115,7 @@ pub enum Atom {
     If {
         cond: Box<Located<Expression>>,
         case: Box<Located<Expression>>,
-        else_vase: Box<Located<Expression>>,
+        else_case: Box<Located<Expression>>,
     },
     Fn {
         params: Vec<Located<String>>,

@@ -1214,8 +1214,60 @@ impl Compilable for Located<Atom> {
             Atom::If {
                 cond,
                 case,
-                else_vase,
-            } => todo!(),
+                else_case,
+            } => {
+                let cond = cond.compile(compiler)?;
+                let register = compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .new_register();
+                let check_addr = compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .write(ByteCode::default(), Position::default());
+
+                let case = case.compile(compiler)?;
+                compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .write(
+                        ByteCode::Move { dst: Location::Register(register), src: case },
+                        pos.clone(),
+                    );
+                let else_addr = compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .write(ByteCode::default(), Position::default());
+                let else_case = else_case.compile(compiler)?;
+                compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .write(
+                        ByteCode::Move { dst: Location::Register(register), src: else_case },
+                        pos.clone(),
+                    );
+                let exit_addr = compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .addr();
+                compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .overwrite(
+                        check_addr,
+                        ByteCode::JumpIf {
+                            negative: true,
+                            cond,
+                            addr: else_addr + 1,
+                        },
+                        Some(pos.clone()),
+                    );
+                compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .overwrite(else_addr, ByteCode::Jump { addr: exit_addr }, Some(pos));
+                Ok(Source::Register(register))
+            }
             Atom::Fn {
                 params,
                 var_args: _,
