@@ -187,10 +187,14 @@ pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
     });
     set_field!(globals."object" = object! {
         "keys" = function!(_object_keys),
-        "values" = function!(_object_values)
+        "values" = function!(_object_values),
+        "setmeta" = function!(_object_setmeta),
+        "getmeta" = function!(_object_getmeta)
     });
     set_field!(globals."keys" = function!(_object_keys));
     set_field!(globals."values" = function!(_object_values));
+    set_field!(globals."setmeta" = function!(_object_setmeta));
+    set_field!(globals."getmeta" = function!(_object_getmeta));
     globals
 }
 
@@ -338,4 +342,21 @@ pub fn _object_values(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Bo
     Ok(Value::UserObject(Rc::new(RefCell::new(Box::new(
         ObjectValuesIterator(object.fields.iter().map(|(_, v)| v.clone()).collect::<Vec<Value>>().into_iter()),
     )))))
+}
+pub fn _object_setmeta(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let object = typed!(args: Object);
+    {
+        let mut object = object.borrow_mut();
+        let meta = typed!(args: Object?);
+    
+        object.meta = meta;
+    }
+    Ok(Value::Object(object))
+}
+pub fn _object_getmeta(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let object = typed!(args: Object);
+    let object = object.borrow();
+    Ok(object.meta.as_ref().map(|o| Value::Object(Rc::clone(o))).unwrap_or_default())
 }
