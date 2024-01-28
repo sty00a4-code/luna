@@ -1067,7 +1067,7 @@ impl Compilable for Located<Expression> {
                     .expect("no compiler frame on stack")
                     .write(
                         ByteCode::Call {
-                            dst: None,
+                            dst: Some(Location::Register(dst)),
                             func,
                             offset,
                             amount,

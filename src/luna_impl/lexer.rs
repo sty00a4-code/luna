@@ -68,6 +68,7 @@ impl<'source> Iterator for Lexer<'source> {
             }
             ',' => Some(Ok(Located::new(Token::Comma, pos))),
             '.' => Some(Ok(Located::new(Token::Dot, pos))),
+            ':' => Some(Ok(Located::new(Token::Colon, pos))),
             '!' => {
                 if self.source.peek() == Some(&'=') {
                     self.source.next();

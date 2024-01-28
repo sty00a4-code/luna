@@ -31,7 +31,7 @@ pub fn compile(text: &str) -> Result<Rc<RefCell<Closure>>, Located<Box<dyn Error
 }
 pub fn run(text: &str) -> Result<Option<Value>, Located<Box<dyn Error>>> {
     let closure = compile(text)?;
-    println!("{}", closure.borrow());
+    // println!("{}", closure.borrow());
     let function = Rc::new(Function {
         closure,
         upvalues: vec![],
