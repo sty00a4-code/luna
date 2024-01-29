@@ -136,7 +136,7 @@ pub struct Closure {
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Upvalue {
     pub register: usize,
-    pub in_stack: bool,
+    pub depth: usize,
 }
 
 impl Display for Source {
@@ -236,8 +236,8 @@ impl Display for Closure {
         for (addr, upvalue) in self.upvalues.iter().enumerate() {
             writeln!(
                 f,
-                "\t[{addr}] register: {}, in_stack: {}",
-                upvalue.register, upvalue.in_stack
+                "\t[{addr}] register: {}, depth: {}",
+                upvalue.register, upvalue.depth
             )?;
         }
         writeln!(f, "constants:")?;

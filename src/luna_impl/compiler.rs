@@ -69,20 +69,20 @@ impl Compiler {
         if let Some(register) = self.frame_mut().expect("no frame").get_local(ident) {
             return Some(Location::Register(register));
         }
-        for (depth, other_frame) in self.frames.iter().rev().skip(1).enumerate() {
+        for (depth, other_frame) in self.frames.iter_mut().rev().skip(1).enumerate() {
             if let Some(register) = other_frame.get_local(ident) {
                 let frame = self.frame_mut().expect("no frame");
                 let addr = frame.closure.borrow().upvalues.len();
                 let upvalue = Upvalue {
                     register,
-                    in_stack: depth == 0,
+                    depth,
                 };
                 if let Some(addr) = frame
                     .closure
                     .borrow_mut()
                     .upvalues
                     .iter()
-                    .position(|upv| *upv == upvalue)
+                    .position(|upv| upv == &upvalue)
                 {
                     return Some(Location::Upvalue(addr));
                 }

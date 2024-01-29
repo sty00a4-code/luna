@@ -1,9 +1,7 @@
 use super::{position::Located, std::globals};
 use crate::lang::{
     code::{BinaryOperation, ByteCode, Location, Source, UnaryOperation},
-    value::{
-        Function, FunctionKind, Object, Value,
-    },
+    value::{Function, FunctionKind, Object, Value},
 };
 use std::{cell::RefCell, collections::HashMap, error::Error, fmt::Display, rc::Rc};
 
@@ -97,31 +95,41 @@ impl Interpreter {
         None
     }
     pub fn step(&mut self) -> Result<Option<Value>, Located<RunTimeError>> {
-        let frame = self.call_frames.last_mut().expect("no call frame");
+        let idx = self.call_frames.last_mut().expect("no call frame").idx;
         let Located {
             value: bytecode,
             pos,
-        } = frame
+        } = self
+            .call_frames
+            .last_mut()
+            .expect("no call frame")
             .function
             .closure
             .borrow()
             .code
-            .get(frame.idx)
+            .get(idx)
             .cloned()
             .expect("idx out of range");
-        frame.idx += 1;
+        self.call_frames.last_mut().expect("no call frame").idx += 1;
         match bytecode {
             ByteCode::None => {}
             ByteCode::Jump { addr } => {
-                frame.idx = addr;
+                self.call_frames.last_mut().expect("no call frame").idx = addr;
             }
             ByteCode::JumpIf {
                 negative: false,
                 cond,
                 addr,
             } => {
-                if frame.source(&cond).expect("cond not found").into() {
-                    frame.idx = addr;
+                if self
+                    .call_frames
+                    .last_mut()
+                    .expect("no call frame")
+                    .source(&cond)
+                    .expect("cond not found")
+                    .into()
+                {
+                    self.call_frames.last_mut().expect("no call frame").idx = addr;
                 }
             }
             ByteCode::JumpIf {
@@ -129,18 +137,41 @@ impl Interpreter {
                 cond,
                 addr,
             } => {
-                if !bool::from(frame.source(&cond).expect("cond not found")) {
-                    frame.idx = addr;
+                if !bool::from(
+                    self.call_frames
+                        .last_mut()
+                        .expect("no call frame")
+                        .source(&cond)
+                        .expect("cond not found"),
+                ) {
+                    self.call_frames.last_mut().expect("no call frame").idx = addr;
                 }
             }
             ByteCode::JumpNull { cond, addr } => {
-                if frame.source(&cond).expect("cond not found") == Value::default() {
-                    frame.idx = addr;
+                if self
+                    .call_frames
+                    .last_mut()
+                    .expect("no call frame")
+                    .source(&cond)
+                    .expect("cond not found")
+                    == Value::default()
+                {
+                    self.call_frames.last_mut().expect("no call frame").idx = addr;
                 }
             }
             ByteCode::Next { dst, src } => {
-                let iter = frame.source(&src).expect("source not found");
-                let dst = frame.location(&dst).expect("location not found");
+                let iter = self
+                    .call_frames
+                    .last_mut()
+                    .expect("no call frame")
+                    .source(&src)
+                    .expect("source not found");
+                let dst = self
+                    .call_frames
+                    .last_mut()
+                    .expect("no call frame")
+                    .location(&dst)
+                    .expect("location not found");
                 *dst.borrow_mut() = match &iter {
                     Value::UserObject(object) => {
                         let object = Rc::clone(object);
@@ -159,11 +190,18 @@ impl Interpreter {
                 offset,
                 amount,
             } => {
-                let func = frame.source(&func).expect("func not found");
+                let func = self
+                    .call_frames
+                    .last_mut()
+                    .expect("no call frame")
+                    .source(&func)
+                    .expect("func not found");
                 let mut args = vec![];
                 for register in offset..offset + amount {
                     args.push(
-                        frame
+                        self.call_frames
+                            .last_mut()
+                            .expect("no call frame")
                             .register(register)
                             .expect("register out of range")
                             .borrow()
@@ -174,7 +212,13 @@ impl Interpreter {
                     Value::Function(kind) => match kind {
                         FunctionKind::Function(function) => self.call(&function, args, dst),
                         FunctionKind::UserFunction(func) => {
-                            let dst = dst.map(|dst| frame.location(&dst).expect("dst not found"));
+                            let dst = dst.map(|dst| {
+                                self.call_frames
+                                    .last_mut()
+                                    .expect("no call frame")
+                                    .location(&dst)
+                                    .expect("dst not found")
+                            });
                             let value = func(self, args).map_err(|err| {
                                 Located::new(RunTimeError::Custom(err.to_string()), pos)
                             })?;
@@ -188,14 +232,39 @@ impl Interpreter {
             }
             ByteCode::Return { src } => return Ok(self.return_call(src)),
             ByteCode::Move { dst, src } => {
-                let dst = frame.location(&dst).expect("location not found");
-                let value = frame.source(&src).expect("source not found");
+                let dst = self
+                    .call_frames
+                    .last_mut()
+                    .expect("no call frame")
+                    .location(&dst)
+                    .expect("location not found");
+                let value = self
+                    .call_frames
+                    .last_mut()
+                    .expect("no call frame")
+                    .source(&src)
+                    .expect("source not found");
                 *dst.borrow_mut() = value;
             }
             ByteCode::Field { dst, head, field } => {
-                let dst = frame.location(&dst).expect("location not found");
-                let head = frame.source(&head).expect("source not found");
-                let field = frame.source(&field).expect("source not found");
+                let dst = self
+                    .call_frames
+                    .last_mut()
+                    .expect("no call frame")
+                    .location(&dst)
+                    .expect("location not found");
+                let head = self
+                    .call_frames
+                    .last_mut()
+                    .expect("no call frame")
+                    .source(&head)
+                    .expect("source not found");
+                let field = self
+                    .call_frames
+                    .last_mut()
+                    .expect("no call frame")
+                    .source(&field)
+                    .expect("source not found");
                 *dst.borrow_mut() = match head {
                     Value::Object(object) => match field {
                         Value::String(key) => object.borrow_mut().fields.get(&key).cloned(),
@@ -268,9 +337,24 @@ impl Interpreter {
                 .unwrap_or_default();
             }
             ByteCode::SetField { head, field, src } => {
-                let value = frame.source(&src).expect("source not found");
-                let head = frame.source(&head).expect("source not found");
-                let field = frame.source(&field).expect("source not found");
+                let value = self
+                    .call_frames
+                    .last_mut()
+                    .expect("no call frame")
+                    .source(&src)
+                    .expect("source not found");
+                let head = self
+                    .call_frames
+                    .last_mut()
+                    .expect("no call frame")
+                    .source(&head)
+                    .expect("source not found");
+                let field = self
+                    .call_frames
+                    .last_mut()
+                    .expect("no call frame")
+                    .source(&field)
+                    .expect("source not found");
                 match head {
                     Value::Object(object) => {
                         let mut object = object.borrow_mut();
@@ -336,11 +420,18 @@ impl Interpreter {
                 }
             }
             ByteCode::Vector { dst, start, amount } => {
-                let dst = frame.location(&dst).expect("location not found");
+                let dst = self
+                    .call_frames
+                    .last_mut()
+                    .expect("no call frame")
+                    .location(&dst)
+                    .expect("location not found");
                 let mut values = vec![];
                 for register in start..start + amount {
                     values.push(
-                        frame
+                        self.call_frames
+                            .last_mut()
+                            .expect("no call frame")
                             .register(register)
                             .expect("register not found")
                             .borrow()
@@ -350,10 +441,18 @@ impl Interpreter {
                 *dst.borrow_mut() = Value::Vector(Rc::new(RefCell::new(values)));
             }
             ByteCode::Object { dst, start, amount } => {
-                let dst = frame.location(&dst).expect("location not found");
+                let dst = self
+                    .call_frames
+                    .last_mut()
+                    .expect("no call frame")
+                    .location(&dst)
+                    .expect("location not found");
                 let mut object = Object::default();
                 for register in (start..start + amount * 2).step_by(2) {
-                    let Value::String(field) = frame
+                    let Value::String(field) = self
+                        .call_frames
+                        .last_mut()
+                        .expect("no call frame")
                         .register(register)
                         .expect("register not found")
                         .borrow()
@@ -361,7 +460,10 @@ impl Interpreter {
                     else {
                         panic!("expected object field to be a string")
                     };
-                    let value = frame
+                    let value = self
+                        .call_frames
+                        .last_mut()
+                        .expect("no call frame")
                         .register(register + 1)
                         .expect("register not found")
                         .borrow()
@@ -371,9 +473,16 @@ impl Interpreter {
                 *dst.borrow_mut() = Value::Object(Rc::new(RefCell::new(object)));
             }
             ByteCode::Function { dst, addr } => {
-                let dst = frame.location(&dst).expect("location not found");
+                let dst = self
+                    .call_frames
+                    .last_mut()
+                    .expect("no call frame")
+                    .location(&dst)
+                    .expect("location not found");
                 let closure = Rc::clone(
-                    frame
+                    self.call_frames
+                        .last_mut()
+                        .expect("no call frame on stack")
                         .function
                         .closure
                         .borrow()
@@ -381,20 +490,28 @@ impl Interpreter {
                         .get(addr)
                         .expect("closure not found"),
                 );
-                let upvalues = closure
-                    .borrow()
-                    .upvalues
-                    .iter()
-                    .map(|upvalue| {
-                        if upvalue.in_stack {
+                let mut upvalues = vec![];
+                for upvalue in closure.borrow().upvalues.iter() {
+                    upvalues.push(if upvalue.depth == 0 {
+                        self.call_frames
+                            .last_mut()
+                            .expect("no call frame")
+                            .register(upvalue.register)
+                            .expect("register not found")
+                    } else if let Some(value) = self
+                        .call_frames
+                        .get(self.call_frames.len() - 1 - upvalue.depth)
+                        .map(|frame| {
                             frame
                                 .register(upvalue.register)
                                 .expect("register not found")
-                        } else {
-                            todo!("upvalue of upvalue")
-                        }
-                    })
-                    .collect();
+                        })
+                    {
+                        value
+                    } else {
+                        Rc::default()
+                    });
+                }
                 *dst.borrow_mut() = Value::Function(FunctionKind::Function(Rc::new(Function {
                     upvalues,
                     closure,
@@ -406,9 +523,24 @@ impl Interpreter {
                 left,
                 right,
             } => {
-                let dst = frame.location(&dst).expect("location not found");
-                let left = frame.source(&left).expect("source not found");
-                let right = frame.source(&right).expect("source not found");
+                let dst = self
+                    .call_frames
+                    .last_mut()
+                    .expect("no call frame")
+                    .location(&dst)
+                    .expect("location not found");
+                let left = self
+                    .call_frames
+                    .last_mut()
+                    .expect("no call frame")
+                    .source(&left)
+                    .expect("source not found");
+                let right = self
+                    .call_frames
+                    .last_mut()
+                    .expect("no call frame")
+                    .source(&right)
+                    .expect("source not found");
                 *dst.borrow_mut() = match op {
                     BinaryOperation::Add => match (left, right) {
                         (Value::Int(left), Value::Int(right)) => Value::Int(left + right),
@@ -616,8 +748,18 @@ impl Interpreter {
                 };
             }
             ByteCode::Unary { op, dst, src } => {
-                let dst = frame.location(&dst).expect("location not found");
-                let src = frame.source(&src).expect("source not found");
+                let dst = self
+                    .call_frames
+                    .last_mut()
+                    .expect("no call frame")
+                    .location(&dst)
+                    .expect("location not found");
+                let src = self
+                    .call_frames
+                    .last_mut()
+                    .expect("no call frame")
+                    .source(&src)
+                    .expect("source not found");
                 *dst.borrow_mut() = match op {
                     UnaryOperation::Neg => match src {
                         Value::Int(v) => Value::Int(-v),
