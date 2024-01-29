@@ -73,10 +73,20 @@ impl Compiler {
             if let Some(register) = other_frame.get_local(ident) {
                 let frame = self.frame_mut().expect("no frame");
                 let addr = frame.closure.borrow().upvalues.len();
-                frame.closure.borrow_mut().upvalues.push(Upvalue {
+                let upvalue = Upvalue {
                     register,
                     in_stack: depth == 0,
-                });
+                };
+                if let Some(addr) = frame
+                    .closure
+                    .borrow_mut()
+                    .upvalues
+                    .iter()
+                    .position(|upv| *upv == upvalue)
+                {
+                    return Some(Location::Upvalue(addr));
+                }
+                frame.closure.borrow_mut().upvalues.push(upvalue);
                 return Some(Location::Upvalue(addr));
             }
         }
@@ -221,17 +231,19 @@ impl Compilable for Located<Statement> {
                     if let Some(prev_scope) = compiler
                         .frame_mut()
                         .expect("no compiler frame on stack")
-                        .scope_mut() {
-                            prev_scope.breaks.extend(scope.breaks);
-                        }
+                        .scope_mut()
+                    {
+                        prev_scope.breaks.extend(scope.breaks);
+                    }
                 }
                 if !scope.continues.is_empty() {
                     if let Some(prev_scope) = compiler
                         .frame_mut()
                         .expect("no compiler frame on stack")
-                        .scope_mut() {
-                            prev_scope.continues.extend(scope.continues);
-                        }
+                        .scope_mut()
+                    {
+                        prev_scope.continues.extend(scope.continues);
+                    }
                 }
                 Ok(None)
             }
@@ -648,17 +660,19 @@ impl Compilable for Located<Statement> {
                     if let Some(prev_scope) = compiler
                         .frame_mut()
                         .expect("no compiler frame on stack")
-                        .scope_mut() {
-                            prev_scope.breaks.extend(scope.breaks);
-                        }
+                        .scope_mut()
+                    {
+                        prev_scope.breaks.extend(scope.breaks);
+                    }
                 }
                 if !scope.continues.is_empty() {
                     if let Some(prev_scope) = compiler
                         .frame_mut()
                         .expect("no compiler frame on stack")
-                        .scope_mut() {
-                            prev_scope.continues.extend(scope.continues);
-                        }
+                        .scope_mut()
+                    {
+                        prev_scope.continues.extend(scope.continues);
+                    }
                 }
                 let else_addr = compiler
                     .frame_mut()
@@ -679,17 +693,19 @@ impl Compilable for Located<Statement> {
                         if let Some(prev_scope) = compiler
                             .frame_mut()
                             .expect("no compiler frame on stack")
-                            .scope_mut() {
-                                prev_scope.breaks.extend(scope.breaks);
-                            }
+                            .scope_mut()
+                        {
+                            prev_scope.breaks.extend(scope.breaks);
+                        }
                     }
                     if !scope.continues.is_empty() {
                         if let Some(prev_scope) = compiler
                             .frame_mut()
                             .expect("no compiler frame on stack")
-                            .scope_mut() {
-                                prev_scope.continues.extend(scope.continues);
-                            }
+                            .scope_mut()
+                        {
+                            prev_scope.continues.extend(scope.continues);
+                        }
                     }
                 }
                 let exit_addr = compiler
@@ -742,7 +758,13 @@ impl Compilable for Located<Statement> {
                     compiler
                         .frame_mut()
                         .expect("no compiler frame on stack")
-                        .overwrite(addr, ByteCode::Jump { addr: exit_addr + 1 }, None);
+                        .overwrite(
+                            addr,
+                            ByteCode::Jump {
+                                addr: exit_addr + 1,
+                            },
+                            None,
+                        );
                 }
                 for addr in scope.continues {
                     compiler
@@ -817,7 +839,13 @@ impl Compilable for Located<Statement> {
                     compiler
                         .frame_mut()
                         .expect("no compiler frame on stack")
-                        .overwrite(addr, ByteCode::Jump { addr: exit_addr + 1 }, None);
+                        .overwrite(
+                            addr,
+                            ByteCode::Jump {
+                                addr: exit_addr + 1,
+                            },
+                            None,
+                        );
                 }
                 for addr in scope.continues {
                     compiler
@@ -1231,7 +1259,10 @@ impl Compilable for Located<Atom> {
                     .frame_mut()
                     .expect("no compiler frame on stack")
                     .write(
-                        ByteCode::Move { dst: Location::Register(register), src: case },
+                        ByteCode::Move {
+                            dst: Location::Register(register),
+                            src: case,
+                        },
                         pos.clone(),
                     );
                 let else_addr = compiler
@@ -1243,7 +1274,10 @@ impl Compilable for Located<Atom> {
                     .frame_mut()
                     .expect("no compiler frame on stack")
                     .write(
-                        ByteCode::Move { dst: Location::Register(register), src: else_case },
+                        ByteCode::Move {
+                            dst: Location::Register(register),
+                            src: else_case,
+                        },
                         pos.clone(),
                     );
                 let exit_addr = compiler
