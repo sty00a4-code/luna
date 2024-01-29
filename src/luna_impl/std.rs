@@ -169,6 +169,7 @@ pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
     let mut globals = HashMap::new();
     set_field!(globals."print" = function!(_print));
     set_field!(globals."input" = function!(_input));
+    set_field!(globals."assert" = function!(_assert));
     set_field!(globals."int" = object! {
         "from" = function!(_int_from)
     });
@@ -245,6 +246,23 @@ pub fn _input(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Er
     std::io::stdin().read_line(&mut input)?;
     let input = input.trim_end();
     Ok(Value::String(input.to_string()))
+}
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct AssertError;
+impl Display for AssertError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "assertion failed")
+    }
+}
+impl Error for AssertError {}
+pub fn _assert(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let cond = bool::from(args.next().unwrap_or_default().1);
+    if cond {
+        Ok(Value::default())
+    } else {
+        Err(Box::new(AssertError))
+    }
 }
 
 pub fn _int_from(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {

@@ -20,6 +20,8 @@ use std::{
 
 pub mod lang;
 pub mod luna_impl;
+#[cfg(test)]
+pub mod tests;
 
 pub fn lex(text: &str, args: &LunaArgs) -> Result<Vec<Located<Token>>, Located<Box<dyn Error>>> {
     let tokens = Lexer::from(text)
