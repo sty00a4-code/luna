@@ -170,6 +170,7 @@ pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
     set_field!(globals."print" = function!(_print));
     set_field!(globals."input" = function!(_input));
     set_field!(globals."assert" = function!(_assert));
+    set_field!(globals."error" = function!(_error));
     set_field!(globals."int" = object! {
         "from" = function!(_int_from)
     });
@@ -263,6 +264,19 @@ pub fn _assert(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn E
     } else {
         Err(Box::new(AssertError))
     }
+}
+#[derive(Debug, Clone, PartialEq)]
+pub struct CustomError(String);
+impl Display for CustomError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+impl Error for CustomError {}
+pub fn _error(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let msg = args.next().unwrap_or_default().1.to_string();
+    Err(Box::new(CustomError(msg)))
 }
 
 pub fn _int_from(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
