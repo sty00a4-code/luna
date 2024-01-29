@@ -72,6 +72,22 @@ impl Display for ExpectedType {
     }
 }
 impl Error for ExpectedType {}
+#[derive(Debug, Clone, PartialEq)]
+pub struct ExpectedTypes {
+    idx: usize,
+    expected: Vec<&'static str>,
+    got: &'static str,
+}
+impl Display for ExpectedTypes {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "expected {} for argument #{}, got {}",
+            self.expected.join("/"), self.idx, self.got
+        )
+    }
+}
+impl Error for ExpectedTypes {}
 macro_rules! typed {
     ($args:ident : $type:ident) => {{
         let (idx, arg) = $args.next().unwrap_or(($args.len(), Value::default()));
@@ -164,6 +180,24 @@ macro_rules! typed {
         }
     }};
 }
+macro_rules! option {
+    ($args:ident : $($type:ident => $value:ident $body:block),+) => {{
+        let (idx, arg) = $args.next().unwrap_or(($args.len(), Value::default()));
+        match arg {
+            $(
+                Value::$type($value) => $body,
+            ) +
+            arg => {
+                return Err(ExpectedTypes {
+                    idx,
+                    expected: vec![$(Value::$type(Default::default()).typ()),+],
+                    got: arg.typ(),
+                }
+                .into())
+            }
+        }
+    }};
+}
 
 pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
     let mut globals = HashMap::new();
@@ -173,9 +207,13 @@ pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
     set_field!(globals."error" = function!(_error));
     set_field!(globals."int" = object! {
         "from" = function!(_int_from)
+        // "bytes" = function!(_int_bytes)
     });
     set_field!(globals."float" = object! {
-        "from" = function!(_float_from)
+        "from" = function!(_float_from),
+        "floor" = function!(_float_floor),
+        "ceil" = function!(_float_ceil),
+        "round" = function!(_float_round)
     });
     set_field!(globals."bool" = object! {
         "from" = function!(_bool_from)
@@ -221,6 +259,31 @@ pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
     set_field!(globals."setmeta" = function!(_object_setmeta));
     set_field!(globals."getmeta" = function!(_object_getmeta));
     set_field!(globals."range" = function!(_range));
+    set_field!(globals."math" = object! {
+        "pi" = Value::Float(std::f64::consts::PI),
+        "nan" = Value::Float(f64::NAN),
+        "inf" = Value::Float(f64::INFINITY),
+        "e" = Value::Float(f64::EPSILON),
+        "abs" = function!(_math_abs),
+        "sqrt" = function!(_math_sqrt),
+        "exp" = function!(_math_exp),
+        "exp2" = function!(_math_exp2),
+        "exp_m1" = function!(_math_exp_m1),
+        "signum" = function!(_math_signum),
+        "fract" = function!(_math_fract),
+        "cos" = function!(_math_cos),
+        "sin" = function!(_math_sin),
+        "tan" = function!(_math_tan),
+        "cosh" = function!(_math_cosh),
+        "sinh" = function!(_math_sinh),
+        "tanh" = function!(_math_tanh),
+        "acos" = function!(_math_acos),
+        "asin" = function!(_math_asin),
+        "atan" = function!(_math_atan),
+        "acosh" = function!(_math_acosh),
+        "asinh" = function!(_math_asinh),
+        "atanh" = function!(_math_atanh)
+    });
     globals
 }
 
@@ -310,6 +373,21 @@ pub fn _float_from(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<d
         },
         _ => return Ok(Value::default())
     }))
+}
+pub fn _float_floor(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let value = typed!(args: Float);
+    Ok(Value::Float(value.floor()))
+}
+pub fn _float_ceil(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let value = typed!(args: Float);
+    Ok(Value::Float(value.ceil()))
+}
+pub fn _float_round(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let value = typed!(args: Float);
+    Ok(Value::Float(value.round()))
 }
 
 pub fn _bool_from(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
@@ -533,6 +611,216 @@ pub fn _range(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Er
             0..start
         }))
     ))))
+}
+
+pub fn _math_abs(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    option!(args:
+        Int => value {
+            Ok(Value::Int(value.abs()))
+        },
+        Float => value {
+            Ok(Value::Float(value.abs()))
+        }
+    )
+}
+pub fn _math_sqrt(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    option!(args:
+        Int => value {
+            Ok(Value::Float((value as f64).sqrt()))
+        },
+        Float => value {
+            Ok(Value::Float(value.sqrt()))
+        }
+    )
+}
+pub fn _math_exp(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    option!(args:
+        Int => value {
+            Ok(Value::Float((value as f64).exp()))
+        },
+        Float => value {
+            Ok(Value::Float(value.exp()))
+        }
+    )
+}
+pub fn _math_exp2(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    option!(args:
+        Int => value {
+            Ok(Value::Float((value as f64).exp2()))
+        },
+        Float => value {
+            Ok(Value::Float(value.exp2()))
+        }
+    )
+}
+pub fn _math_exp_m1(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    option!(args:
+        Int => value {
+            Ok(Value::Float((value as f64).exp_m1()))
+        },
+        Float => value {
+            Ok(Value::Float(value.exp_m1()))
+        }
+    )
+}
+pub fn _math_signum(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    option!(args:
+        Int => value {
+            Ok(Value::Float((value as f64).signum()))
+        },
+        Float => value {
+            Ok(Value::Float(value.signum()))
+        }
+    )
+}
+pub fn _math_fract(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    option!(args:
+        Int => value {
+            Ok(Value::Float((value as f64).fract()))
+        },
+        Float => value {
+            Ok(Value::Float(value.fract()))
+        }
+    )
+}
+pub fn _math_sin(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    option!(args:
+        Int => value {
+            Ok(Value::Float((value as f64).sin()))
+        },
+        Float => value {
+            Ok(Value::Float(value.sin()))
+        }
+    )
+}
+pub fn _math_cos(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    option!(args:
+        Int => value {
+            Ok(Value::Float((value as f64).cos()))
+        },
+        Float => value {
+            Ok(Value::Float(value.cos()))
+        }
+    )
+}
+pub fn _math_tan(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    option!(args:
+        Int => value {
+            Ok(Value::Float((value as f64).tan()))
+        },
+        Float => value {
+            Ok(Value::Float(value.tan()))
+        }
+    )
+}
+pub fn _math_sinh(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    option!(args:
+        Int => value {
+            Ok(Value::Float((value as f64).sinh()))
+        },
+        Float => value {
+            Ok(Value::Float(value.sinh()))
+        }
+    )
+}
+pub fn _math_cosh(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    option!(args:
+        Int => value {
+            Ok(Value::Float((value as f64).cosh()))
+        },
+        Float => value {
+            Ok(Value::Float(value.cosh()))
+        }
+    )
+}
+pub fn _math_tanh(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    option!(args:
+        Int => value {
+            Ok(Value::Float((value as f64).tanh()))
+        },
+        Float => value {
+            Ok(Value::Float(value.tanh()))
+        }
+    )
+}
+pub fn _math_asin(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    option!(args:
+        Int => value {
+            Ok(Value::Float((value as f64).asin()))
+        },
+        Float => value {
+            Ok(Value::Float(value.asin()))
+        }
+    )
+}
+pub fn _math_acos(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    option!(args:
+        Int => value {
+            Ok(Value::Float((value as f64).acos()))
+        },
+        Float => value {
+            Ok(Value::Float(value.acos()))
+        }
+    )
+}
+pub fn _math_atan(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    option!(args:
+        Int => value {
+            Ok(Value::Float((value as f64).atan()))
+        },
+        Float => value {
+            Ok(Value::Float(value.atan()))
+        }
+    )
+}
+pub fn _math_asinh(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    option!(args:
+        Int => value {
+            Ok(Value::Float((value as f64).asinh()))
+        },
+        Float => value {
+            Ok(Value::Float(value.asinh()))
+        }
+    )
+}
+pub fn _math_acosh(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    option!(args:
+        Int => value {
+            Ok(Value::Float((value as f64).acosh()))
+        },
+        Float => value {
+            Ok(Value::Float(value.acosh()))
+        }
+    )
+}
+pub fn _math_atanh(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    option!(args:
+        Int => value {
+            Ok(Value::Float((value as f64).atanh()))
+        },
+        Float => value {
+            Ok(Value::Float(value.atanh()))
+        }
+    )
 }
 
 #[derive(Debug, Clone)]
