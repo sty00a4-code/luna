@@ -61,13 +61,18 @@ pub enum FunctionKind {
     Function(Rc<Function>),
     UserFunction(Rc<UserFunction>),
 }
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Function {
     pub(crate) closure: Rc<RefCell<Closure>>,
     pub(crate) upvalues: Vec<Rc<RefCell<Value>>>,
 }
 pub type UserFunction = dyn Fn(&mut Interpreter, Vec<Value>) -> Result<Value, Box<dyn Error>>;
 
+impl Default for FunctionKind {
+    fn default() -> Self {
+        Self::Function(Default::default())
+    }
+}
 impl Object {
     pub fn new(fields: HashMap<String, Value>) -> Self {
         Self { fields, meta: None }

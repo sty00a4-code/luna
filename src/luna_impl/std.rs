@@ -1,6 +1,9 @@
 #![allow(unused_macros)]
 use crate::lang::value::{FunctionKind, Object, UserObject, UserObjectError, Value};
-use std::{cell::RefCell, collections::HashMap, error::Error, fmt::Display, io::Write, ops::Range, rc::Rc, vec::IntoIter};
+use std::{
+    cell::RefCell, collections::HashMap, error::Error, fmt::Display, io::Write, ops::Range, rc::Rc,
+    vec::IntoIter,
+};
 
 use super::interpreter::Interpreter;
 
@@ -83,7 +86,9 @@ impl Display for ExpectedTypes {
         write!(
             f,
             "expected {} for argument #{}, got {}",
-            self.expected.join("/"), self.idx, self.got
+            self.expected.join("/"),
+            self.idx,
+            self.got
         )
     }
 }
@@ -119,19 +124,6 @@ macro_rules! typed {
             }
         }
     }};
-    ($args:ident : $type:ident $param:ident) => {{
-        let (idx, arg) = $args.next().unwrap_or(($args.len(), Value::default()));
-        if let Value::$type($param) = arg {
-            $param
-        } else {
-            return Err(ExpectedType {
-                idx,
-                expected: Value::$type(Default::default()).typ(),
-                got: arg.typ(),
-            }
-            .into());
-        }
-    }};
     ($args:ident : $type:ident $param:ident => $value:expr) => {{
         let (idx, arg) = $args.next().unwrap_or(($args.len(), Value::default()));
         if let Value::$type($param) = arg {
@@ -143,23 +135,6 @@ macro_rules! typed {
                 got: arg.typ(),
             }
             .into());
-        }
-    }};
-    ($args:ident : $type:ident ? $param:ident) => {{
-        let (idx, arg) = $args.next().unwrap_or(($args.len(), Value::default()));
-        if arg == Value::default() {
-            None
-        } else {
-            if let Value::$type($param) = arg {
-                Some($param)
-            } else {
-                return Err(ExpectedType {
-                    idx,
-                    expected: Value::$type(Default::default()).typ(),
-                    got: arg.typ(),
-                }
-                .into());
-            }
         }
     }};
     ($args:ident : $type:ident ? $param:ident => $value:expr) => {{
@@ -205,6 +180,8 @@ pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
     set_field!(globals."input" = function!(_input));
     set_field!(globals."assert" = function!(_assert));
     set_field!(globals."error" = function!(_error));
+    set_field!(globals."safe_call" = function!(_safe_call));
+    set_field!(globals."type" = function!(_type));
     set_field!(globals."int" = object! {
         "from" = function!(_int_from)
         // "bytes" = function!(_int_bytes)
@@ -284,6 +261,14 @@ pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
         "asinh" = function!(_math_asinh),
         "atanh" = function!(_math_atanh)
     });
+    // set_field!(globals."io" = object! {
+    //     "write" = function!(_io_write),
+    //     "open" = function!(_io_open),
+    //     "close" = function!(_io_close),
+    //     "stdin" = function!(_io_stdin),
+    //     "stdout" = function!(_io_stdout),
+    //     "stderr" = function!(_io_stderr)
+    // });
     globals
 }
 
@@ -341,6 +326,40 @@ pub fn _error(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Er
     let msg = args.next().unwrap_or_default().1.to_string();
     Err(Box::new(CustomError(msg)))
 }
+pub fn _safe_call(
+    interpreter: &mut Interpreter,
+    args: Vec<Value>,
+) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let func = typed!(args: Function);
+    Ok(match func {
+        FunctionKind::Function(func) => {
+            interpreter.call(&func, args.map(|(_, v)| v).collect(), None);
+            let res = interpreter.run();
+            match res {
+                Ok(value) => object! {
+                    "ok" = value.unwrap_or_default()
+                },
+                Err(err) => object! {
+                    "err" = Value::String(err.value.to_string())
+                },
+            }
+        }
+        FunctionKind::UserFunction(func) => match func(interpreter, args.map(|(_, v)| v).collect()) {
+            Ok(value) => object! {
+                "ok" = value
+            },
+            Err(err) => object! {
+                "err" = Value::String(err.to_string())
+            },
+        }
+    })
+}
+pub fn _type(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let value = args.next().unwrap_or_default().1;
+    Ok(Value::String(value.typ().to_string()))
+}
 
 pub fn _int_from(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let mut args = args.into_iter().enumerate();
@@ -348,14 +367,22 @@ pub fn _int_from(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn
     Ok(Value::Int(match value {
         Value::Int(v) => v,
         Value::Float(v) => v as i64,
-        Value::Bool(v) => if v { 1 } else { 0 },
+        Value::Bool(v) => {
+            if v {
+                1
+            } else {
+                0
+            }
+        }
         Value::Char(v) => v as i64,
-        Value::String(v) => if let Ok(v) = v.parse() {
-            v
-        } else {
-            return Ok(Value::default())
-        },
-        _ => return Ok(Value::default())
+        Value::String(v) => {
+            if let Ok(v) = v.parse() {
+                v
+            } else {
+                return Ok(Value::default());
+            }
+        }
+        _ => return Ok(Value::default()),
     }))
 }
 
@@ -365,13 +392,21 @@ pub fn _float_from(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<d
     Ok(Value::Float(match value {
         Value::Int(v) => v as f64,
         Value::Float(v) => v,
-        Value::Bool(v) => if v { 1. } else { 0. },
-        Value::String(v) => if let Ok(v) = v.parse() {
-            v
-        } else {
-            return Ok(Value::default())
-        },
-        _ => return Ok(Value::default())
+        Value::Bool(v) => {
+            if v {
+                1.
+            } else {
+                0.
+            }
+        }
+        Value::String(v) => {
+            if let Ok(v) = v.parse() {
+                v
+            } else {
+                return Ok(Value::default());
+            }
+        }
+        _ => return Ok(Value::default()),
     }))
 }
 pub fn _float_floor(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
@@ -420,7 +455,10 @@ pub fn _char_is_alphabetic(_: &mut Interpreter, args: Vec<Value>) -> Result<Valu
     let value = typed!(args: Char);
     Ok(Value::Bool(value.is_ascii_alphabetic()))
 }
-pub fn _char_is_alphanumeric(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+pub fn _char_is_alphanumeric(
+    _: &mut Interpreter,
+    args: Vec<Value>,
+) -> Result<Value, Box<dyn Error>> {
     let mut args = args.into_iter().enumerate();
     let value = typed!(args: Char);
     Ok(Value::Bool(value.is_ascii_alphanumeric()))
@@ -459,7 +497,11 @@ pub fn _char_is_upper(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Bo
 
 pub fn _string_from(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let args = args.into_iter().enumerate();
-    Ok(Value::String(args.map(|(_, value)| value.to_string()).collect::<Vec<String>>().join("")))
+    Ok(Value::String(
+        args.map(|(_, value)| value.to_string())
+            .collect::<Vec<String>>()
+            .join(""),
+    ))
 }
 pub fn _string_iter(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let mut args = args.into_iter().enumerate();
@@ -570,7 +612,14 @@ pub fn _object_keys(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<
     let object = object.borrow();
 
     Ok(Value::UserObject(Rc::new(RefCell::new(Box::new(
-        ObjectKeysIterator(object.fields.keys().cloned().collect::<Vec<String>>().into_iter()),
+        ObjectKeysIterator(
+            object
+                .fields
+                .keys()
+                .cloned()
+                .collect::<Vec<String>>()
+                .into_iter(),
+        ),
     )))))
 }
 pub fn _object_values(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
@@ -579,7 +628,14 @@ pub fn _object_values(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Bo
     let object = object.borrow();
 
     Ok(Value::UserObject(Rc::new(RefCell::new(Box::new(
-        ObjectValuesIterator(object.fields.values().cloned().collect::<Vec<Value>>().into_iter()),
+        ObjectValuesIterator(
+            object
+                .fields
+                .values()
+                .cloned()
+                .collect::<Vec<Value>>()
+                .into_iter(),
+        ),
     )))))
 }
 pub fn _object_setmeta(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
@@ -588,7 +644,7 @@ pub fn _object_setmeta(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, B
     {
         let mut object = object.borrow_mut();
         let meta = typed!(args: Object?);
-    
+
         object.meta = meta;
     }
     Ok(Value::Object(object))
@@ -597,20 +653,24 @@ pub fn _object_getmeta(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, B
     let mut args = args.into_iter().enumerate();
     let object = typed!(args: Object);
     let object = object.borrow();
-    Ok(object.meta.as_ref().map(|o| Value::Object(Rc::clone(o))).unwrap_or_default())
+    Ok(object
+        .meta
+        .as_ref()
+        .map(|o| Value::Object(Rc::clone(o)))
+        .unwrap_or_default())
 }
 pub fn _range(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let mut args = args.into_iter().enumerate();
     let start = typed!(args: Int);
     let end = typed!(args: Int?);
-    
-    Ok(Value::UserObject(Rc::new(RefCell::new(
-        Box::new(RangeIterator(if let Some(end) = end {
+
+    Ok(Value::UserObject(Rc::new(RefCell::new(Box::new(
+        RangeIterator(if let Some(end) = end {
             start..end
         } else {
             0..start
-        }))
-    ))))
+        }),
+    )))))
 }
 
 pub fn _math_abs(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
@@ -905,7 +965,9 @@ impl VectorIterator {
         }
     }
     pub fn call_collect(&self) -> Result<Value, Box<dyn Error>> {
-        Ok(Value::Vector(Rc::new(RefCell::new(self.0.clone().collect::<Vec<Value>>()))))
+        Ok(Value::Vector(Rc::new(RefCell::new(
+            self.0.clone().collect::<Vec<Value>>(),
+        ))))
     }
 }
 impl UserObject for ObjectKeysIterator {
@@ -963,7 +1025,9 @@ impl ObjectKeysIterator {
         }
     }
     pub fn call_collect(&self) -> Result<Value, Box<dyn Error>> {
-        Ok(Value::Vector(Rc::new(RefCell::new(self.0.clone().map(Value::String).collect::<Vec<Value>>()))))
+        Ok(Value::Vector(Rc::new(RefCell::new(
+            self.0.clone().map(Value::String).collect::<Vec<Value>>(),
+        ))))
     }
 }
 impl UserObject for ObjectValuesIterator {
@@ -1021,7 +1085,9 @@ impl ObjectValuesIterator {
         }
     }
     pub fn call_collect(&self) -> Result<Value, Box<dyn Error>> {
-        Ok(Value::Vector(Rc::new(RefCell::new(self.0.clone().collect::<Vec<Value>>()))))
+        Ok(Value::Vector(Rc::new(RefCell::new(
+            self.0.clone().collect::<Vec<Value>>(),
+        ))))
     }
 }
 impl UserObject for StringIterator {
@@ -1079,7 +1145,9 @@ impl StringIterator {
         }
     }
     pub fn call_collect(&self) -> Result<Value, Box<dyn Error>> {
-        Ok(Value::Vector(Rc::new(RefCell::new(self.0.clone().map(Value::Char).collect::<Vec<Value>>()))))
+        Ok(Value::Vector(Rc::new(RefCell::new(
+            self.0.clone().map(Value::Char).collect::<Vec<Value>>(),
+        ))))
     }
 }
 impl UserObject for RangeIterator {
@@ -1137,6 +1205,8 @@ impl RangeIterator {
         }
     }
     pub fn call_collect(&self) -> Result<Value, Box<dyn Error>> {
-        Ok(Value::Vector(Rc::new(RefCell::new(self.0.clone().map(Value::Int).collect::<Vec<Value>>()))))
+        Ok(Value::Vector(Rc::new(RefCell::new(
+            self.0.clone().map(Value::Int).collect::<Vec<Value>>(),
+        ))))
     }
 }
