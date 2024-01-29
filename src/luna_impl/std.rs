@@ -571,12 +571,21 @@ impl UserObject for VectorIterator {
             "next" => Some(Value::Function(FunctionKind::UserFunction(Rc::new(
                 Box::new(Self::_next),
             )))),
+            "collect" => Some(Value::Function(FunctionKind::UserFunction(Rc::new(
+                Box::new(Self::_collect),
+            )))),
             _ => None,
         }
     }
     fn call_mut(&mut self, key: &str, _: Vec<Value>) -> Result<Value, Box<dyn Error>> {
         match key {
             "next" => self.call_next(),
+            _ => Err(Box::new(UserObjectError::CannotCallNull)),
+        }
+    }
+    fn call(&self, key: &str, _: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+        match key {
+            "collect" => self.call_collect(),
             _ => Err(Box::new(UserObjectError::CannotCallNull)),
         }
     }
@@ -596,6 +605,20 @@ impl VectorIterator {
     pub fn call_next(&mut self) -> Result<Value, Box<dyn Error>> {
         Ok(self.0.next().unwrap_or_default())
     }
+    pub fn _collect(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+        let Some(_self) = args.first().cloned() else {
+            return Err(Box::new(UserObjectError::ExpectedSelf("null")));
+        };
+        if let Value::UserObject(_self) = _self {
+            let mut _self = _self.borrow_mut();
+            _self.call("collect", args)
+        } else {
+            Err(Box::new(UserObjectError::ExpectedSelf(_self.typ())))
+        }
+    }
+    pub fn call_collect(&self) -> Result<Value, Box<dyn Error>> {
+        Ok(Value::Vector(Rc::new(RefCell::new(self.0.clone().collect::<Vec<Value>>()))))
+    }
 }
 impl UserObject for ObjectKeysIterator {
     fn typ(&self) -> &'static str {
@@ -606,12 +629,21 @@ impl UserObject for ObjectKeysIterator {
             "next" => Some(Value::Function(FunctionKind::UserFunction(Rc::new(
                 Box::new(Self::_next),
             )))),
+            "collect" => Some(Value::Function(FunctionKind::UserFunction(Rc::new(
+                Box::new(Self::_collect),
+            )))),
             _ => None,
         }
     }
     fn call_mut(&mut self, key: &str, _: Vec<Value>) -> Result<Value, Box<dyn Error>> {
         match key {
             "next" => self.call_next(),
+            _ => Err(Box::new(UserObjectError::CannotCallNull)),
+        }
+    }
+    fn call(&self, key: &str, _: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+        match key {
+            "collect" => self.call_collect(),
             _ => Err(Box::new(UserObjectError::CannotCallNull)),
         }
     }
@@ -631,6 +663,20 @@ impl ObjectKeysIterator {
     pub fn call_next(&mut self) -> Result<Value, Box<dyn Error>> {
         Ok(self.0.next().map(Value::String).unwrap_or_default())
     }
+    pub fn _collect(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+        let Some(_self) = args.first().cloned() else {
+            return Err(Box::new(UserObjectError::ExpectedSelf("null")));
+        };
+        if let Value::UserObject(_self) = _self {
+            let mut _self = _self.borrow_mut();
+            _self.call("collect", args)
+        } else {
+            Err(Box::new(UserObjectError::ExpectedSelf(_self.typ())))
+        }
+    }
+    pub fn call_collect(&self) -> Result<Value, Box<dyn Error>> {
+        Ok(Value::Vector(Rc::new(RefCell::new(self.0.clone().map(Value::String).collect::<Vec<Value>>()))))
+    }
 }
 impl UserObject for ObjectValuesIterator {
     fn typ(&self) -> &'static str {
@@ -641,12 +687,21 @@ impl UserObject for ObjectValuesIterator {
             "next" => Some(Value::Function(FunctionKind::UserFunction(Rc::new(
                 Box::new(Self::_next),
             )))),
+            "collect" => Some(Value::Function(FunctionKind::UserFunction(Rc::new(
+                Box::new(Self::_collect),
+            )))),
             _ => None,
         }
     }
     fn call_mut(&mut self, key: &str, _: Vec<Value>) -> Result<Value, Box<dyn Error>> {
         match key {
             "next" => self.call_next(),
+            _ => Err(Box::new(UserObjectError::CannotCallNull)),
+        }
+    }
+    fn call(&self, key: &str, _: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+        match key {
+            "collect" => self.call_collect(),
             _ => Err(Box::new(UserObjectError::CannotCallNull)),
         }
     }
@@ -666,6 +721,20 @@ impl ObjectValuesIterator {
     pub fn call_next(&mut self) -> Result<Value, Box<dyn Error>> {
         Ok(self.0.next().unwrap_or_default())
     }
+    pub fn _collect(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+        let Some(_self) = args.first().cloned() else {
+            return Err(Box::new(UserObjectError::ExpectedSelf("null")));
+        };
+        if let Value::UserObject(_self) = _self {
+            let mut _self = _self.borrow_mut();
+            _self.call("collect", args)
+        } else {
+            Err(Box::new(UserObjectError::ExpectedSelf(_self.typ())))
+        }
+    }
+    pub fn call_collect(&self) -> Result<Value, Box<dyn Error>> {
+        Ok(Value::Vector(Rc::new(RefCell::new(self.0.clone().collect::<Vec<Value>>()))))
+    }
 }
 impl UserObject for StringIterator {
     fn typ(&self) -> &'static str {
@@ -676,12 +745,21 @@ impl UserObject for StringIterator {
             "next" => Some(Value::Function(FunctionKind::UserFunction(Rc::new(
                 Box::new(Self::_next),
             )))),
+            "collect" => Some(Value::Function(FunctionKind::UserFunction(Rc::new(
+                Box::new(Self::_collect),
+            )))),
             _ => None,
         }
     }
     fn call_mut(&mut self, key: &str, _: Vec<Value>) -> Result<Value, Box<dyn Error>> {
         match key {
             "next" => self.call_next(),
+            _ => Err(Box::new(UserObjectError::CannotCallNull)),
+        }
+    }
+    fn call(&self, key: &str, _: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+        match key {
+            "collect" => self.call_collect(),
             _ => Err(Box::new(UserObjectError::CannotCallNull)),
         }
     }
@@ -701,6 +779,20 @@ impl StringIterator {
     pub fn call_next(&mut self) -> Result<Value, Box<dyn Error>> {
         Ok(self.0.next().map(Value::Char).unwrap_or_default())
     }
+    pub fn _collect(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+        let Some(_self) = args.first().cloned() else {
+            return Err(Box::new(UserObjectError::ExpectedSelf("null")));
+        };
+        if let Value::UserObject(_self) = _self {
+            let mut _self = _self.borrow_mut();
+            _self.call("collect", args)
+        } else {
+            Err(Box::new(UserObjectError::ExpectedSelf(_self.typ())))
+        }
+    }
+    pub fn call_collect(&self) -> Result<Value, Box<dyn Error>> {
+        Ok(Value::Vector(Rc::new(RefCell::new(self.0.clone().map(Value::Char).collect::<Vec<Value>>()))))
+    }
 }
 impl UserObject for RangeIterator {
     fn typ(&self) -> &'static str {
@@ -711,12 +803,21 @@ impl UserObject for RangeIterator {
             "next" => Some(Value::Function(FunctionKind::UserFunction(Rc::new(
                 Box::new(Self::_next),
             )))),
+            "collect" => Some(Value::Function(FunctionKind::UserFunction(Rc::new(
+                Box::new(Self::_collect),
+            )))),
             _ => None,
         }
     }
     fn call_mut(&mut self, key: &str, _: Vec<Value>) -> Result<Value, Box<dyn Error>> {
         match key {
             "next" => self.call_next(),
+            _ => Err(Box::new(UserObjectError::CannotCallNull)),
+        }
+    }
+    fn call(&self, key: &str, _: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+        match key {
+            "collect" => self.call_collect(),
             _ => Err(Box::new(UserObjectError::CannotCallNull)),
         }
     }
@@ -735,5 +836,19 @@ impl RangeIterator {
     }
     pub fn call_next(&mut self) -> Result<Value, Box<dyn Error>> {
         Ok(self.0.next().map(Value::Int).unwrap_or_default())
+    }
+    pub fn _collect(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+        let Some(_self) = args.first().cloned() else {
+            return Err(Box::new(UserObjectError::ExpectedSelf("null")));
+        };
+        if let Value::UserObject(_self) = _self {
+            let mut _self = _self.borrow_mut();
+            _self.call("collect", args)
+        } else {
+            Err(Box::new(UserObjectError::ExpectedSelf(_self.typ())))
+        }
+    }
+    pub fn call_collect(&self) -> Result<Value, Box<dyn Error>> {
+        Ok(Value::Vector(Rc::new(RefCell::new(self.0.clone().map(Value::Int).collect::<Vec<Value>>()))))
     }
 }

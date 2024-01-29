@@ -278,6 +278,18 @@ impl Interpreter {
                             ))
                         }
                     },
+                    Value::UserObject(object) => match field {
+                        Value::String(key) => object.borrow_mut().get(&key),
+                        field => {
+                            return Err(Located::new(
+                                RunTimeError::CannotFieldInto {
+                                    head: Value::Object(Default::default()).typ(),
+                                    field: field.typ(),
+                                },
+                                pos,
+                            ))
+                        }
+                    }
                     Value::Vector(vector) => match field {
                         Value::Int(index) => {
                             let vector = vector.borrow_mut();
