@@ -35,7 +35,7 @@ pub fn lex(text: &str, args: &LunaArgs) -> Result<Vec<Located<Token>>, Located<B
 }
 pub fn parse(text: &str, args: &LunaArgs) -> Result<Located<Chunk>, Located<Box<dyn Error>>> {
     let ast = Chunk::parse(
-        &mut lex(text, &args)?
+        &mut lex(text, args)?
             .into_iter()
             .peekable(),
     )
@@ -69,7 +69,7 @@ pub fn run(text: &str, args: &LunaArgs) -> Result<Option<Value>, Located<Box<dyn
 fn main() {
     let args = LunaArgs::from(env::args());
     if let Some(path) = &args.path {
-        let text = fs::read_to_string(&path)
+        let text = fs::read_to_string(path)
             .map_err(|err| {
                 eprintln!("ERROR: error while reading {path:?}: {err}");
                 process::exit(1);
@@ -116,7 +116,7 @@ impl From<Args> for LunaArgs {
                     singles.extend(args);
                     break;
                 }
-            } else if arg.starts_with("-") {
+            } else if arg.starts_with('-') {
                 if let Some(flag) = arg.get(1..) {
                     flags.insert(flag.to_string());
                 } else {

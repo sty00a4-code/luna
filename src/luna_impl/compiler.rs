@@ -217,7 +217,7 @@ impl Compilable for Located<Statement> {
                     .expect("no compiler frame on stack")
                     .pop_scope()
                     .expect("no compiler frame on stack");
-                if scope.breaks.len() > 0 {
+                if !scope.breaks.is_empty() {
                     if let Some(prev_scope) = compiler
                         .frame_mut()
                         .expect("no compiler frame on stack")
@@ -225,7 +225,7 @@ impl Compilable for Located<Statement> {
                             prev_scope.breaks.extend(scope.breaks);
                         }
                 }
-                if scope.continues.len() > 0 {
+                if !scope.continues.is_empty() {
                     if let Some(prev_scope) = compiler
                         .frame_mut()
                         .expect("no compiler frame on stack")
@@ -644,7 +644,7 @@ impl Compilable for Located<Statement> {
                     .expect("no compiler frame on stack")
                     .pop_scope()
                     .expect("no compiler frame on stack");
-                if scope.breaks.len() > 0 {
+                if !scope.breaks.is_empty() {
                     if let Some(prev_scope) = compiler
                         .frame_mut()
                         .expect("no compiler frame on stack")
@@ -652,7 +652,7 @@ impl Compilable for Located<Statement> {
                             prev_scope.breaks.extend(scope.breaks);
                         }
                 }
-                if scope.continues.len() > 0 {
+                if !scope.continues.is_empty() {
                     if let Some(prev_scope) = compiler
                         .frame_mut()
                         .expect("no compiler frame on stack")
@@ -675,7 +675,7 @@ impl Compilable for Located<Statement> {
                         .expect("no compiler frame on stack")
                         .pop_scope()
                         .expect("no compiler frame on stack");
-                    if scope.breaks.len() > 0 {
+                    if !scope.breaks.is_empty() {
                         if let Some(prev_scope) = compiler
                             .frame_mut()
                             .expect("no compiler frame on stack")
@@ -683,7 +683,7 @@ impl Compilable for Located<Statement> {
                                 prev_scope.breaks.extend(scope.breaks);
                             }
                     }
-                    if scope.continues.len() > 0 {
+                    if !scope.continues.is_empty() {
                         if let Some(prev_scope) = compiler
                             .frame_mut()
                             .expect("no compiler frame on stack")

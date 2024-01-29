@@ -460,7 +460,7 @@ pub fn _object_keys(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<
     let object = object.borrow();
 
     Ok(Value::UserObject(Rc::new(RefCell::new(Box::new(
-        ObjectKeysIterator(object.fields.iter().map(|(k, _)| k.clone()).collect::<Vec<String>>().into_iter()),
+        ObjectKeysIterator(object.fields.keys().cloned().collect::<Vec<String>>().into_iter()),
     )))))
 }
 pub fn _object_values(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
@@ -469,7 +469,7 @@ pub fn _object_values(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Bo
     let object = object.borrow();
 
     Ok(Value::UserObject(Rc::new(RefCell::new(Box::new(
-        ObjectValuesIterator(object.fields.iter().map(|(_, v)| v.clone()).collect::<Vec<Value>>().into_iter()),
+        ObjectValuesIterator(object.fields.values().cloned().collect::<Vec<Value>>().into_iter()),
     )))))
 }
 pub fn _object_setmeta(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {

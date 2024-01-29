@@ -373,7 +373,7 @@ impl Interpreter {
             ByteCode::Function { dst, addr } => {
                 let dst = frame.location(&dst).expect("location not found");
                 let closure = Rc::clone(
-                    &frame
+                    frame
                         .function
                         .closure
                         .borrow()

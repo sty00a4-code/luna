@@ -230,7 +230,7 @@ impl Statement {
                     pos,
                 ))
             } else {
-                return Err(Located::new(ParseError::ExpectedIdentNotPath, path_pos));
+                Err(Located::new(ParseError::ExpectedIdentNotPath, path_pos))
             }
         } else {
             Ok(Located::new(

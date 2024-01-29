@@ -248,7 +248,7 @@ impl Display for Closure {
         for (addr, closure) in self.closures.iter().enumerate() {
             writeln!(f, "\t[{addr}] {:08x?}", closure.as_ptr())?;
         }
-        writeln!(f, "")?;
+        writeln!(f)?;
         for closure in self.closures.iter() {
             write!(f, "{}", closure.borrow())?;
         }
