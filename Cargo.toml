@@ -8,3 +8,6 @@ opt-level = "z"
 codegen-units = 1
 panic = "abort"
 lto = true
+
+[dependencies]
+rand = "0.8.5"

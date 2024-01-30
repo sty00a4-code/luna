@@ -263,7 +263,10 @@ pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
         "atan" = function!(_math_atan),
         "acosh" = function!(_math_acosh),
         "asinh" = function!(_math_asinh),
-        "atanh" = function!(_math_atanh)
+        "atanh" = function!(_math_atanh),
+        "deg" = function!(_math_deg),
+        "rad" = function!(_math_rad),
+        "random" = function!(_math_random)
     });
     // set_field!(globals."io" = object! {
     //     "write" = function!(_io_write),
@@ -919,6 +922,31 @@ pub fn _math_atanh(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<d
             Ok(Value::Float(value.atanh()))
         }
     )
+}
+pub fn _math_deg(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    option!(args:
+        Int => value {
+            Ok(Value::Float((value as f64).to_degrees()))
+        },
+        Float => value {
+            Ok(Value::Float(value.to_degrees()))
+        }
+    )
+}
+pub fn _math_rad(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    option!(args:
+        Int => value {
+            Ok(Value::Float((value as f64).to_radians()))
+        },
+        Float => value {
+            Ok(Value::Float(value.to_radians()))
+        }
+    )
+}
+pub fn _math_random(_: &mut Interpreter, _: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    Ok(Value::Float(rand::random()))
 }
 
 #[derive(Debug, Clone)]
