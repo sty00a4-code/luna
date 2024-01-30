@@ -289,7 +289,7 @@ impl Interpreter {
                                 pos,
                             ))
                         }
-                    }
+                    },
                     Value::Vector(vector) => match field {
                         Value::Int(index) => {
                             let vector = vector.borrow_mut();
@@ -305,6 +305,22 @@ impl Interpreter {
                                 index.unsigned_abs() as usize
                             };
                             vector.get(index).cloned()
+                        }
+                        Value::String(key) => {
+                            if let Value::Object(object) = self
+                                .globals
+                                .borrow()
+                                .get("vec")
+                                .cloned()
+                                .unwrap_or_default()
+                                .borrow()
+                                .clone()
+                            {
+                                let object = object.borrow();
+                                object.fields.get(&key).cloned()
+                            } else {
+                                todo!()
+                            }
                         }
                         field => {
                             return Err(Located::new(
@@ -333,6 +349,130 @@ impl Interpreter {
                                 .get(index..=index)
                                 .and_then(|s| s.chars().next())
                                 .map(Value::Char)
+                        }
+                        Value::String(key) => {
+                            if let Value::Object(object) = self
+                                .globals
+                                .borrow()
+                                .get("str")
+                                .cloned()
+                                .unwrap_or_default()
+                                .borrow()
+                                .clone()
+                            {
+                                let object = object.borrow();
+                                object.fields.get(&key).cloned()
+                            } else {
+                                todo!()
+                            }
+                        }
+                        field => {
+                            return Err(Located::new(
+                                RunTimeError::CannotFieldInto {
+                                    head: Value::String(Default::default()).typ(),
+                                    field: field.typ(),
+                                },
+                                pos,
+                            ))
+                        }
+                    },
+                    Value::Int(_) => match field {
+                        Value::String(key) => {
+                            if let Value::Object(object) = self
+                                .globals
+                                .borrow()
+                                .get("int")
+                                .cloned()
+                                .unwrap_or_default()
+                                .borrow()
+                                .clone()
+                            {
+                                let object = object.borrow();
+                                object.fields.get(&key).cloned()
+                            } else {
+                                todo!()
+                            }
+                        }
+                        field => {
+                            return Err(Located::new(
+                                RunTimeError::CannotFieldInto {
+                                    head: Value::String(Default::default()).typ(),
+                                    field: field.typ(),
+                                },
+                                pos,
+                            ))
+                        }
+                    },
+                    Value::Float(_) => match field {
+                        Value::String(key) => {
+                            if let Value::Object(object) = self
+                                .globals
+                                .borrow()
+                                .get("float")
+                                .cloned()
+                                .unwrap_or_default()
+                                .borrow()
+                                .clone()
+                            {
+                                let object = object.borrow();
+                                object.fields.get(&key).cloned()
+                            } else {
+                                todo!()
+                            }
+                        }
+                        field => {
+                            return Err(Located::new(
+                                RunTimeError::CannotFieldInto {
+                                    head: Value::String(Default::default()).typ(),
+                                    field: field.typ(),
+                                },
+                                pos,
+                            ))
+                        }
+                    },
+                    Value::Bool(_) => match field {
+                        Value::String(key) => {
+                            if let Value::Object(object) = self
+                                .globals
+                                .borrow()
+                                .get("bool")
+                                .cloned()
+                                .unwrap_or_default()
+                                .borrow()
+                                .clone()
+                            {
+                                let object = object.borrow();
+                                object.fields.get(&key).cloned()
+                            } else {
+                                todo!()
+                            }
+                        }
+                        field => {
+                            return Err(Located::new(
+                                RunTimeError::CannotFieldInto {
+                                    head: Value::String(Default::default()).typ(),
+                                    field: field.typ(),
+                                },
+                                pos,
+                            ))
+                        }
+                    },
+                    Value::Char(_) => match field {
+                        Value::String(key) => {
+                            if let Value::Object(object) = self
+                                .globals
+                                .borrow()
+                                .get("char")
+                                .cloned()
+                                .unwrap_or_default()
+                                .borrow()
+                                .clone()
+                            {
+                                let object = object.borrow();
+                                object.fields.get(&key).cloned()
+                            } else {
+                                todo!()
+                            }
                         }
                         field => {
                             return Err(Located::new(

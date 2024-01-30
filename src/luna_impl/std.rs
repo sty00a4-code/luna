@@ -212,7 +212,7 @@ pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
         "is_lower" = function!(_char_is_lower),
         "is_upper" = function!(_char_is_upper)
     });
-    set_field!(globals."string" = object! {
+    set_field!(globals."str" = object! {
         "lowercase" = ('a'..='z').collect::<Vec<char>>(),
         "uppercase" = ('A'..='Z').collect::<Vec<char>>(),
         "letters" = ('a'..='z').chain('A'..='Z').collect::<Vec<char>>(),
@@ -222,14 +222,14 @@ pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
         "sub" = function!(_string_sub),
         "sep" = function!(_string_sep)
     });
-    set_field!(globals."vector" = object! {
+    set_field!(globals."vec" = object! {
         "iter" = function!(_vector_iter),
         "get" = function!(_vector_get),
         "contains" = function!(_vector_contains),
         "push" = function!(_vector_push),
         "pop" = function!(_vector_pop)
     });
-    set_field!(globals."object" = object! {
+    set_field!(globals."obj" = object! {
         "keys" = function!(_object_keys),
         "values" = function!(_object_values),
         "setmeta" = function!(_object_setmeta),

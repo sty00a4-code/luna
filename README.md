@@ -4,7 +4,7 @@ A light weight scripting language for quick and easy coding
 
 # TODO
 
-- [ ] easier self call on vectors and strings, requires new bytecode `SelfCall`
+- [x] easier self call on vectors and strings ~~, requires new bytecode `SelfCall`~~
 - [x] `require(path)`
 - [ ] `string` module
     - [ ] `:rep(n)`
