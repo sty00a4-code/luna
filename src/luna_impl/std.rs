@@ -1,8 +1,11 @@
 #![allow(unused_macros)]
-use crate::lang::value::{FunctionKind, Object, UserObject, UserObjectError, Value};
+use crate::{
+    lang::value::{FunctionKind, Object, UserObject, UserObjectError, Value},
+    run, LunaArgs,
+};
 use std::{
-    cell::RefCell, collections::HashMap, error::Error, fmt::Display, io::Write, ops::Range, rc::Rc,
-    vec::IntoIter,
+    cell::RefCell, collections::HashMap, error::Error, fmt::Display, fs, io::Write, ops::Range,
+    rc::Rc, vec::IntoIter,
 };
 
 use super::interpreter::Interpreter;
@@ -182,6 +185,7 @@ pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
     set_field!(globals."error" = function!(_error));
     set_field!(globals."safe_call" = function!(_safe_call));
     set_field!(globals."type" = function!(_type));
+    set_field!(globals."require" = function!(_require));
     set_field!(globals."int" = object! {
         "from" = function!(_int_from)
         // "bytes" = function!(_int_bytes)
@@ -345,20 +349,54 @@ pub fn _safe_call(
                 },
             }
         }
-        FunctionKind::UserFunction(func) => match func(interpreter, args.map(|(_, v)| v).collect()) {
+        FunctionKind::UserFunction(func) => match func(interpreter, args.map(|(_, v)| v).collect())
+        {
             Ok(value) => object! {
                 "ok" = value
             },
             Err(err) => object! {
                 "err" = Value::String(err.to_string())
             },
-        }
+        },
     })
 }
 pub fn _type(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let mut args = args.into_iter().enumerate();
     let value = args.next().unwrap_or_default().1;
     Ok(Value::String(value.typ().to_string()))
+}
+#[derive(Debug, Clone, PartialEq)]
+pub struct RequireError(String);
+impl Display for RequireError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "couldn't find any of these modules:\n\t{}.luna\n\t{}/mod.luna",
+            self.0, self.0
+        )
+    }
+}
+impl Error for RequireError {}
+pub fn _require(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let path = typed!(args: String path => path.split('.').collect::<Vec<&str>>().join("/"));
+    let (text, full_path) = if let Ok(text) = fs::read_to_string(format!("{path}.luna")) {
+        (text, format!("{path}.luna"))
+    } else if let Ok(text) = fs::read_to_string(format!("{path}/mod.luna")) {
+        (text, format!("{path}/mod.luna"))
+    } else {
+        return Err(Box::new(RequireError(path)));
+    };
+    Ok(run(&text, &LunaArgs::default())
+        .map_err(|err| {
+            format!(
+                "{full_path}:{}:{}: {}",
+                err.pos.ln.start + 1,
+                err.pos.col.start + 1,
+                err.value
+            )
+        })?
+        .unwrap_or_default())
 }
 
 pub fn _int_from(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
