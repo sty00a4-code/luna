@@ -6,11 +6,11 @@ A light weight scripting language for quick and easy coding
 
 - [x] easier self call on vectors and strings ~~, requires new bytecode `SelfCall`~~
 - [x] `require(path)`
-- [ ] `string` module
-    - [ ] `:rep(n)`
-    - [ ] `:rev()`
-    - [ ] `:find(patt)`
-    - [ ] `:format(...values)`
+- [x] `string` module
+    - [x] `:rep(n)`
+    - [x] `:rev()`
+    - [x] `:find(patt)`
+    - [x] `:format(...values)`
 - [ ] `vector` module
     - [ ] `:insert(idx, value)`
     - [ ] `:join(sep)`

@@ -220,7 +220,11 @@ pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
         "iter" = function!(_string_iter),
         "get" = function!(_string_get),
         "sub" = function!(_string_sub),
-        "sep" = function!(_string_sep)
+        "sep" = function!(_string_sep),
+        "rep" = function!(_string_rep),
+        "rev" = function!(_string_rev),
+        "find" = function!(_string_find),
+        "format" = function!(_string_format)
     });
     set_field!(globals."vec" = object! {
         "iter" = function!(_vector_iter),
@@ -589,6 +593,88 @@ pub fn _string_sep(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<d
         .map(|s| s.to_string())
         .collect::<Vec<String>>()
         .into())
+}
+pub fn _string_rep(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let string = typed!(args: String);
+    let n = typed!(args: Int);
+
+    Ok(string.repeat(n as usize).into())
+}
+pub fn _string_rev(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let string = typed!(args: String);
+
+    Ok(string.chars().rev().collect::<String>().into())
+}
+pub fn _string_find(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let string = typed!(args: String);
+    let pattern = typed!(args: String);
+
+    Ok(string
+        .find(&pattern)
+        .map(|i| Value::Int(i as i64))
+        .unwrap_or_default())
+}
+#[derive(Debug, Clone, PartialEq)]
+pub enum FormatErrorKind {
+    NoFormatOption,
+    InvalidFormatOption(char),
+}
+#[derive(Debug, Clone, PartialEq)]
+pub struct FormatError {
+    kind: FormatErrorKind,
+    pos: usize,
+}
+impl Display for FormatErrorKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            FormatErrorKind::NoFormatOption => write!(f, "no format option"),
+            FormatErrorKind::InvalidFormatOption(c) => write!(f, "invalid format option {c:?}"),
+        }
+    }
+}
+impl Display for FormatError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} (at idx {})", self.kind, self.pos)
+    }
+}
+impl Error for FormatError {}
+pub fn _string_format(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let string = typed!(args: String);
+    let mut formatted = String::new();
+    let mut chars = string.chars().enumerate();
+    while let Some((i, c)) = chars.next() {
+        match c {
+            '%' => {
+                let Some((i, c)) = chars.next() else {
+                    return Err(Box::new(FormatError {
+                        kind: FormatErrorKind::NoFormatOption,
+                        pos: i,
+                    }));
+                };
+                formatted.push_str(&match c {
+                    '%' => "%".to_string(),
+                    's' => args.next().map(|(_, v)| v).unwrap_or_default().to_string(),
+                    'q' => format!("{:?}", args.next().map(|(_, v)| v).unwrap_or_default()),
+                    'x' => match args.next().map(|(_, v)| v).unwrap_or_default() {
+                        Value::Int(v) => format!("{v:x?}"),
+                        value => value.to_string()
+                    }
+                    c => {
+                        return Err(Box::new(FormatError {
+                            kind: FormatErrorKind::InvalidFormatOption(c),
+                            pos: i,
+                        }))
+                    }
+                })
+            }
+            c => formatted.push(c),
+        }
+    }
+    Ok(formatted.into())
 }
 
 pub fn _vector_iter(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
