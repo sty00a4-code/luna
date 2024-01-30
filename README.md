@@ -16,11 +16,10 @@ A light weight scripting language for quick and easy coding
     - [ ] `:join(sep)`
     - [ ] `:swap(idx1, idx2)`
     - [ ] `:sort()`
-- [ ] `math` module
-    - [ ] `.random_seed(seed)`
-    - [ ] `.random()`
-    - [ ] `.deg(rad)`
-    - [ ] `.rad(deg)`
+- [x] `math` module
+    - [x] `.random()`
+    - [x] `.deg(rad)`
+    - [x] `.rad(deg)`
 - [ ] `io` module
     - [ ] `.remove(path)`
     - [ ] `.rename(old_path, new_path)`
