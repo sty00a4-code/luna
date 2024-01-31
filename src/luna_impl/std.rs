@@ -231,7 +231,10 @@ pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
         "get" = function!(_vector_get),
         "contains" = function!(_vector_contains),
         "push" = function!(_vector_push),
-        "pop" = function!(_vector_pop)
+        "pop" = function!(_vector_pop),
+        "insert" = function!(_vector_insert),
+        "join" = function!(_vector_join),
+        "swap" = function!(_vector_swap)
     });
     set_field!(globals."obj" = object! {
         "keys" = function!(_object_keys),
@@ -661,8 +664,8 @@ pub fn _string_format(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Bo
                     'q' => format!("{:?}", args.next().map(|(_, v)| v).unwrap_or_default()),
                     'x' => match args.next().map(|(_, v)| v).unwrap_or_default() {
                         Value::Int(v) => format!("{v:x?}"),
-                        value => value.to_string()
-                    }
+                        value => value.to_string(),
+                    },
                     c => {
                         return Err(Box::new(FormatError {
                             kind: FormatErrorKind::InvalidFormatOption(c),
@@ -731,6 +734,41 @@ pub fn _vector_pop(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<d
     } else {
         Ok(vector.pop().unwrap_or_default())
     }
+}
+pub fn _vector_insert(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let vector = typed!(args: Vector);
+    let mut vector = vector.borrow_mut();
+    let index = typed!(args: Int int => int.unsigned_abs() as usize);
+    let value = args.next().map(|(_, v)| v).unwrap_or_default();
+    if index <= vector.len() {
+        vector.insert(index, value);
+    }
+    Ok(Value::default())
+}
+pub fn _vector_join(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let vector = typed!(args: Vector);
+    let vector = vector.borrow();
+    let sep = typed!(args: String);
+
+    Ok(Value::String(
+        vector
+            .iter()
+            .map(|v| v.to_string())
+            .collect::<Vec<String>>()
+            .join(&sep),
+    ))
+}
+pub fn _vector_swap(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let vector = typed!(args: Vector);
+    let mut vector = vector.borrow_mut();
+    let index1 = typed!(args: Int int => int.unsigned_abs() as usize);
+    let index2 = typed!(args: Int int => int.unsigned_abs() as usize);
+
+    vector.swap(index1, index2);
+    Ok(Value::default())
 }
 
 pub fn _object_keys(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {

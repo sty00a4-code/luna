@@ -11,11 +11,11 @@ A light weight scripting language for quick and easy coding
     - [x] `:rev()`
     - [x] `:find(patt)`
     - [x] `:format(...values)`
-- [ ] `vector` module
-    - [ ] `:insert(idx, value)`
-    - [ ] `:join(sep)`
-    - [ ] `:swap(idx1, idx2)`
-    - [ ] `:sort()`
+- [x] `vector` module
+    - [x] `:insert(idx, value)`
+    - [x] `:join(sep)`
+    - [x] `:swap(idx1, idx2)`
+    - [ ] ~~`:sort()`~~
 - [x] `math` module
     - [x] `.random()`
     - [x] `.deg(rad)`
