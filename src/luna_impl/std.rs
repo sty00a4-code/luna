@@ -4,7 +4,7 @@ use crate::{
     run, LunaArgs,
 };
 use std::{
-    cell::RefCell, collections::HashMap, error::Error, fmt::Display, fs, io::Write, ops::Range,
+    cell::RefCell, collections::HashMap, error::Error, fmt::Display, fs::{self, File}, io::{self, Lines, Write}, ops::Range,
     rc::Rc, vec::IntoIter,
 };
 
@@ -276,14 +276,20 @@ pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
         "rad" = function!(_math_rad),
         "random" = function!(_math_random)
     });
-    // set_field!(globals."io" = object! {
-    //     "write" = function!(_io_write),
-    //     "open" = function!(_io_open),
-    //     "close" = function!(_io_close),
-    //     "stdin" = function!(_io_stdin),
-    //     "stdout" = function!(_io_stdout),
-    //     "stderr" = function!(_io_stderr)
-    // });
+    set_field!(globals."io" = object! {
+        "write" = function!(_io_write),
+        "flush" = function!(_io_flush),
+        "stdin" = function!(_io_stdin),
+        "stdout" = function!(_io_stdout),
+        "stderr" = function!(_io_stderr)
+    });
+    set_field!(globals."fs" = object! {
+        "open" = function!(_fs_open),
+        "close" = function!(_fs_close),
+        "lines" = function!(_fs_lines),
+        "list" = function!(_fs_list),
+        "type" = function!(_fs_type)
+    });
     globals
 }
 
@@ -1081,6 +1087,52 @@ pub fn _math_random(_: &mut Interpreter, _: Vec<Value>) -> Result<Value, Box<dyn
     Ok(Value::Float(rand::random()))
 }
 
+pub fn _io_write(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let text = typed!(args: String);
+    write!(io::stdout(), "{}", text)?;
+    Ok(Value::default())
+}
+pub fn _io_flush(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let text = typed!(args: String);
+    io::stdout().flush()?;
+    Ok(Value::default())
+}
+pub fn _io_stdin(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    todo!()
+}
+pub fn _io_stdout(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    todo!()
+}
+pub fn _io_stderr(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    todo!()
+}
+
+pub fn _fs_open(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    todo!()
+}
+pub fn _fs_close(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    todo!()
+}
+pub fn _fs_lines(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    todo!()
+}
+pub fn _fs_list(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    todo!()
+}
+pub fn _fs_type(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    todo!()
+}
+
 #[derive(Debug, Clone)]
 pub struct VectorIterator(pub IntoIter<Value>);
 #[derive(Debug, Clone)]
@@ -1091,6 +1143,9 @@ pub struct ObjectValuesIterator(pub IntoIter<Value>);
 pub struct StringIterator(pub IntoIter<char>);
 #[derive(Debug, Clone)]
 pub struct RangeIterator(pub Range<i64>);
+
+#[derive(Debug)]
+pub struct FileObject(File);
 
 impl Display for UserObjectError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
