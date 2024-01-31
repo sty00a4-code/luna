@@ -440,6 +440,25 @@ impl Parsable for Statement {
                     }
                     Token::Colon => {
                         let field = Path::ident(parser)?;
+                        let Some(Located {
+                            value: start_token,
+                            pos: start_pos,
+                        }) = parser.next()
+                        else {
+                            return Err(Located::new(
+                                ParseError::UnexpectedEOF,
+                                Position::default(),
+                            ));
+                        };
+                        if start_token != Token::ParanLeft {
+                            return Err(Located::new(
+                                ParseError::ExpectedToken {
+                                    expected: Token::ParanLeft,
+                                    got: start_token,
+                                },
+                                start_pos,
+                            ));
+                        }
                         let mut args = vec![];
                         while let Some(Located {
                             value: token,
