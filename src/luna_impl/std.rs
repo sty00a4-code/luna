@@ -234,7 +234,8 @@ pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
         "pop" = function!(_vector_pop),
         "insert" = function!(_vector_insert),
         "join" = function!(_vector_join),
-        "swap" = function!(_vector_swap)
+        "swap" = function!(_vector_swap),
+        "copy" = function!(_vector_copy)
     });
     set_field!(globals."obj" = object! {
         "keys" = function!(_object_keys),
@@ -769,6 +770,13 @@ pub fn _vector_swap(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<
 
     vector.swap(index1, index2);
     Ok(Value::default())
+}
+pub fn _vector_copy(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let vector = typed!(args: Vector);
+    let vector = vector.borrow();
+
+    Ok(vector.clone().into())
 }
 
 pub fn _object_keys(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
