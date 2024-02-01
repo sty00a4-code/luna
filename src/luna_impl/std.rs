@@ -1174,8 +1174,7 @@ pub fn _fs_list(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn 
     let path = typed!(args: String);
     Ok(fs::read_dir(path)?
         .flatten()
-        .map(|entry| entry.file_name().to_str().map(|s| s.to_string()))
-        .flatten()
+        .filter_map(|entry| entry.file_name().to_str().map(|s| s.to_string()))
         .collect::<Vec<String>>()
         .into())
 }
