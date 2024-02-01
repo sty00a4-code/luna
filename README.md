@@ -20,11 +20,6 @@ A light weight scripting language for quick and easy coding
     - [x] `.random()`
     - [x] `.deg(rad)`
     - [x] `.rad(deg)`
-- [ ] `os` module
-    - [ ] `.clock()`
-    - [ ] `.date(format, time)`
-    - [ ] `.time()`
-    - [ ] `.exec(command)`
-    - [ ] `.exit(code)`
+- [ ] `env` module
     - [ ] `.get_var(name)`
     - [ ] `.set_var(name, value)`

@@ -6,6 +6,7 @@ use crate::{
 use std::{
     cell::RefCell,
     collections::HashMap,
+    env,
     error::Error,
     fmt::Display,
     fs::{self, File},
@@ -297,6 +298,15 @@ pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
         "open" = function!(_fs_open),
         "list" = function!(_fs_list),
         "type" = function!(_fs_type)
+    });
+    set_field!(globals."env" = object! {
+        "var" = function!(_env_var),
+        "set_var" = function!(_env_set_var),
+        "remove_var" = function!(_env_remove_var),
+        "vars" = function!(_env_vars),
+        "current_dir" = function!(_env_current_dir),
+        "current_exe" = function!(_env_current_exe),
+        "set_current_dir" = function!(_env_set_current_dir)
     });
     globals
 }
@@ -1188,6 +1198,50 @@ pub fn _fs_type(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn 
     } else {
         Ok(Value::default())
     }
+}
+
+pub fn _env_set_var(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let var = typed!(args: String);
+    let value = args.next().unwrap_or_default().1.to_string();
+    env::set_var(var, value);
+    Ok(Value::default())
+}
+pub fn _env_var(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let var = typed!(args: String);
+    Ok(env::var(var).map(Value::String).unwrap_or_default())
+}
+pub fn _env_remove_var(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let var = typed!(args: String);
+    env::remove_var(var);
+    Ok(Value::default())
+}
+pub fn _env_vars(_: &mut Interpreter, _: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    Ok(Value::Object(Rc::new(RefCell::new(Object::new(
+        env::vars().map(|(k, v)| (k, Value::String(v))).collect(),
+    )))))
+}
+pub fn _env_current_dir(_: &mut Interpreter, _: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    Ok(env::current_dir()?
+        .to_str()
+        .map(|s| Value::String(s.to_string()))
+        .unwrap_or_default())
+}
+pub fn _env_current_exe(_: &mut Interpreter, _: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    Ok(env::current_exe()?
+        .to_str()
+        .map(|s| Value::String(s.to_string()))
+        .unwrap_or_default())
+}
+pub fn _env_set_current_dir(_: &mut Interpreter, _: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    Ok(Value::Object(Rc::new(RefCell::new(Object::new(
+        env::vars().map(|(k, v)| (k, Value::String(v))).collect(),
+    )))))
+}
+pub fn _env_args(_: &mut Interpreter, _: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    Ok(env::args().collect::<Vec<String>>().into())
 }
 
 #[derive(Debug, Clone)]
