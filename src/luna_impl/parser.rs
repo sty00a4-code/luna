@@ -339,7 +339,7 @@ impl Parsable for Statement {
                 let mut pos = path.pos.clone();
                 let Some(Located {
                     value: token,
-                    pos: _,
+                    pos: token_pos,
                 }) = parser.next()
                 else {
                     return Err(Located::new(ParseError::UnexpectedEOF, Position::default()));
@@ -437,6 +437,10 @@ impl Parsable for Statement {
                         }
                         pos.extend(&end_pos);
                         Ok(Located::new(Self::Call { path, args }, pos))
+                    }
+                    Token::String(string) => {
+                        pos.extend(&token_pos);
+                        Ok(Located::new(Self::Call { path, args: vec![Located::new(Expression::Atom(Atom::String(string)), token_pos)] }, pos))
                     }
                     Token::Colon => {
                         let field = Path::ident(parser)?;
