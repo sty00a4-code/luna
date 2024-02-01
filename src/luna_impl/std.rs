@@ -4,8 +4,15 @@ use crate::{
     run, LunaArgs,
 };
 use std::{
-    cell::RefCell, collections::HashMap, error::Error, fmt::Display, fs::{self, File}, io::{self, Lines, Write}, ops::Range,
-    rc::Rc, vec::IntoIter,
+    cell::RefCell,
+    collections::HashMap,
+    error::Error,
+    fmt::Display,
+    fs::{self, File},
+    io::{self, Read, Stderr, Stdin, Stdout, Write},
+    ops::Range,
+    rc::Rc,
+    vec::IntoIter,
 };
 
 use super::interpreter::Interpreter;
@@ -217,6 +224,7 @@ pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
         "uppercase" = ('A'..='Z').collect::<Vec<char>>(),
         "letters" = ('a'..='z').chain('A'..='Z').collect::<Vec<char>>(),
         "from" = function!(_string_from),
+        "len" = function!(_string_len),
         "iter" = function!(_string_iter),
         "get" = function!(_string_get),
         "sub" = function!(_string_sub),
@@ -228,6 +236,7 @@ pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
     });
     set_field!(globals."vec" = object! {
         "iter" = function!(_vector_iter),
+        "len" = function!(_vector_len),
         "get" = function!(_vector_get),
         "contains" = function!(_vector_contains),
         "push" = function!(_vector_push),
@@ -238,6 +247,7 @@ pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
         "copy" = function!(_vector_copy)
     });
     set_field!(globals."obj" = object! {
+        "len" = function!(_object_len),
         "keys" = function!(_object_keys),
         "values" = function!(_object_values),
         "setmeta" = function!(_object_setmeta),
@@ -285,8 +295,6 @@ pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
     });
     set_field!(globals."fs" = object! {
         "open" = function!(_fs_open),
-        "close" = function!(_fs_close),
-        "lines" = function!(_fs_lines),
         "list" = function!(_fs_list),
         "type" = function!(_fs_type)
     });
@@ -566,6 +574,12 @@ pub fn _string_iter(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<
         StringIterator(string.chars().collect::<Vec<char>>().into_iter()),
     )))))
 }
+pub fn _string_len(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let string = typed!(args: String);
+
+    Ok(Value::Int(string.len() as i64))
+}
 pub fn _string_get(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let mut args = args.into_iter().enumerate();
     let string = typed!(args: String);
@@ -696,6 +710,13 @@ pub fn _vector_iter(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<
         VectorIterator(vector.clone().into_iter()),
     )))))
 }
+pub fn _vector_len(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let vector = typed!(args: Vector);
+    let vector = vector.borrow();
+
+    Ok(Value::Int(vector.len() as i64))
+}
 pub fn _vector_get(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let mut args = args.into_iter().enumerate();
     let vector = typed!(args: Vector);
@@ -785,6 +806,13 @@ pub fn _vector_copy(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<
     Ok(vector.clone().into())
 }
 
+pub fn _object_len(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let object = typed!(args: Object);
+    let object = object.borrow();
+
+    Ok(Value::Int(object.fields.len() as i64))
+}
 pub fn _object_keys(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let mut args = args.into_iter().enumerate();
     let object = typed!(args: Object);
@@ -1093,44 +1121,74 @@ pub fn _io_write(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn
     write!(io::stdout(), "{}", text)?;
     Ok(Value::default())
 }
-pub fn _io_flush(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
-    let mut args = args.into_iter().enumerate();
-    let text = typed!(args: String);
+pub fn _io_flush(_: &mut Interpreter, _: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     io::stdout().flush()?;
     Ok(Value::default())
 }
-pub fn _io_stdin(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
-    let mut args = args.into_iter().enumerate();
-    todo!()
+pub fn _io_stdin(_: &mut Interpreter, _: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    Ok(Value::UserObject(Rc::new(RefCell::new(Box::new(
+        StdinObject(io::stdin()),
+    )))))
 }
-pub fn _io_stdout(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
-    let mut args = args.into_iter().enumerate();
-    todo!()
+pub fn _io_stdout(_: &mut Interpreter, _: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    Ok(Value::UserObject(Rc::new(RefCell::new(Box::new(
+        StdoutObject(io::stdout()),
+    )))))
 }
-pub fn _io_stderr(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
-    let mut args = args.into_iter().enumerate();
-    todo!()
+pub fn _io_stderr(_: &mut Interpreter, _: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    Ok(Value::UserObject(Rc::new(RefCell::new(Box::new(
+        StderrObject(io::stderr()),
+    )))))
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct InvalidOptionError(String);
+impl Display for InvalidOptionError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "invalid option {:?}", self.0)
+    }
+}
+impl Error for InvalidOptionError {}
 pub fn _fs_open(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let mut args = args.into_iter().enumerate();
-    todo!()
-}
-pub fn _fs_close(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
-    let mut args = args.into_iter().enumerate();
-    todo!()
-}
-pub fn _fs_lines(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
-    let mut args = args.into_iter().enumerate();
-    todo!()
+    let path = typed!(args: String);
+    let (read, write, append) = typed!(args: String options => match options.as_str() {
+        "w" => (true, true, false),
+        "r" => (true, false, false),
+        "a" => (true, false, true),
+        _ => return Err(InvalidOptionError(options).into())
+    });
+    Ok(Value::UserObject(Rc::new(RefCell::new(Box::new(
+        FileObject(
+            File::options()
+                .read(read)
+                .write(write)
+                .create(write)
+                .append(append)
+                .open(path)?,
+        ),
+    )))))
 }
 pub fn _fs_list(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let mut args = args.into_iter().enumerate();
-    todo!()
+    let path = typed!(args: String);
+    Ok(fs::read_dir(path)?
+        .flatten()
+        .map(|entry| entry.file_name().to_str().map(|s| s.to_string()))
+        .flatten()
+        .collect::<Vec<String>>()
+        .into())
 }
 pub fn _fs_type(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let mut args = args.into_iter().enumerate();
-    todo!()
+    let path = typed!(args: String);
+    if fs::metadata(&path)?.is_dir() {
+        Ok(Value::String("dir".to_string()))
+    } else if fs::metadata(&path)?.is_file() {
+        Ok(Value::String("file".to_string()))
+    } else {
+        Ok(Value::default())
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -1144,6 +1202,12 @@ pub struct StringIterator(pub IntoIter<char>);
 #[derive(Debug, Clone)]
 pub struct RangeIterator(pub Range<i64>);
 
+#[derive(Debug)]
+pub struct StdinObject(Stdin);
+#[derive(Debug)]
+pub struct StdoutObject(Stdout);
+#[derive(Debug)]
+pub struct StderrObject(Stderr);
 #[derive(Debug)]
 pub struct FileObject(File);
 
@@ -1461,5 +1525,140 @@ impl RangeIterator {
         Ok(Value::Vector(Rc::new(RefCell::new(
             self.0.clone().map(Value::Int).collect::<Vec<Value>>(),
         ))))
+    }
+}
+impl UserObject for FileObject {
+    fn typ(&self) -> &'static str {
+        "file"
+    }
+    fn get(&self, key: &str) -> Option<Value> {
+        match key {
+            "read" => Some(Value::Function(FunctionKind::UserFunction(Rc::new(
+                Box::new(Self::_read),
+            )))),
+            "write" => Some(Value::Function(FunctionKind::UserFunction(Rc::new(
+                Box::new(Self::_write),
+            )))),
+            _ => None,
+        }
+    }
+    fn call_mut(&mut self, key: &str, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+        match key {
+            "write" => self.call_write(args),
+            "read" => self.call_read(),
+            _ => Err(Box::new(UserObjectError::CannotCallNull)),
+        }
+    }
+}
+impl FileObject {
+    pub fn _write(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+        let Some(_self) = args.first().cloned() else {
+            return Err(Box::new(UserObjectError::ExpectedSelf("null")));
+        };
+        if let Value::UserObject(_self) = _self {
+            let mut _self = _self.borrow_mut();
+            _self.call_mut("write", args)
+        } else {
+            Err(Box::new(UserObjectError::ExpectedSelf(_self.typ())))
+        }
+    }
+    pub fn call_write(&mut self, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+        let mut args = args.into_iter().enumerate();
+        let buf = typed!(args: String);
+        Ok(Value::Int(self.0.write(&buf.into_bytes())? as i64))
+    }
+    pub fn _read(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+        let Some(_self) = args.first().cloned() else {
+            return Err(Box::new(UserObjectError::ExpectedSelf("null")));
+        };
+        if let Value::UserObject(_self) = _self {
+            let mut _self = _self.borrow_mut();
+            _self.call_mut("read", args)
+        } else {
+            Err(Box::new(UserObjectError::ExpectedSelf(_self.typ())))
+        }
+    }
+    pub fn call_read(&mut self) -> Result<Value, Box<dyn Error>> {
+        let mut string = String::new();
+        self.0.read_to_string(&mut string)?;
+        Ok(Value::String(string))
+    }
+}
+impl UserObject for StdinObject {
+    fn typ(&self) -> &'static str {
+        "stdin"
+    }
+    fn get(&self, key: &str) -> Option<Value> {
+        match key {
+            "read" => Some(Value::Function(FunctionKind::UserFunction(Rc::new(
+                Box::new(FileObject::_read),
+            )))),
+            _ => None,
+        }
+    }
+    fn call_mut(&mut self, key: &str, _: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+        match key {
+            "read" => self.call_read(),
+            _ => Err(Box::new(UserObjectError::CannotCallNull)),
+        }
+    }
+}
+impl StdinObject {
+    pub fn call_read(&mut self) -> Result<Value, Box<dyn Error>> {
+        let mut string = String::new();
+        self.0.read_to_string(&mut string)?;
+        Ok(Value::String(string))
+    }
+}
+impl UserObject for StdoutObject {
+    fn typ(&self) -> &'static str {
+        "stdout"
+    }
+    fn get(&self, key: &str) -> Option<Value> {
+        match key {
+            "read" => Some(Value::Function(FunctionKind::UserFunction(Rc::new(
+                Box::new(FileObject::_write),
+            )))),
+            _ => None,
+        }
+    }
+    fn call_mut(&mut self, key: &str, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+        match key {
+            "write" => self.call_write(args),
+            _ => Err(Box::new(UserObjectError::CannotCallNull)),
+        }
+    }
+}
+impl StdoutObject {
+    pub fn call_write(&mut self, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+        let mut args = args.into_iter().enumerate();
+        let buf = typed!(args: String);
+        Ok(Value::Int(self.0.write(&buf.into_bytes())? as i64))
+    }
+}
+impl UserObject for StderrObject {
+    fn typ(&self) -> &'static str {
+        "stderr"
+    }
+    fn get(&self, key: &str) -> Option<Value> {
+        match key {
+            "read" => Some(Value::Function(FunctionKind::UserFunction(Rc::new(
+                Box::new(FileObject::_write),
+            )))),
+            _ => None,
+        }
+    }
+    fn call_mut(&mut self, key: &str, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+        match key {
+            "write" => self.call_write(args),
+            _ => Err(Box::new(UserObjectError::CannotCallNull)),
+        }
+    }
+}
+impl StderrObject {
+    pub fn call_write(&mut self, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+        let mut args = args.into_iter().enumerate();
+        let buf = typed!(args: String);
+        Ok(Value::Int(self.0.write(&buf.into_bytes())? as i64))
     }
 }
