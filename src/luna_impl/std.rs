@@ -1616,7 +1616,7 @@ impl FileObject {
         }
     }
     pub fn call_write(&mut self, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
-        let mut args = args.into_iter().enumerate();
+        let mut args = args.into_iter().enumerate().skip(1);
         let buf = typed!(args: String);
         Ok(Value::Int(self.0.write(&buf.into_bytes())? as i64))
     }
@@ -1684,7 +1684,7 @@ impl UserObject for StdoutObject {
 }
 impl StdoutObject {
     pub fn call_write(&mut self, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
-        let mut args = args.into_iter().enumerate();
+        let mut args = args.into_iter().enumerate().skip(1);
         let buf = typed!(args: String);
         Ok(Value::Int(self.0.write(&buf.into_bytes())? as i64))
     }
@@ -1710,7 +1710,7 @@ impl UserObject for StderrObject {
 }
 impl StderrObject {
     pub fn call_write(&mut self, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
-        let mut args = args.into_iter().enumerate();
+        let mut args = args.into_iter().enumerate().skip(1);
         let buf = typed!(args: String);
         Ok(Value::Int(self.0.write(&buf.into_bytes())? as i64))
     }
