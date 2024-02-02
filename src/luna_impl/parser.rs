@@ -440,7 +440,16 @@ impl Parsable for Statement {
                     }
                     Token::String(string) => {
                         pos.extend(&token_pos);
-                        Ok(Located::new(Self::Call { path, args: vec![Located::new(Expression::Atom(Atom::String(string)), token_pos)] }, pos))
+                        Ok(Located::new(
+                            Self::Call {
+                                path,
+                                args: vec![Located::new(
+                                    Expression::Atom(Atom::String(string)),
+                                    token_pos,
+                                )],
+                            },
+                            pos,
+                        ))
                     }
                     Token::Colon => {
                         let field = Path::ident(parser)?;
@@ -504,7 +513,14 @@ impl Parsable for Statement {
                             ));
                         }
                         pos.extend(&end_pos);
-                        Ok(Located::new(Self::SelfCall { head: path, field, args }, pos))
+                        Ok(Located::new(
+                            Self::SelfCall {
+                                head: path,
+                                field,
+                                args,
+                            },
+                            pos,
+                        ))
                     }
                     token => Err(Located::new(ParseError::UnexpectedToken(token), pos)),
                 }
@@ -589,7 +605,7 @@ impl Expression {
         let mut head = Atom::parse(parser)?.map(Self::Atom);
         while let Some(Located {
             value: token,
-            pos: _,
+            pos: token_pos,
         }) = parser.peek()
         {
             match token {
@@ -642,6 +658,24 @@ impl Expression {
                         pos,
                     );
                 }
+
+                Token::String(string) => {
+                    let mut pos = head.pos.clone();
+                    pos.extend(token_pos);
+                    let token_pos = token_pos.clone();
+                    let string = string.clone();
+                    parser.next();
+                    return Ok(Located::new(
+                        Self::Call {
+                            head: Box::new(head),
+                            args: vec![Located::new(
+                                Expression::Atom(Atom::String(string)),
+                                token_pos,
+                            )],
+                        },
+                        pos,
+                    ));
+                }
                 Token::Colon => {
                     parser.next().unwrap();
                     let mut pos = head.pos.clone();
@@ -651,10 +685,7 @@ impl Expression {
                         pos: token_pos,
                     }) = parser.next()
                     else {
-                        return Err(Located::new(
-                            ParseError::UnexpectedEOF,
-                            Position::default(),
-                        ));
+                        return Err(Located::new(ParseError::UnexpectedEOF, Position::default()));
                     };
                     if token != Token::ParanLeft {
                         return Err(Located::new(
@@ -691,10 +722,7 @@ impl Expression {
                         pos: end_pos,
                     }) = parser.next()
                     else {
-                        return Err(Located::new(
-                            ParseError::UnexpectedEOF,
-                            Position::default(),
-                        ));
+                        return Err(Located::new(ParseError::UnexpectedEOF, Position::default()));
                     };
                     if end_token != Token::ParanRight {
                         return Err(Located::new(
@@ -706,7 +734,14 @@ impl Expression {
                         ));
                     }
                     pos.extend(&end_pos);
-                    head = Located::new(Self::SelfCall { head: Box::new(head), field, args }, pos);
+                    head = Located::new(
+                        Self::SelfCall {
+                            head: Box::new(head),
+                            field,
+                            args,
+                        },
+                        pos,
+                    );
                 }
                 _ => break,
             }
@@ -944,7 +979,13 @@ impl Parsable for Atom {
                     return Err(Located::new(ParseError::UnexpectedEOF, Position::default()));
                 };
                 if token != Token::Else {
-                    return Err(Located::new(ParseError::ExpectedToken { expected: Token::Else, got: token }, pos));
+                    return Err(Located::new(
+                        ParseError::ExpectedToken {
+                            expected: Token::Else,
+                            got: token,
+                        },
+                        pos,
+                    ));
                 }
                 let else_case = Expression::parse(parser)?;
                 pos.extend(&else_case.pos);

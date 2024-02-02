@@ -406,19 +406,27 @@ impl Display for RequireError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "couldn't find any of these modules:\n\t{}.luna\n\t{}/mod.luna",
-            self.0, self.0
+            "couldn't find any of these modules:\n\t{0}.luna\n\t{0}/mod.luna\n\t$LUNA_PATH/{0}.luna\n\t$LUNA_PATH/{0}/mod.luna",
+            self.0
         )
     }
 }
 impl Error for RequireError {}
-pub fn _require(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+pub fn _require(interpreter: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let mut args = args.into_iter().enumerate();
     let path = typed!(args: String path => path.split('.').collect::<Vec<&str>>().join("/"));
     let (text, full_path) = if let Ok(text) = fs::read_to_string(format!("{path}.luna")) {
         (text, format!("{path}.luna"))
     } else if let Ok(text) = fs::read_to_string(format!("{path}/mod.luna")) {
         (text, format!("{path}/mod.luna"))
+    } else if let Some(global_path) = &interpreter.global_path {
+        if let Ok(text) = fs::read_to_string(format!("{global_path}/{path}.luna")) {
+            (text, format!("{global_path}/{path}.luna"))
+        } else if let Ok(text) = fs::read_to_string(format!("{global_path}/{path}/mod.luna")) {
+            (text, format!("{global_path}/{path}/mod.luna"))
+        } else {
+            return Err(Box::new(RequireError(path)));
+        }
     } else {
         return Err(Box::new(RequireError(path)));
     };
