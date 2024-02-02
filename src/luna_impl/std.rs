@@ -306,7 +306,8 @@ pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
         "vars" = function!(_env_vars),
         "current_dir" = function!(_env_current_dir),
         "current_exe" = function!(_env_current_exe),
-        "set_current_dir" = function!(_env_set_current_dir)
+        "set_current_dir" = function!(_env_set_current_dir),
+        "args" = function!(_env_args)
     });
     globals
 }
