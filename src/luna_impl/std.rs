@@ -4,16 +4,7 @@ use crate::{
     run, LunaArgs,
 };
 use std::{
-    cell::RefCell,
-    collections::HashMap,
-    env,
-    error::Error,
-    fmt::Display,
-    fs::{self, File},
-    io::{self, Read, Stderr, Stdin, Stdout, Write},
-    ops::Range,
-    rc::Rc,
-    vec::IntoIter,
+    cell::RefCell, collections::HashMap, env, error::Error, fmt::Display, fs::{self, File}, io::{self, Read, Stderr, Stdin, Stdout, Write}, ops::Range, path::Path, rc::Rc, vec::IntoIter
 };
 
 use super::interpreter::Interpreter;
@@ -402,13 +393,16 @@ pub fn _type(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Err
     Ok(Value::String(value.typ().to_string()))
 }
 #[derive(Debug, Clone, PartialEq)]
-pub struct RequireError(String);
+pub struct RequireError {
+    path: String,
+    global_path: Option<String>
+}
 impl Display for RequireError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "couldn't find any of these modules:\n\t{0}.luna\n\t{0}/mod.luna\n\t$LUNA_PATH/{0}.luna\n\t$LUNA_PATH/{0}/mod.luna",
-            self.0
+            "couldn't find any of these modules:\n\t{0}.luna\n\t{0}/mod.luna\n\t{1}/{0}.luna\n\t{1}/{0}/mod.luna",
+            self.path, self.global_path.as_ref().unwrap_or(&"$LUNA_PATH".into())
         )
     }
 }
@@ -421,15 +415,28 @@ pub fn _require(interpreter: &mut Interpreter, args: Vec<Value>) -> Result<Value
     } else if let Ok(text) = fs::read_to_string(format!("{path}/mod.luna")) {
         (text, format!("{path}/mod.luna"))
     } else if let Some(global_path) = &interpreter.global_path {
+        let current_path = env::current_dir().map_err(|_| "couldn't resolve current directory")?;
+        let root_path = format!("/{}", env::var("HOME")?);
+        let root_path = Path::new(&root_path);
+        env::set_current_dir(root_path).map_err(|_| "couldn't change directory to root")?;
         if let Ok(text) = fs::read_to_string(format!("{global_path}/{path}.luna")) {
+            env::set_current_dir(current_path).map_err(|_| "couldn't change directory")?;
             (text, format!("{global_path}/{path}.luna"))
         } else if let Ok(text) = fs::read_to_string(format!("{global_path}/{path}/mod.luna")) {
+            env::set_current_dir(current_path).map_err(|_| "couldn't change directory")?;
             (text, format!("{global_path}/{path}/mod.luna"))
         } else {
-            return Err(Box::new(RequireError(path)));
+            env::set_current_dir(current_path).map_err(|_| "couldn't change directory")?;
+            return Err(Box::new(RequireError {
+                path,
+                global_path: Some(global_path.clone())
+            }));
         }
     } else {
-        return Err(Box::new(RequireError(path)));
+        return Err(Box::new(RequireError {
+            path,
+            global_path: None
+        }));
     };
     Ok(run(&text, &LunaArgs::default())
         .map_err(|err| {
