@@ -358,6 +358,25 @@ impl Parsable for Statement {
                             let path = Path::parse(parser)?;
                             paths.push(path);
                         }
+                        let Some(Located {
+                            value: start_token,
+                            pos: start_pos,
+                        }) = parser.next()
+                        else {
+                            return Err(Located::new(
+                                ParseError::UnexpectedEOF,
+                                Position::default(),
+                            ));
+                        };
+                        if start_token != Token::Equal {
+                            return Err(Located::new(
+                                ParseError::ExpectedToken {
+                                    expected: Token::Equal,
+                                    got: start_token,
+                                },
+                                start_pos,
+                            ));
+                        }
                         let mut exprs = vec![];
                         let expr = Expression::parse(parser)?;
                         exprs.push(expr);
@@ -394,6 +413,20 @@ impl Parsable for Statement {
                             pos,
                         ))
                     }
+                    token
+                        if matches!(
+                            &token,
+                            Token::PlusEqual
+                                | Token::MinusEqual
+                                | Token::StarEqual
+                                | Token::SlashEqual
+                                | Token::PercentEqual
+                                | Token::ExponentEqual
+                        ) => {
+                            let op = AssignOperator::try_from(&token).expect("should transform");
+                            let expr = Expression::parse(parser)?;
+                            Ok(Located::new(Self::AssignOperation { op, path, expr }, pos))
+                        }
                     Token::ParanLeft => {
                         let mut args = vec![];
                         while let Some(Located {

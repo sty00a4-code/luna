@@ -1,6 +1,6 @@
 use crate::luna_impl::position::Located;
 
-use super::tokens::Token;
+use super::{code::BinaryOperation, tokens::Token};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Chunk(pub Vec<Located<Statement>>);
@@ -16,6 +16,11 @@ pub enum Statement {
     Assign {
         paths: Vec<Located<Path>>,
         exprs: Vec<Located<Expression>>,
+    },
+    AssignOperation {
+        op: AssignOperator,
+        path: Located<Path>,
+        expr: Located<Expression>,
     },
     Call {
         path: Located<Path>,
@@ -55,6 +60,17 @@ pub enum Statement {
     Return(Option<Located<Expression>>),
     Break,
     Continue,
+}
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum AssignOperator {
+    Plus,
+    Minus,
+    Star,
+    Slash,
+    Exponent,
+    Percent,
+    // Ampersand,
+    // Pipe,
 }
 #[derive(Debug, Clone, PartialEq)]
 pub enum Expression {
@@ -136,6 +152,32 @@ pub enum Path {
     },
 }
 
+impl TryFrom<&Token> for AssignOperator {
+    type Error = ();
+    fn try_from(value: &Token) -> Result<Self, Self::Error> {
+        match value {
+            Token::PlusEqual => Ok(Self::Plus),
+            Token::MinusEqual => Ok(Self::Minus),
+            Token::StarEqual => Ok(Self::Star),
+            Token::SlashEqual => Ok(Self::Slash),
+            Token::PercentEqual => Ok(Self::Percent),
+            Token::ExponentEqual => Ok(Self::Exponent),
+            _ => Err(()),
+        }
+    }
+}
+impl From<AssignOperator> for BinaryOperation {
+    fn from(value: AssignOperator) -> Self {
+        match value {
+            AssignOperator::Plus => Self::Add,
+            AssignOperator::Minus => Self::Sub,
+            AssignOperator::Star => Self::Mul,
+            AssignOperator::Slash => Self::Div,
+            AssignOperator::Exponent => Self::Pow,
+            AssignOperator::Percent => Self::Mod,
+        }
+    }
+}
 impl BinaryOperator {
     pub const LAYERS: &'static [&'static [Self]] = &[
         &[Self::Ampersand, Self::Pipe],
