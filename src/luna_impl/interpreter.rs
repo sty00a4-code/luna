@@ -319,7 +319,7 @@ impl Interpreter {
                                 let object = object.borrow();
                                 object.fields.get(&key).cloned()
                             } else {
-                                todo!()
+                                Some(Value::default())
                             }
                         }
                         field => {
@@ -363,7 +363,7 @@ impl Interpreter {
                                 let object = object.borrow();
                                 object.fields.get(&key).cloned()
                             } else {
-                                todo!()
+                                Some(Value::default())
                             }
                         }
                         field => {
@@ -390,7 +390,7 @@ impl Interpreter {
                                 let object = object.borrow();
                                 object.fields.get(&key).cloned()
                             } else {
-                                todo!()
+                                Some(Value::default())
                             }
                         }
                         field => {
@@ -417,7 +417,7 @@ impl Interpreter {
                                 let object = object.borrow();
                                 object.fields.get(&key).cloned()
                             } else {
-                                todo!()
+                                Some(Value::default())
                             }
                         }
                         field => {
@@ -444,7 +444,7 @@ impl Interpreter {
                                 let object = object.borrow();
                                 object.fields.get(&key).cloned()
                             } else {
-                                todo!()
+                                Some(Value::default())
                             }
                         }
                         field => {
@@ -471,7 +471,7 @@ impl Interpreter {
                                 let object = object.borrow();
                                 object.fields.get(&key).cloned()
                             } else {
-                                todo!()
+                                Some(Value::default())
                             }
                         }
                         field => {
