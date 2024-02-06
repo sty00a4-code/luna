@@ -2,6 +2,11 @@
 name = "luna"
 version = "0.1.0"
 edition = "2021"
+description = "a light weight interpreted programming language"
+[package.metadata.bundle]
+name = "Luna"
+identifier = "luna"
+
 [profile.release]
 strip = true
 opt-level = "z"
