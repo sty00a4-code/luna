@@ -1665,17 +1665,30 @@ impl UserObject for StdinObject {
             _ => None,
         }
     }
-    fn call_mut(&mut self, key: &str, _: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    fn call_mut(&mut self, key: &str, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
         match key {
-            "read" => self.call_read(),
+            "read" => self.call_read(args),
             _ => Err(Box::new(UserObjectError::CannotCallNull)),
         }
     }
 }
 impl StdinObject {
-    pub fn call_read(&mut self) -> Result<Value, Box<dyn Error>> {
+    pub fn call_read(&mut self, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+        let mut args = args.into_iter().enumerate().skip(1);
+        enum Mode {
+            All,
+            Line
+        }
+        let mode = typed!(args: String mode => match mode.as_str() {
+            "a" => Mode::All,
+            "l" => Mode::Line,
+            _ => return Err(format!("invalid mode {mode:?} (expected: 'a', 'l')").into())
+        });
         let mut string = String::new();
-        self.0.read_to_string(&mut string)?;
+        match mode {
+            Mode::All => self.0.read_to_string(&mut string)?,
+            Mode::Line => self.0.read_line(&mut string)?,
+        };
         Ok(Value::String(string))
     }
 }
@@ -1685,8 +1698,11 @@ impl UserObject for StdoutObject {
     }
     fn get(&self, key: &str) -> Option<Value> {
         match key {
-            "read" => Some(Value::Function(FunctionKind::UserFunction(Rc::new(
+            "write" => Some(Value::Function(FunctionKind::UserFunction(Rc::new(
                 Box::new(FileObject::_write),
+            )))),
+            "flush" => Some(Value::Function(FunctionKind::UserFunction(Rc::new(
+                Box::new(Self::_flush),
             )))),
             _ => None,
         }
@@ -1694,15 +1710,31 @@ impl UserObject for StdoutObject {
     fn call_mut(&mut self, key: &str, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
         match key {
             "write" => self.call_write(args),
+            "flush" => self.call_flush(),
             _ => Err(Box::new(UserObjectError::CannotCallNull)),
         }
     }
 }
 impl StdoutObject {
+    pub fn _flush(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+        let Some(_self) = args.first().cloned() else {
+            return Err(Box::new(UserObjectError::ExpectedSelf("null")));
+        };
+        if let Value::UserObject(_self) = _self {
+            let mut _self = _self.borrow_mut();
+            _self.call_mut("flush", args)
+        } else {
+            Err(Box::new(UserObjectError::ExpectedSelf(_self.typ())))
+        }
+    }
     pub fn call_write(&mut self, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
         let mut args = args.into_iter().enumerate().skip(1);
         let buf = typed!(args: String);
         Ok(Value::Int(self.0.write(&buf.into_bytes())? as i64))
+    }
+    pub fn call_flush(&mut self) -> Result<Value, Box<dyn Error>> {
+        self.0.flush()?;
+        Ok(Value::default())
     }
 }
 impl UserObject for StderrObject {
@@ -1711,7 +1743,7 @@ impl UserObject for StderrObject {
     }
     fn get(&self, key: &str) -> Option<Value> {
         match key {
-            "read" => Some(Value::Function(FunctionKind::UserFunction(Rc::new(
+            "write" => Some(Value::Function(FunctionKind::UserFunction(Rc::new(
                 Box::new(FileObject::_write),
             )))),
             _ => None,
