@@ -186,8 +186,10 @@ pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
     set_field!(globals."type" = function!(_type));
     set_field!(globals."require" = function!(_require));
     set_field!(globals."int" = object! {
-        "from" = function!(_int_from)
-        // "bytes" = function!(_int_bytes)
+        "from" = function!(_int_from),
+        "from_bin" = function!(_int_from_bin),
+        "from_hex" = function!(_int_from_hex),
+        "bytes" = function!(_int_bytes)
     });
     set_field!(globals."float" = object! {
         "from" = function!(_float_from),
@@ -224,7 +226,9 @@ pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
         "rep" = function!(_string_rep),
         "rev" = function!(_string_rev),
         "find" = function!(_string_find),
-        "format" = function!(_string_format)
+        "format" = function!(_string_format),
+        "bin" = function!(_int_from_bin),
+        "hex" = function!(_int_from_hex)
     });
     set_field!(globals."vec" = object! {
         "iter" = function!(_vector_iter),
@@ -473,6 +477,21 @@ pub fn _int_from(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn
         }
         _ => return Ok(Value::default()),
     }))
+}
+pub fn _int_from_bin(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let string = typed!(args: String);
+    Ok(i64::from_str_radix(&string, 2).map(Value::Int).unwrap_or_default())
+}
+pub fn _int_from_hex(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let string = typed!(args: String);
+    Ok(i64::from_str_radix(&string, 16).map(Value::Int).unwrap_or_default())
+}
+pub fn _int_bytes(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let value = typed!(args: Int);
+    Ok(Value::Vector(Rc::new(RefCell::new(value.to_be_bytes().into_iter().map(Value::from).collect()))))
 }
 
 pub fn _float_from(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
