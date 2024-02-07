@@ -241,7 +241,13 @@ impl<'source> Iterator for Lexer<'source> {
             c if c.is_ascii_digit() => {
                 let mut number = String::from(c);
                 while let Some(c) = self.source.peek() {
-                    if !c.is_ascii_alphanumeric() && *c != '_' {
+                    if c == &'_' {
+                        pos.extend(&self.pos());
+                        self.advance();
+                        self.source.next();
+                        continue;
+                    }
+                    if !c.is_ascii_digit() {
                         break;
                     }
                     number.push(*c);
@@ -254,7 +260,13 @@ impl<'source> Iterator for Lexer<'source> {
                     pos.extend(&self.pos());
                     self.advance();
                     while let Some(c) = self.source.peek() {
-                        if !c.is_ascii_alphanumeric() && *c != '_' {
+                        if c == &'_' {
+                            pos.extend(&self.pos());
+                            self.advance();
+                            self.source.next();
+                            continue;
+                        }
+                        if !c.is_ascii_digit() {
                             break;
                         }
                         number.push(*c);
@@ -267,6 +279,70 @@ impl<'source> Iterator for Lexer<'source> {
                             match number
                                 .parse()
                                 .map_err(LexError::ParseFloatError)
+                                .map_err(|err| Located::new(err, pos.clone()))
+                            {
+                                Ok(number) => number,
+                                Err(err) => return Some(Err(err)),
+                            },
+                        ),
+                        pos,
+                    )))
+                } else if self.source.next_if(|c| *c == 'b').is_some() && number.as_str() == "0" {
+                    number.clear();
+                    pos.extend(&self.pos());
+                    self.advance();
+                    while let Some(c) = self.source.peek() {
+                        if c == &'_' {
+                            pos.extend(&self.pos());
+                            self.advance();
+                            self.source.next();
+                            continue;
+                        }
+                        if !c.is_digit(2) {
+                            break;
+                        }
+                        number.push(*c);
+                        pos.extend(&self.pos());
+                        self.advance();
+                        self.source.next();
+                    }
+                    Some(Ok(Located::new(
+                        Token::Int(
+                            match i64
+                                ::from_str_radix(&number, 2)
+                                .map_err(LexError::ParseIntError)
+                                .map_err(|err| Located::new(err, pos.clone()))
+                            {
+                                Ok(number) => number,
+                                Err(err) => return Some(Err(err)),
+                            },
+                        ),
+                        pos,
+                    )))
+                } else if self.source.next_if(|c| *c == 'x').is_some() && number.as_str() == "0" {
+                    number.clear();
+                    pos.extend(&self.pos());
+                    self.advance();
+                    while let Some(c) = self.source.peek() {
+                        if c == &'_' {
+                            pos.extend(&self.pos());
+                            self.advance();
+                            self.source.next();
+                            continue;
+                        }
+                        if !c.is_ascii_hexdigit() {
+                            break;
+                        }
+                        number.push(*c);
+                        pos.extend(&self.pos());
+                        self.advance();
+                        self.source.next();
+                    }
+                    Some(Ok(Located::new(
+                        Token::Int(
+                            match i64
+                                ::from_str_radix(&number, 16)
+                                .map_err(LexError::ParseIntError)
                                 .map_err(|err| Located::new(err, pos.clone()))
                             {
                                 Ok(number) => number,
