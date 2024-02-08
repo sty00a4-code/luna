@@ -4,7 +4,15 @@ use crate::{
     run, LunaArgs,
 };
 use std::{
-    cell::RefCell, collections::HashMap, env, error::Error, fmt::Display, fs::{self, File}, io::{self, Read, Stderr, Stdin, Stdout, Write}, ops::Range, path::Path, rc::Rc, vec::IntoIter
+    cell::RefCell,
+    collections::HashMap,
+    env,
+    error::Error,
+    fmt::{Debug, Display},
+    fs::{self, File},
+    io::{self, Read, Stderr, Stdin, Stdout, Write},
+    path::Path,
+    rc::Rc,
 };
 
 use super::interpreter::Interpreter;
@@ -399,7 +407,7 @@ pub fn _type(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Err
 #[derive(Debug, Clone, PartialEq)]
 pub struct RequireError {
     path: String,
-    global_path: Option<String>
+    global_path: Option<String>,
 }
 impl Display for RequireError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -433,13 +441,13 @@ pub fn _require(interpreter: &mut Interpreter, args: Vec<Value>) -> Result<Value
             env::set_current_dir(current_path).map_err(|_| "couldn't change directory")?;
             return Err(Box::new(RequireError {
                 path,
-                global_path: Some(global_path.clone())
+                global_path: Some(global_path.clone()),
             }));
         }
     } else {
         return Err(Box::new(RequireError {
             path,
-            global_path: None
+            global_path: None,
         }));
     };
     Ok(run(&text, &LunaArgs::default())
@@ -481,17 +489,23 @@ pub fn _int_from(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn
 pub fn _int_from_bin(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let mut args = args.into_iter().enumerate();
     let string = typed!(args: String);
-    Ok(i64::from_str_radix(&string, 2).map(Value::Int).unwrap_or_default())
+    Ok(i64::from_str_radix(&string, 2)
+        .map(Value::Int)
+        .unwrap_or_default())
 }
 pub fn _int_from_hex(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let mut args = args.into_iter().enumerate();
     let string = typed!(args: String);
-    Ok(i64::from_str_radix(&string, 16).map(Value::Int).unwrap_or_default())
+    Ok(i64::from_str_radix(&string, 16)
+        .map(Value::Int)
+        .unwrap_or_default())
 }
 pub fn _int_bytes(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let mut args = args.into_iter().enumerate();
     let value = typed!(args: Int);
-    Ok(Value::Vector(Rc::new(RefCell::new(value.to_be_bytes().into_iter().map(Value::from).collect()))))
+    Ok(Value::Vector(Rc::new(RefCell::new(
+        value.to_be_bytes().into_iter().map(Value::from).collect(),
+    ))))
 }
 
 pub fn _float_from(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
@@ -616,7 +630,13 @@ pub fn _string_iter(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<
     let string = typed!(args: String);
 
     Ok(Value::UserObject(Rc::new(RefCell::new(Box::new(
-        StringIterator(string.chars().collect::<Vec<char>>().into_iter()),
+        IteratorObject(Box::new(
+            string
+                .chars()
+                .map(Value::Char)
+                .collect::<Vec<Value>>()
+                .into_iter(),
+        )),
     )))))
 }
 pub fn _string_len(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
@@ -752,7 +772,7 @@ pub fn _vector_iter(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<
     let vector = vector.borrow();
 
     Ok(Value::UserObject(Rc::new(RefCell::new(Box::new(
-        VectorIterator(vector.clone().into_iter()),
+        IteratorObject(Box::new(vector.clone().into_iter())),
     )))))
 }
 pub fn _vector_len(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
@@ -864,14 +884,15 @@ pub fn _object_keys(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<
     let object = object.borrow();
 
     Ok(Value::UserObject(Rc::new(RefCell::new(Box::new(
-        ObjectKeysIterator(
+        IteratorObject(Box::new(
             object
                 .fields
                 .keys()
                 .cloned()
-                .collect::<Vec<String>>()
+                .map(Value::String)
+                .collect::<Vec<Value>>()
                 .into_iter(),
-        ),
+        )),
     )))))
 }
 pub fn _object_values(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
@@ -880,14 +901,14 @@ pub fn _object_values(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Bo
     let object = object.borrow();
 
     Ok(Value::UserObject(Rc::new(RefCell::new(Box::new(
-        ObjectValuesIterator(
+        IteratorObject(Box::new(
             object
                 .fields
                 .values()
                 .cloned()
                 .collect::<Vec<Value>>()
                 .into_iter(),
-        ),
+        )),
     )))))
 }
 pub fn _object_setmeta(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
@@ -917,11 +938,11 @@ pub fn _range(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Er
     let end = typed!(args: Int?);
 
     Ok(Value::UserObject(Rc::new(RefCell::new(Box::new(
-        RangeIterator(if let Some(end) = end {
+        IteratorObject(Box::new(if let Some(end) = end {
             start..end
         } else {
             0..start
-        }),
+        }.map(Value::Int).collect::<Vec<Value>>().into_iter())),
     )))))
 }
 
@@ -1279,16 +1300,40 @@ pub fn _env_args(_: &mut Interpreter, _: Vec<Value>) -> Result<Value, Box<dyn Er
     Ok(env::args().collect::<Vec<String>>().into())
 }
 
-#[derive(Debug, Clone)]
-pub struct VectorIterator(pub IntoIter<Value>);
-#[derive(Debug, Clone)]
-pub struct ObjectKeysIterator(pub IntoIter<String>);
-#[derive(Debug, Clone)]
-pub struct ObjectValuesIterator(pub IntoIter<Value>);
-#[derive(Debug, Clone)]
-pub struct StringIterator(pub IntoIter<char>);
-#[derive(Debug, Clone)]
-pub struct RangeIterator(pub Range<i64>);
+fn _iter_next(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let Some(_self) = args.first().cloned() else {
+        return Err(Box::new(UserObjectError::ExpectedSelf("null")));
+    };
+    if let Value::UserObject(_self) = _self {
+        let mut _self = _self.borrow_mut();
+        _self.call_mut("next", args)
+    } else {
+        Err(Box::new(UserObjectError::ExpectedSelf(_self.typ())))
+    }
+}
+fn _iter_collect(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let Some(_self) = args.first().cloned() else {
+        return Err(Box::new(UserObjectError::ExpectedSelf("null")));
+    };
+    if let Value::UserObject(_self) = _self {
+        let mut _self = _self.borrow_mut();
+        _self.call_mut("collect", args)
+    } else {
+        Err(Box::new(UserObjectError::ExpectedSelf(_self.typ())))
+    }
+}
+pub trait CanBeIterator: Iterator<Item = Value> + Debug {
+    fn call_next(&mut self) -> Result<Value, Box<dyn Error>> {
+        Ok(self.next().unwrap_or_default())
+    }
+    fn call_collect(&mut self) -> Result<Value, Box<dyn Error>> {
+        Ok(Value::Vector(Rc::new(RefCell::new(
+            self.collect::<Vec<Value>>(),
+        ))))
+    }
+}
+#[derive(Debug)]
+pub struct IteratorObject(pub Box<dyn CanBeIterator>);
 
 #[derive(Debug)]
 pub struct StdinObject(Stdin);
@@ -1315,306 +1360,27 @@ impl Display for UserObjectError {
     }
 }
 impl Error for UserObjectError {}
-impl UserObject for VectorIterator {
+impl UserObject for IteratorObject {
     fn typ(&self) -> &'static str {
-        "vector-iter"
+        "iterator"
     }
     fn get(&self, key: &str) -> Option<Value> {
         match key {
-            "next" => Some(Value::Function(FunctionKind::UserFunction(Rc::new(
-                Box::new(Self::_next),
-            )))),
-            "collect" => Some(Value::Function(FunctionKind::UserFunction(Rc::new(
-                Box::new(Self::_collect),
-            )))),
+            "next" => Some(function!(_iter_next)),
+            "collect" => Some(function!(_iter_collect)),
             _ => None,
         }
     }
     fn call_mut(&mut self, key: &str, _: Vec<Value>) -> Result<Value, Box<dyn Error>> {
         match key {
-            "next" => self.call_next(),
-            _ => Err(Box::new(UserObjectError::CannotCallNull)),
-        }
-    }
-    fn call(&self, key: &str, _: Vec<Value>) -> Result<Value, Box<dyn Error>> {
-        match key {
-            "collect" => self.call_collect(),
+            "next" => self.0.call_next(),
+            "collect" => self.0.call_collect(),
             _ => Err(Box::new(UserObjectError::CannotCallNull)),
         }
     }
 }
-impl VectorIterator {
-    pub fn _next(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
-        let Some(_self) = args.first().cloned() else {
-            return Err(Box::new(UserObjectError::ExpectedSelf("null")));
-        };
-        if let Value::UserObject(_self) = _self {
-            let mut _self = _self.borrow_mut();
-            _self.call_mut("next", args)
-        } else {
-            Err(Box::new(UserObjectError::ExpectedSelf(_self.typ())))
-        }
-    }
-    pub fn call_next(&mut self) -> Result<Value, Box<dyn Error>> {
-        Ok(self.0.next().unwrap_or_default())
-    }
-    pub fn _collect(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
-        let Some(_self) = args.first().cloned() else {
-            return Err(Box::new(UserObjectError::ExpectedSelf("null")));
-        };
-        if let Value::UserObject(_self) = _self {
-            let mut _self = _self.borrow_mut();
-            _self.call("collect", args)
-        } else {
-            Err(Box::new(UserObjectError::ExpectedSelf(_self.typ())))
-        }
-    }
-    pub fn call_collect(&self) -> Result<Value, Box<dyn Error>> {
-        Ok(Value::Vector(Rc::new(RefCell::new(
-            self.0.clone().collect::<Vec<Value>>(),
-        ))))
-    }
-}
-impl UserObject for ObjectKeysIterator {
-    fn typ(&self) -> &'static str {
-        "object-keys"
-    }
-    fn get(&self, key: &str) -> Option<Value> {
-        match key {
-            "next" => Some(Value::Function(FunctionKind::UserFunction(Rc::new(
-                Box::new(Self::_next),
-            )))),
-            "collect" => Some(Value::Function(FunctionKind::UserFunction(Rc::new(
-                Box::new(Self::_collect),
-            )))),
-            _ => None,
-        }
-    }
-    fn call_mut(&mut self, key: &str, _: Vec<Value>) -> Result<Value, Box<dyn Error>> {
-        match key {
-            "next" => self.call_next(),
-            _ => Err(Box::new(UserObjectError::CannotCallNull)),
-        }
-    }
-    fn call(&self, key: &str, _: Vec<Value>) -> Result<Value, Box<dyn Error>> {
-        match key {
-            "collect" => self.call_collect(),
-            _ => Err(Box::new(UserObjectError::CannotCallNull)),
-        }
-    }
-}
-impl ObjectKeysIterator {
-    pub fn _next(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
-        let Some(_self) = args.first().cloned() else {
-            return Err(Box::new(UserObjectError::ExpectedSelf("null")));
-        };
-        if let Value::UserObject(_self) = _self {
-            let mut _self = _self.borrow_mut();
-            Ok(_self.call_mut("next", args)?)
-        } else {
-            Err(Box::new(UserObjectError::ExpectedSelf(_self.typ())))
-        }
-    }
-    pub fn call_next(&mut self) -> Result<Value, Box<dyn Error>> {
-        Ok(self.0.next().map(Value::String).unwrap_or_default())
-    }
-    pub fn _collect(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
-        let Some(_self) = args.first().cloned() else {
-            return Err(Box::new(UserObjectError::ExpectedSelf("null")));
-        };
-        if let Value::UserObject(_self) = _self {
-            let mut _self = _self.borrow_mut();
-            _self.call("collect", args)
-        } else {
-            Err(Box::new(UserObjectError::ExpectedSelf(_self.typ())))
-        }
-    }
-    pub fn call_collect(&self) -> Result<Value, Box<dyn Error>> {
-        Ok(Value::Vector(Rc::new(RefCell::new(
-            self.0.clone().map(Value::String).collect::<Vec<Value>>(),
-        ))))
-    }
-}
-impl UserObject for ObjectValuesIterator {
-    fn typ(&self) -> &'static str {
-        "object-keys"
-    }
-    fn get(&self, key: &str) -> Option<Value> {
-        match key {
-            "next" => Some(Value::Function(FunctionKind::UserFunction(Rc::new(
-                Box::new(Self::_next),
-            )))),
-            "collect" => Some(Value::Function(FunctionKind::UserFunction(Rc::new(
-                Box::new(Self::_collect),
-            )))),
-            _ => None,
-        }
-    }
-    fn call_mut(&mut self, key: &str, _: Vec<Value>) -> Result<Value, Box<dyn Error>> {
-        match key {
-            "next" => self.call_next(),
-            _ => Err(Box::new(UserObjectError::CannotCallNull)),
-        }
-    }
-    fn call(&self, key: &str, _: Vec<Value>) -> Result<Value, Box<dyn Error>> {
-        match key {
-            "collect" => self.call_collect(),
-            _ => Err(Box::new(UserObjectError::CannotCallNull)),
-        }
-    }
-}
-impl ObjectValuesIterator {
-    pub fn _next(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
-        let Some(_self) = args.first().cloned() else {
-            return Err(Box::new(UserObjectError::ExpectedSelf("null")));
-        };
-        if let Value::UserObject(_self) = _self {
-            let mut _self = _self.borrow_mut();
-            Ok(_self.call_mut("next", args)?)
-        } else {
-            Err(Box::new(UserObjectError::ExpectedSelf(_self.typ())))
-        }
-    }
-    pub fn call_next(&mut self) -> Result<Value, Box<dyn Error>> {
-        Ok(self.0.next().unwrap_or_default())
-    }
-    pub fn _collect(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
-        let Some(_self) = args.first().cloned() else {
-            return Err(Box::new(UserObjectError::ExpectedSelf("null")));
-        };
-        if let Value::UserObject(_self) = _self {
-            let mut _self = _self.borrow_mut();
-            _self.call("collect", args)
-        } else {
-            Err(Box::new(UserObjectError::ExpectedSelf(_self.typ())))
-        }
-    }
-    pub fn call_collect(&self) -> Result<Value, Box<dyn Error>> {
-        Ok(Value::Vector(Rc::new(RefCell::new(
-            self.0.clone().collect::<Vec<Value>>(),
-        ))))
-    }
-}
-impl UserObject for StringIterator {
-    fn typ(&self) -> &'static str {
-        "string-iter"
-    }
-    fn get(&self, key: &str) -> Option<Value> {
-        match key {
-            "next" => Some(Value::Function(FunctionKind::UserFunction(Rc::new(
-                Box::new(Self::_next),
-            )))),
-            "collect" => Some(Value::Function(FunctionKind::UserFunction(Rc::new(
-                Box::new(Self::_collect),
-            )))),
-            _ => None,
-        }
-    }
-    fn call_mut(&mut self, key: &str, _: Vec<Value>) -> Result<Value, Box<dyn Error>> {
-        match key {
-            "next" => self.call_next(),
-            _ => Err(Box::new(UserObjectError::CannotCallNull)),
-        }
-    }
-    fn call(&self, key: &str, _: Vec<Value>) -> Result<Value, Box<dyn Error>> {
-        match key {
-            "collect" => self.call_collect(),
-            _ => Err(Box::new(UserObjectError::CannotCallNull)),
-        }
-    }
-}
-impl StringIterator {
-    pub fn _next(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
-        let Some(_self) = args.first().cloned() else {
-            return Err(Box::new(UserObjectError::ExpectedSelf("null")));
-        };
-        if let Value::UserObject(_self) = _self {
-            let mut _self = _self.borrow_mut();
-            _self.call_mut("next", args)
-        } else {
-            Err(Box::new(UserObjectError::ExpectedSelf(_self.typ())))
-        }
-    }
-    pub fn call_next(&mut self) -> Result<Value, Box<dyn Error>> {
-        Ok(self.0.next().map(Value::Char).unwrap_or_default())
-    }
-    pub fn _collect(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
-        let Some(_self) = args.first().cloned() else {
-            return Err(Box::new(UserObjectError::ExpectedSelf("null")));
-        };
-        if let Value::UserObject(_self) = _self {
-            let mut _self = _self.borrow_mut();
-            _self.call("collect", args)
-        } else {
-            Err(Box::new(UserObjectError::ExpectedSelf(_self.typ())))
-        }
-    }
-    pub fn call_collect(&self) -> Result<Value, Box<dyn Error>> {
-        Ok(Value::Vector(Rc::new(RefCell::new(
-            self.0.clone().map(Value::Char).collect::<Vec<Value>>(),
-        ))))
-    }
-}
-impl UserObject for RangeIterator {
-    fn typ(&self) -> &'static str {
-        "range-iter"
-    }
-    fn get(&self, key: &str) -> Option<Value> {
-        match key {
-            "next" => Some(Value::Function(FunctionKind::UserFunction(Rc::new(
-                Box::new(Self::_next),
-            )))),
-            "collect" => Some(Value::Function(FunctionKind::UserFunction(Rc::new(
-                Box::new(Self::_collect),
-            )))),
-            _ => None,
-        }
-    }
-    fn call_mut(&mut self, key: &str, _: Vec<Value>) -> Result<Value, Box<dyn Error>> {
-        match key {
-            "next" => self.call_next(),
-            _ => Err(Box::new(UserObjectError::CannotCallNull)),
-        }
-    }
-    fn call(&self, key: &str, _: Vec<Value>) -> Result<Value, Box<dyn Error>> {
-        match key {
-            "collect" => self.call_collect(),
-            _ => Err(Box::new(UserObjectError::CannotCallNull)),
-        }
-    }
-}
-impl RangeIterator {
-    pub fn _next(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
-        let Some(_self) = args.first().cloned() else {
-            return Err(Box::new(UserObjectError::ExpectedSelf("null")));
-        };
-        if let Value::UserObject(_self) = _self {
-            let mut _self = _self.borrow_mut();
-            _self.call_mut("next", args)
-        } else {
-            Err(Box::new(UserObjectError::ExpectedSelf(_self.typ())))
-        }
-    }
-    pub fn call_next(&mut self) -> Result<Value, Box<dyn Error>> {
-        Ok(self.0.next().map(Value::Int).unwrap_or_default())
-    }
-    pub fn _collect(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
-        let Some(_self) = args.first().cloned() else {
-            return Err(Box::new(UserObjectError::ExpectedSelf("null")));
-        };
-        if let Value::UserObject(_self) = _self {
-            let mut _self = _self.borrow_mut();
-            _self.call("collect", args)
-        } else {
-            Err(Box::new(UserObjectError::ExpectedSelf(_self.typ())))
-        }
-    }
-    pub fn call_collect(&self) -> Result<Value, Box<dyn Error>> {
-        Ok(Value::Vector(Rc::new(RefCell::new(
-            self.0.clone().map(Value::Int).collect::<Vec<Value>>(),
-        ))))
-    }
-}
+impl CanBeIterator for std::vec::IntoIter<Value> {}
+
 impl UserObject for FileObject {
     fn typ(&self) -> &'static str {
         "file"
@@ -1696,7 +1462,7 @@ impl StdinObject {
         let mut args = args.into_iter().enumerate().skip(1);
         enum Mode {
             All,
-            Line
+            Line,
         }
         let mode = typed!(args: String mode => match mode.as_str() {
             "a" => Mode::All,
