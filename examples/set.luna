@@ -1,0 +1,30 @@
+let set_mt = {
+	__type = "set"
+}
+let fn set(values) {
+	return setmeta({
+		values = values,
+		insert = fn (v) {
+			if !values:contains(v) {
+				values:push(v)
+			}
+		}
+		remove = fn (rv) {
+			let pos = null
+			for i in range(values:len()) {
+				if values[i] == rv {
+					pos = i
+					break
+				}
+			}
+			if pos {
+				values:pop(pos)
+			}
+		}
+	}, set_mt)
+}
+
+let s = set([1, 2, 3])
+s.insert(4)
+s.remove(2)
+print(s.values)

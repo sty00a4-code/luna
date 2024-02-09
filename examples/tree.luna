@@ -1,6 +1,9 @@
-let fn tree(data) {
+let node_mt =  {
+	__type = "node"
+}
+let fn node(data) {
 	let children = []
-	return {
+	return setmeta({
 		data = data,
 		append = fn (child) {
 			children:push(child)
@@ -11,9 +14,9 @@ let fn tree(data) {
 		iter = fn () {
 			return children:iter()
 		}
-	}
+	}, node_mt)
 }
-let dir = tree("src")
+let dir = node("src")
 dir.append("main.rs")
 dir.append("tokens.rs")
 dir.append("lexer.rs")
