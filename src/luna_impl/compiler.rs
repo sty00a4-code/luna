@@ -622,6 +622,10 @@ impl Compilable for Located<Statement> {
                         .new_local(param);
                 }
                 body.compile(compiler)?;
+                compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .write(ByteCode::Return { src: None }, pos.clone());
                 let closure = compiler
                     .pop_frame()
                     .expect("no compiler frame on stack")
@@ -1449,6 +1453,10 @@ impl Compilable for Located<Atom> {
                         .new_local(param);
                 }
                 body.compile(compiler)?;
+                compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .write(ByteCode::Return { src: None }, pos.clone());
                 let closure = compiler
                     .pop_frame()
                     .expect("no compiler frame on stack")

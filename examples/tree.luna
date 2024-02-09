@@ -1,0 +1,31 @@
+let fn tree(data) {
+	let children = []
+	return {
+		data = data,
+		append = fn (child) {
+			children:push(child)
+		}
+		get = fn (idx, default) {
+			return children:get(idx, default)
+		}
+		iter = fn () {
+			return children:iter()
+		}
+	}
+}
+let dir = tree("src")
+dir.append("main.rs")
+dir.append("tokens.rs")
+dir.append("lexer.rs")
+dir.append("ast.rs")
+dir.append("parser.rs")
+dir.append("code.rs")
+dir.append("compiler.rs")
+dir.append("value.rs")
+dir.append("interpreter.rs")
+
+print(dir)
+print(dir.data)
+for child in dir.iter() {
+	print(child)
+}
