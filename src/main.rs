@@ -9,13 +9,7 @@ use luna_impl::{
     position::Located,
 };
 use std::{
-    cell::RefCell,
-    collections::{HashMap, HashSet},
-    env::{self, Args},
-    error::Error,
-    fs,
-    process,
-    rc::Rc,
+    cell::RefCell, collections::{HashMap, HashSet}, env::{self, Args}, error::Error, fmt::Display, fs, process, rc::Rc
 };
 
 pub mod lang;
@@ -69,41 +63,57 @@ pub fn run(text: &str, args: &LunaArgs) -> Result<Option<Value>, Located<Box<dyn
 }
 
 fn main() {
-    let args = LunaArgs::from(env::args());
-    if let Some(path) = &args.path {
-        let text = fs::read_to_string(path)
-            .map_err(|err| {
-                eprintln!("ERROR: error while reading {path:?}: {err}");
-                process::exit(1);
-            })
-            .unwrap();
-        let value = run(&text, &args)
-            .map_err(|Located { value: err, pos }| {
-                eprintln!(
-                    "ERROR {}:{}:{}: {err}",
-                    path,
-                    pos.ln.start + 1,
-                    pos.col.start + 1
-                );
-                process::exit(1);
-            })
-            .unwrap();
-        if let Some(value) = value {
-            println!("{value}");
-        }
+    let args = LunaArgs::try_from(env::args()).map_err(|err| {
+        eprintln!("{err}");
+        process::exit(1);
+    }).unwrap();
+    let text = fs::read_to_string(&args.path)
+        .map_err(|err| {
+            eprintln!("ERROR: error while reading {:?}: {err}", args.path);
+            process::exit(1);
+        })
+        .unwrap();
+    let value = run(&text, &args)
+        .map_err(|Located { value: err, pos }| {
+            eprintln!(
+                "ERROR {}:{}:{}: {err}",
+                args.path,
+                pos.ln.start + 1,
+                pos.col.start + 1
+            );
+            process::exit(1);
+        })
+        .unwrap();
+    if let Some(value) = value {
+        println!("{value}");
     }
 }
 
 #[derive(Debug, Clone, Default)]
 pub struct LunaArgs {
-    path: Option<String>,
+    path: String,
 
     tokens: bool,
     ast: bool,
     code: bool
 }
-impl From<Args> for LunaArgs {
-    fn from(args: Args) -> Self {
+#[derive(Debug, Clone, PartialEq)]
+pub struct LunaArgsError;
+pub const USAGE: &str = r#"USAGE:
+    luna <input.luna> [OPTIONS]
+    OPTIONS:
+        -t  display lexer tokens
+        -a  display parser ast
+        -c  display compiler code
+"#;
+impl Display for LunaArgsError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", USAGE)
+    }
+}
+impl TryFrom<Args> for LunaArgs {
+    type Error = LunaArgsError;
+    fn try_from(args: Args) -> Result<Self, Self::Error> {
         let mut args = args.skip(1);
         let mut singles: Vec<String> = vec![];
         let mut attributes: HashMap<String, String> = HashMap::new();
@@ -129,15 +139,15 @@ impl From<Args> for LunaArgs {
                 singles.push(arg);
             }
         }
-        Self {
+        Ok(Self {
             path: if !singles.is_empty() {
-                Some(singles.remove(0))
+                singles.remove(0)
             } else {
-                None
+                return Err(LunaArgsError)
             },
             tokens: flags.contains("tokens") || flags.contains("t"),
             ast: flags.contains("ast") || flags.contains("a"),
             code: flags.contains("code") || flags.contains("c"),
-        }
+        })
     }
 }
