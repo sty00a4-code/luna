@@ -1,0 +1,12 @@
+let fn iter(values) {
+    let idx = 0
+    return fn () {
+        let v = values[idx]
+        idx += 1
+        return v
+    }
+}
+
+for v in iter([1, 2, 3]) {
+    print(v)
+}

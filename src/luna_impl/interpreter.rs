@@ -166,13 +166,13 @@ impl Interpreter {
                     .expect("no call frame")
                     .source(&src)
                     .expect("source not found");
-                let dst = self
+                let value_dst = self
                     .call_frames
                     .last_mut()
                     .expect("no call frame")
                     .location(&dst)
                     .expect("location not found");
-                *dst.borrow_mut() = match &iter {
+                *value_dst.borrow_mut() = match &iter {
                     Value::UserObject(object) => {
                         let object = Rc::clone(object);
                         let mut object = object.borrow_mut();
@@ -181,6 +181,36 @@ impl Interpreter {
                             .map_err(|err| RunTimeError::Custom(err.to_string()))
                             .map_err(|err| Located::new(err, pos))?
                     }
+                    Value::Object(object) => {
+                        let object = Rc::clone(object);
+                        let object = object.borrow();
+                        let value = object
+                            .meta
+                            .as_ref()
+                            .and_then(|meta| meta.borrow().fields.get("__next").cloned())
+                            .unwrap_or_default();
+                        match value {
+                            Value::Function(kind) => match kind {
+                                FunctionKind::Function(function) => {
+                                    self.call(&function, vec![], Some(dst));
+                                    return Ok(None);
+                                }
+                                FunctionKind::UserFunction(func) => func(self, vec![])
+                                    .map_err(|err| RunTimeError::Custom(err.to_string()))
+                                    .map_err(|err| Located::new(err, pos))?,
+                            }
+                            _ => Value::default()
+                        }
+                    }
+                    Value::Function(kind) => match kind {
+                        FunctionKind::Function(function) => {
+                            self.call(&function, vec![], Some(dst));
+                            return Ok(None);
+                        }
+                        FunctionKind::UserFunction(func) => func(self, vec![])
+                            .map_err(|err| RunTimeError::Custom(err.to_string()))
+                            .map_err(|err| Located::new(err, pos))?,
+                    },
                     iter => return Err(Located::new(RunTimeError::CannotIter(iter.typ()), pos)),
                 };
             }
