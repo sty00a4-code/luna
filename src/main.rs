@@ -139,6 +139,9 @@ impl TryFrom<Args> for LunaArgs {
                 singles.push(arg);
             }
         }
+        if flags.contains("help") || flags.contains("h") {
+            return Err(LunaArgsError)
+        }
         Ok(Self {
             path: if !singles.is_empty() {
                 singles.remove(0)
