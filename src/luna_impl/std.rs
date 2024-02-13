@@ -190,6 +190,7 @@ pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
     set_field!(globals."input" = function!(_input));
     set_field!(globals."assert" = function!(_assert));
     set_field!(globals."error" = function!(_error));
+    set_field!(globals."exit" = function!(_exit));
     set_field!(globals."safe_call" = function!(_safe_call));
     set_field!(globals."type" = function!(_type));
     set_field!(globals."require" = function!(_require));
@@ -368,6 +369,11 @@ pub fn _error(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Er
     let mut args = args.into_iter().enumerate();
     let msg = args.next().unwrap_or_default().1.to_string();
     Err(Box::new(CustomError(msg)))
+}
+pub fn _exit(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let code = typed!(args: Int?).unwrap_or_default() as i32;
+    std::process::exit(code)
 }
 pub fn _safe_call(
     interpreter: &mut Interpreter,
