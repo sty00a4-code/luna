@@ -957,19 +957,7 @@ impl Interpreter {
                         }
                     },
                     UnaryOperation::Not => Value::Bool(!bool::from(src)),
-                    UnaryOperation::Len => match src {
-                        Value::String(v) => Value::Int(v.len() as i64),
-                        Value::Vector(v) => Value::Int(v.borrow().len() as i64),
-                        src => {
-                            return Err(Located::new(
-                                RunTimeError::InvalidUnary {
-                                    op,
-                                    right: src.typ(),
-                                },
-                                pos,
-                            ))
-                        }
-                    },
+                    
                 };
             }
         }

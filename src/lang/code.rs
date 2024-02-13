@@ -122,7 +122,6 @@ pub enum BinaryOperation {
 pub enum UnaryOperation {
     Neg,
     Not,
-    Len,
 }
 
 #[derive(Debug, Clone, Default)]
