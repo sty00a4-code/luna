@@ -53,6 +53,20 @@ impl<'source> Iterator for Lexer<'source> {
             self.advance();
             self.source.next();
         }
+        while self.source.peek() == Some(&'#') {
+            self.advance();
+            self.source.next()?;
+            while self.source.peek().map(|c| *c != '\n').unwrap_or_default() {
+                self.advance();
+                self.source.next();
+            }
+            self.advance();
+            self.source.next();
+            while self.source.peek().map(|c| c.is_ascii_whitespace()).unwrap_or_default() {
+                self.advance();
+                self.source.next();
+            }
+        }
         let mut pos = self.pos();
         self.advance();
         match self.source.next()? {
