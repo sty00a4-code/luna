@@ -11,6 +11,7 @@ use std::{
     fmt::{Debug, Display},
     fs::{self, File},
     io::{self, Read, Stderr, Stdin, Stdout, Write},
+    net::{TcpListener, TcpStream},
     path::Path,
     rc::Rc,
 };
@@ -312,6 +313,10 @@ pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
         "current_exe" = function!(_env_current_exe),
         "set_current_dir" = function!(_env_set_current_dir),
         "args" = function!(_env_args)
+    });
+    set_field!(globals."net" = object! {
+        "bind" = function!(_net_bind),
+        "connect" = function!(_net_connect)
     });
     globals
 }
@@ -944,11 +949,16 @@ pub fn _range(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Er
     let end = typed!(args: Int?);
 
     Ok(Value::UserObject(Rc::new(RefCell::new(Box::new(
-        IteratorObject(Box::new(if let Some(end) = end {
-            start..end
-        } else {
-            0..start
-        }.map(Value::Int).collect::<Vec<Value>>().into_iter())),
+        IteratorObject(Box::new(
+            if let Some(end) = end {
+                start..end
+            } else {
+                0..start
+            }
+            .map(Value::Int)
+            .collect::<Vec<Value>>()
+            .into_iter(),
+        )),
     )))))
 }
 
@@ -1306,10 +1316,32 @@ pub fn _env_args(_: &mut Interpreter, _: Vec<Value>) -> Result<Value, Box<dyn Er
     Ok(env::args().collect::<Vec<String>>().into())
 }
 
-fn _iter_next(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+pub fn _net_bind(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let addr = typed!(args: String);
+    let port = typed!(args: Int port => u16::try_from(port))
+        .map_err(|_| Into::<Box<dyn Error>>::into("invalid port"))?;
+    Ok(TcpListener::bind((addr, port))
+        .map(|listener| {
+            Value::UserObject(Rc::new(RefCell::new(Box::new(TcpListenerObject(listener)))))
+        })
+        .unwrap_or_default())
+}
+pub fn _net_connect(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let addr = typed!(args: String);
+    let port = typed!(args: Int port => u16::try_from(port))
+        .map_err(|_| Into::<Box<dyn Error>>::into("invalid port"))?;
+    Ok(TcpStream::connect((addr, port))
+        .map(|stream| Value::UserObject(Rc::new(RefCell::new(Box::new(TcpStreamObject(stream))))))
+        .unwrap_or_default())
+}
+
+fn _iter_next(_: &mut Interpreter, mut args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let Some(_self) = args.first().cloned() else {
         return Err(Box::new(UserObjectError::ExpectedSelf("null")));
     };
+    args.remove(0);
     if let Value::UserObject(_self) = _self {
         let mut _self = _self.borrow_mut();
         _self.call_mut("next", args)
@@ -1317,10 +1349,11 @@ fn _iter_next(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Er
         Err(Box::new(UserObjectError::ExpectedSelf(_self.typ())))
     }
 }
-fn _iter_collect(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+fn _iter_collect(_: &mut Interpreter, mut args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let Some(_self) = args.first().cloned() else {
         return Err(Box::new(UserObjectError::ExpectedSelf("null")));
     };
+    args.remove(0);
     if let Value::UserObject(_self) = _self {
         let mut _self = _self.borrow_mut();
         _self.call_mut("collect", args)
@@ -1349,6 +1382,11 @@ pub struct StdoutObject(Stdout);
 pub struct StderrObject(Stderr);
 #[derive(Debug)]
 pub struct FileObject(File);
+
+#[derive(Debug)]
+pub struct TcpListenerObject(TcpListener);
+#[derive(Debug)]
+pub struct TcpStreamObject(TcpStream);
 
 impl Display for UserObjectError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -1411,10 +1449,11 @@ impl UserObject for FileObject {
     }
 }
 impl FileObject {
-    pub fn _write(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    pub fn _write(_: &mut Interpreter, mut args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
         let Some(_self) = args.first().cloned() else {
             return Err(Box::new(UserObjectError::ExpectedSelf("null")));
         };
+        args.remove(0);
         if let Value::UserObject(_self) = _self {
             let mut _self = _self.borrow_mut();
             _self.call_mut("write", args)
@@ -1427,10 +1466,11 @@ impl FileObject {
         let buf = typed!(args: String);
         Ok(Value::Int(self.0.write(&buf.into_bytes())? as i64))
     }
-    pub fn _read(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    pub fn _read(_: &mut Interpreter, mut args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
         let Some(_self) = args.first().cloned() else {
             return Err(Box::new(UserObjectError::ExpectedSelf("null")));
         };
+        args.remove(0);
         if let Value::UserObject(_self) = _self {
             let mut _self = _self.borrow_mut();
             _self.call_mut("read", args)
@@ -1507,10 +1547,11 @@ impl UserObject for StdoutObject {
     }
 }
 impl StdoutObject {
-    pub fn _flush(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    pub fn _flush(_: &mut Interpreter, mut args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
         let Some(_self) = args.first().cloned() else {
             return Err(Box::new(UserObjectError::ExpectedSelf("null")));
         };
+        args.remove(0);
         if let Value::UserObject(_self) = _self {
             let mut _self = _self.borrow_mut();
             _self.call_mut("flush", args)
@@ -1552,5 +1593,205 @@ impl StderrObject {
         let mut args = args.into_iter().enumerate().skip(1);
         let buf = typed!(args: String);
         Ok(Value::Int(self.0.write(&buf.into_bytes())? as i64))
+    }
+}
+
+impl UserObject for TcpListenerObject {
+    fn typ(&self) -> &'static str {
+        "tcp-listener"
+    }
+    fn get(&self, key: &str) -> Option<Value> {
+        match key {
+            "accept" => Some(Value::Function(FunctionKind::UserFunction(Rc::new(
+                Self::_accept,
+            )))),
+            "addr" => Some(Value::Function(FunctionKind::UserFunction(Rc::new(
+                Self::_addr,
+            )))),
+            _ => None,
+        }
+    }
+    fn call(&self, key: &str, _: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+        match key {
+            "accept" => self.call_accept(),
+            "addr" => self.call_addr(),
+            _ => Err(Box::new(UserObjectError::CannotCallNull)),
+        }
+    }
+}
+impl TcpListenerObject {
+    pub fn _accept(_: &mut Interpreter, mut args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+        let Some(_self) = args.first().cloned() else {
+            return Err(Box::new(UserObjectError::ExpectedSelf("null")));
+        };
+        args.remove(0);
+        if let Value::UserObject(_self) = _self {
+            let _self = _self.borrow();
+            _self.call("accept", args)
+        } else {
+            Err(Box::new(UserObjectError::ExpectedSelf(_self.typ())))
+        }
+    }
+    pub fn call_accept(&self) -> Result<Value, Box<dyn Error>> {
+        Ok(self
+            .0
+            .accept()
+            .map(|(stream, _)| {
+                Value::UserObject(Rc::new(RefCell::new(Box::new(TcpStreamObject(stream)))))
+            })
+            .unwrap_or_default())
+    }
+    pub fn _addr(_: &mut Interpreter, mut args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+        let Some(_self) = args.first().cloned() else {
+            return Err(Box::new(UserObjectError::ExpectedSelf("null")));
+        };
+        args.remove(0);
+        if let Value::UserObject(_self) = _self {
+            let _self = _self.borrow();
+            _self.call("addr", args)
+        } else {
+            Err(Box::new(UserObjectError::ExpectedSelf(_self.typ())))
+        }
+    }
+    pub fn call_addr(&self) -> Result<Value, Box<dyn Error>> {
+        Ok(self
+            .0
+            .local_addr()
+            .map(|addr| Value::String(addr.to_string()))
+            .unwrap_or_default())
+    }
+}
+impl UserObject for TcpStreamObject {
+    fn typ(&self) -> &'static str {
+        "tcp-stream"
+    }
+    fn get(&self, key: &str) -> Option<Value> {
+        match key {
+            "read" => Some(Value::Function(FunctionKind::UserFunction(Rc::new(
+                Self::_read,
+            )))),
+            "write" => Some(Value::Function(FunctionKind::UserFunction(Rc::new(
+                Self::_write,
+            )))),
+            "flush" => Some(Value::Function(FunctionKind::UserFunction(Rc::new(
+                Box::new(Self::_flush),
+            )))),
+            "local_addr" => Some(Value::Function(FunctionKind::UserFunction(Rc::new(
+                Box::new(Self::_local_addr),
+            )))),
+            "peer_addr" => Some(Value::Function(FunctionKind::UserFunction(Rc::new(
+                Box::new(Self::_peer_addr),
+            )))),
+            _ => None,
+        }
+    }
+    fn call_mut(&mut self, key: &str, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+        match key {
+            "read" => self.call_read(),
+            "write" => self.call_write(args),
+            _ => Err(Box::new(UserObjectError::CannotCallNull)),
+        }
+    }
+    fn call(&self, key: &str, _: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+        match key {
+            "local_addr" => self.call_local_addr(),
+            "peer_addr" => self.call_peer_addr(),
+            _ => Err(Box::new(UserObjectError::CannotCallNull)),
+        }
+    }
+}
+impl TcpStreamObject {
+    pub fn _read(_: &mut Interpreter, mut args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+        let Some(_self) = args.first().cloned() else {
+            return Err(Box::new(UserObjectError::ExpectedSelf("null")));
+        };
+        args.remove(0);
+        if let Value::UserObject(_self) = _self {
+            let mut _self = _self.borrow_mut();
+            _self.call_mut("read", args)
+        } else {
+            Err(Box::new(UserObjectError::ExpectedSelf(_self.typ())))
+        }
+    }
+    pub fn call_read(&mut self) -> Result<Value, Box<dyn Error>> {
+        let mut buf = String::new();
+        let Ok(_) = self.0.read_to_string(&mut buf) else {
+            return Ok(Value::default());
+        };
+        Ok(Value::String(buf))
+    }
+    pub fn _write(_: &mut Interpreter, mut args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+        let Some(_self) = args.first().cloned() else {
+            return Err(Box::new(UserObjectError::ExpectedSelf("null")));
+        };
+        args.remove(0);
+        if let Value::UserObject(_self) = _self {
+            let mut _self = _self.borrow_mut();
+            _self.call_mut("write", args)
+        } else {
+            Err(Box::new(UserObjectError::ExpectedSelf(_self.typ())))
+        }
+    }
+    pub fn call_write(&mut self, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+        let mut args = args.into_iter().enumerate();
+        let text = typed!(args: String);
+        let Ok(size) = self.0.write(text.as_bytes()) else {
+            return Ok(Value::default());
+        };
+        Ok(Value::Int(size as i64))
+    }
+    pub fn _flush(_: &mut Interpreter, mut args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+        let Some(_self) = args.first().cloned() else {
+            return Err(Box::new(UserObjectError::ExpectedSelf("null")));
+        };
+        args.remove(0);
+        if let Value::UserObject(_self) = _self {
+            let mut _self = _self.borrow_mut();
+            _self.call_mut("flush", args)
+        } else {
+            Err(Box::new(UserObjectError::ExpectedSelf(_self.typ())))
+        }
+    }
+    pub fn call_flush(&mut self) -> Result<Value, Box<dyn Error>> {
+        self.0.flush()?;
+        Ok(Value::default())
+    }
+    pub fn _local_addr(_: &mut Interpreter, mut args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+        let Some(_self) = args.first().cloned() else {
+            return Err(Box::new(UserObjectError::ExpectedSelf("null")));
+        };
+        args.remove(0);
+        if let Value::UserObject(_self) = _self {
+            let _self = _self.borrow();
+            _self.call("local_addr", args)
+        } else {
+            Err(Box::new(UserObjectError::ExpectedSelf(_self.typ())))
+        }
+    }
+    pub fn call_local_addr(&self) -> Result<Value, Box<dyn Error>> {
+        Ok(self
+            .0
+            .local_addr()
+            .map(|addr| Value::String(addr.to_string()))
+            .unwrap_or_default())
+    }
+    pub fn _peer_addr(_: &mut Interpreter, mut args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+        let Some(_self) = args.first().cloned() else {
+            return Err(Box::new(UserObjectError::ExpectedSelf("null")));
+        };
+        args.remove(0);
+        if let Value::UserObject(_self) = _self {
+            let _self = _self.borrow();
+            _self.call("peer_addr", args)
+        } else {
+            Err(Box::new(UserObjectError::ExpectedSelf(_self.typ())))
+        }
+    }
+    pub fn call_peer_addr(&self) -> Result<Value, Box<dyn Error>> {
+        Ok(self
+            .0
+            .peer_addr()
+            .map(|addr| Value::String(addr.to_string()))
+            .unwrap_or_default())
     }
 }
