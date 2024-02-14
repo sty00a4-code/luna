@@ -49,7 +49,12 @@ impl<'source> Lexer<'source> {
 impl<'source> Iterator for Lexer<'source> {
     type Item = Result<Located<Token>, Located<LexError>>;
     fn next(&mut self) -> Option<Self::Item> {
-        while self.source.peek().map(|c| c.is_ascii_whitespace()).unwrap_or_default() {
+        while self
+            .source
+            .peek()
+            .map(|c| c.is_ascii_whitespace())
+            .unwrap_or_default()
+        {
             self.advance();
             self.source.next();
         }
@@ -62,7 +67,12 @@ impl<'source> Iterator for Lexer<'source> {
             }
             self.advance();
             self.source.next();
-            while self.source.peek().map(|c| c.is_ascii_whitespace()).unwrap_or_default() {
+            while self
+                .source
+                .peek()
+                .map(|c| c.is_ascii_whitespace())
+                .unwrap_or_default()
+            {
                 self.advance();
                 self.source.next();
             }
@@ -322,8 +332,7 @@ impl<'source> Iterator for Lexer<'source> {
                     }
                     Some(Ok(Located::new(
                         Token::Int(
-                            match i64
-                                ::from_str_radix(&number, 2)
+                            match i64::from_str_radix(&number, 2)
                                 .map_err(LexError::ParseIntError)
                                 .map_err(|err| Located::new(err, pos.clone()))
                             {
@@ -354,8 +363,7 @@ impl<'source> Iterator for Lexer<'source> {
                     }
                     Some(Ok(Located::new(
                         Token::Int(
-                            match i64
-                                ::from_str_radix(&number, 16)
+                            match i64::from_str_radix(&number, 16)
                                 .map_err(LexError::ParseIntError)
                                 .map_err(|err| Located::new(err, pos.clone()))
                             {
