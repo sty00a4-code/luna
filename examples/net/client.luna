@@ -1,0 +1,3 @@
+let server = net.connect("127.0.0.1", 6969)
+print("connected to server: ", server)
+server:write("hello world")

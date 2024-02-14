@@ -1,0 +1,5 @@
+let listener = net.bind("127.0.0.1", 6969)
+print("listener:", listener:addr())
+let stream = listener:accept()
+print("connected:", stream)
+print("message:", stream:read())
