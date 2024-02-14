@@ -1,30 +1,45 @@
-let set_mt = {
-	__type = "set"
+let set = {
+	mt = {
+		__type = "set"
+		__tostring = fn (self) {
+			return raw_get(self, "values")
+		}
+		__get = fn (self, v) {
+			return raw_get(self, "values"):contains(v)
+		}
+	}
 }
-let fn set(values) {
+fn set.new(values) {
 	return setmeta({
 		values = values,
-		insert = fn (v) {
-			if !values:contains(v) {
-				values:push(v)
-			}
+	}, set.mt)
+}
+fn set.insert(self, v) {
+	let values = raw_get(self, "values")
+	if !values:contains(v) {
+		values:push(v)
+	}
+}
+fn set.remove(self, rv) {
+	let values = raw_get(self, "values")
+	let pos = null
+	for i in range(raw_get(self, "values"):len()) {
+		if values[i] == rv {
+			pos = i
+			break
 		}
-		remove = fn (rv) {
-			let pos = null
-			for i in range(values:len()) {
-				if values[i] == rv {
-					pos = i
-					break
-				}
-			}
-			if pos {
-				values:pop(pos)
-			}
-		}
-	}, set_mt)
+	}
+	if pos {
+		values:pop(pos)
+	}
 }
 
-let s = set([1, 2, 3])
-s.insert(4)
-s.remove(2)
-print(s.values)
+let s = set.new([1, 2, 3])
+print(type(s)) # set
+print(s) # [1, 2, 3]
+set.insert(s, 4)
+print("inserted 4:", s) # [1, 2, 3]
+set.remove(s, 2)
+print("removed 2:", s) # [1, 2, 3]
+print("s[4] =", s[4]) # true
+print("s[2] =", s[2]) # false
