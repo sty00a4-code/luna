@@ -198,8 +198,8 @@ impl Interpreter {
                                 FunctionKind::UserFunction(func) => func(self, vec![])
                                     .map_err(|err| RunTimeError::Custom(err.to_string()))
                                     .map_err(|err| Located::new(err, pos))?,
-                            }
-                            _ => Value::default()
+                            },
+                            _ => Value::default(),
                         }
                     }
                     Value::Function(kind) => match kind {
@@ -957,7 +957,6 @@ impl Interpreter {
                         }
                     },
                     UnaryOperation::Not => Value::Bool(!bool::from(src)),
-                    
                 };
             }
         }

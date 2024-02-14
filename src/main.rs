@@ -1,5 +1,8 @@
 use lang::{
-    ast::Chunk, code::Closure, tokens::Token, value::{Function, Value}
+    ast::Chunk,
+    code::Closure,
+    tokens::Token,
+    value::{Function, Value},
 };
 use luna_impl::{
     compiler::{Compilable, Compiler},
@@ -9,7 +12,13 @@ use luna_impl::{
     position::Located,
 };
 use std::{
-    cell::RefCell, collections::{HashMap, HashSet}, env::{self, Args}, error::Error, fmt::Display, fs, process, rc::Rc
+    cell::RefCell,
+    collections::{HashMap, HashSet},
+    env::{self, Args},
+    error::Error,
+    fmt::Display,
+    fs, process,
+    rc::Rc,
 };
 
 pub mod lang;
@@ -30,19 +39,18 @@ pub fn lex(text: &str, args: &LunaArgs) -> Result<Vec<Located<Token>>, Located<B
     Ok(tokens)
 }
 pub fn parse(text: &str, args: &LunaArgs) -> Result<Located<Chunk>, Located<Box<dyn Error>>> {
-    let ast = Chunk::parse(
-        &mut lex(text, args)?
-            .into_iter()
-            .peekable(),
-    )
-    .map_err(|err| err.map(|err| err.into()))?;
+    let ast = Chunk::parse(&mut lex(text, args)?.into_iter().peekable())
+        .map_err(|err| err.map(|err| err.into()))?;
     if args.ast {
         println!("AST:");
         dbg!(&ast);
     }
     Ok(ast)
 }
-pub fn compile(text: &str, args: &LunaArgs) -> Result<Rc<RefCell<Closure>>, Located<Box<dyn Error>>> {
+pub fn compile(
+    text: &str,
+    args: &LunaArgs,
+) -> Result<Rc<RefCell<Closure>>, Located<Box<dyn Error>>> {
     let ast = parse(text, args)?;
     let closure = ast.compile(&mut Compiler::default())?;
     if args.code {
@@ -63,10 +71,12 @@ pub fn run(text: &str, args: &LunaArgs) -> Result<Option<Value>, Located<Box<dyn
 }
 
 fn main() {
-    let args = LunaArgs::try_from(env::args()).map_err(|err| {
-        eprintln!("{err}");
-        process::exit(1);
-    }).unwrap();
+    let args = LunaArgs::try_from(env::args())
+        .map_err(|err| {
+            eprintln!("{err}");
+            process::exit(1);
+        })
+        .unwrap();
     let text = fs::read_to_string(&args.path)
         .map_err(|err| {
             eprintln!("ERROR: error while reading {:?}: {err}", args.path);
@@ -95,7 +105,7 @@ pub struct LunaArgs {
 
     tokens: bool,
     ast: bool,
-    code: bool
+    code: bool,
 }
 #[derive(Debug, Clone, PartialEq)]
 pub struct LunaArgsError;
@@ -140,13 +150,13 @@ impl TryFrom<Args> for LunaArgs {
             }
         }
         if flags.contains("help") || flags.contains("h") {
-            return Err(LunaArgsError)
+            return Err(LunaArgsError);
         }
         Ok(Self {
             path: if !singles.is_empty() {
                 singles.remove(0)
             } else {
-                return Err(LunaArgsError)
+                return Err(LunaArgsError);
             },
             tokens: flags.contains("tokens") || flags.contains("t"),
             ast: flags.contains("ast") || flags.contains("a"),

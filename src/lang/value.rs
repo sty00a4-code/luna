@@ -2,7 +2,11 @@ use crate::luna_impl::interpreter::Interpreter;
 
 use super::code::Closure;
 use std::{
-    cell::RefCell, collections::HashMap, error::Error, fmt::{Debug, Display}, rc::Rc
+    cell::RefCell,
+    collections::HashMap,
+    error::Error,
+    fmt::{Debug, Display},
+    rc::Rc,
 };
 
 pub const META_NAME: &str = "__name";
