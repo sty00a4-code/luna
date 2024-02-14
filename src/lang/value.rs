@@ -1,4 +1,7 @@
-use crate::luna_impl::interpreter::Interpreter;
+use crate::luna_impl::{
+    interpreter::{Interpreter, RunTimeError},
+    position::Located,
+};
 
 use super::code::Closure;
 use std::{
@@ -15,6 +18,7 @@ pub const META_TOSTRING: &str = "__tostring";
 pub const META_CALL: &str = "__call";
 pub const META_GET: &str = "__get";
 pub const META_SET: &str = "__set";
+pub const META_NEXT: &str = "__next";
 
 #[derive(Clone, Default)]
 pub enum Value {
@@ -81,6 +85,15 @@ impl Object {
     pub fn new(fields: HashMap<String, Value>) -> Self {
         Self { fields, meta: None }
     }
+    pub fn get(&self, k: &str) -> Option<Value> {
+        self.fields.get(k).cloned()
+    }
+    pub fn set(&mut self, k: String, v: Value) {
+        self.fields.insert(k, v);
+    }
+    pub fn get_meta(&self, k: &str) -> Option<Value> {
+        self.meta.as_ref()?.borrow().get(k)
+    }
 }
 impl Value {
     pub fn typ(&self) -> &'static str {
@@ -97,6 +110,37 @@ impl Value {
             Value::Function(_) => "fn",
         }
     }
+    pub fn dynamic_typ(&self) -> String {
+        match self {
+            Value::Object(object) => {
+                let object = object.borrow();
+                if let Some(value) = object.get_meta(META_TYPE) {
+                    value.to_string()
+                } else {
+                    self.typ().to_string()
+                }
+            }
+            _ => self.typ().to_string()
+        }
+    }
+    pub fn call_tostring(
+        &self,
+        interpreter: &mut Interpreter,
+    ) -> Result<String, Located<RunTimeError>> {
+        match self {
+            Value::Object(object) => {
+                let func = object.borrow().get_meta(META_TOSTRING);
+                if let Some(Value::Function(FunctionKind::Function(func))) = func {
+                    interpreter.call(&func, vec![self.clone()], None);
+                    let value = interpreter.run()?;
+                    Ok(value.unwrap_or_default().to_string())
+                } else {
+                    Ok(self.to_string())
+                }
+            }
+            value => Ok(value.to_string()),
+        }
+    }
 }
 impl Debug for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -108,7 +152,18 @@ impl Debug for Value {
             Value::Char(v) => write!(f, "{v:?}"),
             Value::String(v) => write!(f, "{v:?}"),
             Value::Vector(v) => write!(f, "{:?}", v.borrow()),
-            Value::Object(v) => write!(f, "object:{:08x?}", v.as_ptr()),
+            Value::Object(v) => write!(
+                f,
+                "{}:{:08x?}",
+                if let Some(value) = v.borrow().get_meta(META_TYPE) {
+                    value.to_string()
+                } else if let Some(value) = v.borrow().get_meta(META_NAME) {
+                    value.to_string()
+                } else {
+                    "object".to_string()
+                },
+                v.as_ptr()
+            ),
             Value::UserObject(v) => write!(f, "{}:{:08x?}", v.borrow().typ(), v.as_ptr()),
             Value::Function(FunctionKind::Function(function)) => {
                 write!(f, "fn:{:08x?}", Rc::as_ptr(function))

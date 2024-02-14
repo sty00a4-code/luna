@@ -1,7 +1,7 @@
-use super::{position::Located, std::globals};
+use super::{position::{Located, Position}, std::globals};
 use crate::lang::{
     code::{BinaryOperation, ByteCode, Location, Source, UnaryOperation},
-    value::{Function, FunctionKind, Object, Value},
+    value::{Function, FunctionKind, Object, Value, META_CALL, META_GET, META_NEXT, META_SET},
 };
 use std::{cell::RefCell, collections::HashMap, error::Error, fmt::Display, rc::Rc};
 
@@ -89,10 +89,32 @@ impl Interpreter {
                 let dst = prev_frame.location(&dst).expect("location not found");
                 *dst.borrow_mut() = value;
             }
-        } else if let Some(src) = src {
+        }
+        if let Some(src) = src {
             return Some(top_frame.source(&src).expect("source not found"));
         }
         None
+    }
+    pub fn call_kind(&mut self, kind: FunctionKind, args: Vec<Value>, dst: Option<Location>, pos: Position) -> Result<(), Located<RunTimeError>> {
+        match kind {
+            FunctionKind::Function(function) => Ok(self.call(&function, args, dst)),
+            FunctionKind::UserFunction(func) => {
+                let dst = dst.map(|dst| {
+                    self.call_frames
+                        .last_mut()
+                        .expect("no call frame")
+                        .location(&dst)
+                        .expect("dst not found")
+                });
+                let value = func(self, args).map_err(|err| {
+                    Located::new(RunTimeError::Custom(err.to_string()), pos)
+                })?;
+                if let Some(dst) = dst {
+                    *dst.borrow_mut() = value;
+                }
+                Ok(())
+            }
+        }
     }
     pub fn step(&mut self) -> Result<Option<Value>, Located<RunTimeError>> {
         let idx = self.call_frames.last_mut().expect("no call frame").idx;
@@ -182,13 +204,9 @@ impl Interpreter {
                             .map_err(|err| Located::new(err, pos))?
                     }
                     Value::Object(object) => {
-                        let object = Rc::clone(object);
+                        let object: Rc<RefCell<Object>> = Rc::clone(object);
                         let object = object.borrow();
-                        let value = object
-                            .meta
-                            .as_ref()
-                            .and_then(|meta| meta.borrow().fields.get("__next").cloned())
-                            .unwrap_or_default();
+                        let value = object.get_meta(META_NEXT).unwrap_or_default();
                         match value {
                             Value::Function(kind) => match kind {
                                 FunctionKind::Function(function) => {
@@ -239,24 +257,14 @@ impl Interpreter {
                     )
                 }
                 match func {
-                    Value::Function(kind) => match kind {
-                        FunctionKind::Function(function) => self.call(&function, args, dst),
-                        FunctionKind::UserFunction(func) => {
-                            let dst = dst.map(|dst| {
-                                self.call_frames
-                                    .last_mut()
-                                    .expect("no call frame")
-                                    .location(&dst)
-                                    .expect("dst not found")
-                            });
-                            let value = func(self, args).map_err(|err| {
-                                Located::new(RunTimeError::Custom(err.to_string()), pos)
-                            })?;
-                            if let Some(dst) = dst {
-                                *dst.borrow_mut() = value;
-                            }
+                    Value::Function(kind) => self.call_kind(kind, args, dst, pos)?,
+                    Value::Object(object) => {
+                        args.insert(0, Value::Object(Rc::clone(&object)));
+                        let object = object.borrow();
+                        if let Some(Value::Function(kind)) = object.get_meta(META_CALL) {
+                            self.call_kind(kind, args, dst, pos)?;
                         }
-                    },
+                    }
                     value => return Err(Located::new(RunTimeError::CannotCall(value.typ()), pos)),
                 };
             }
@@ -277,7 +285,7 @@ impl Interpreter {
                 *dst.borrow_mut() = value;
             }
             ByteCode::Field { dst, head, field } => {
-                let dst = self
+                let dst_value = self
                     .call_frames
                     .last_mut()
                     .expect("no call frame")
@@ -295,17 +303,23 @@ impl Interpreter {
                     .expect("no call frame")
                     .source(&field)
                     .expect("source not found");
-                *dst.borrow_mut() = match head {
-                    Value::Object(object) => match field {
-                        Value::String(key) => object.borrow_mut().fields.get(&key).cloned(),
-                        field => {
-                            return Err(Located::new(
-                                RunTimeError::CannotFieldInto {
-                                    head: Value::Object(Default::default()).typ(),
-                                    field: field.typ(),
-                                },
-                                pos,
-                            ))
+                *dst_value.borrow_mut() = match &head {
+                    Value::Object(object) => {
+                        if let Some(Value::Function(kind)) = object.borrow().get_meta(META_GET) {
+                            self.call_kind(kind, vec![head.clone(), field], Some(dst), pos.clone())?;
+                            return Ok(None);
+                        }
+                        match field {
+                            Value::String(key) => object.borrow_mut().fields.get(&key).cloned(),
+                            field => {
+                                return Err(Located::new(
+                                    RunTimeError::CannotFieldInto {
+                                        head: Value::Object(Default::default()).typ(),
+                                        field: field.typ(),
+                                    },
+                                    pos,
+                                ))
+                            }
                         }
                     },
                     Value::UserObject(object) => match field {
@@ -537,8 +551,12 @@ impl Interpreter {
                     .expect("no call frame")
                     .source(&field)
                     .expect("source not found");
-                match head {
+                match &head {
                     Value::Object(object) => {
+                        if let Some(Value::Function(kind)) = object.borrow().get_meta(META_SET) {
+                            self.call_kind(kind, vec![head.clone(), field, value], None, pos.clone())?;
+                            return Ok(None);
+                        }
                         let mut object = object.borrow_mut();
                         let old_value = match field {
                             Value::String(key) => {
@@ -963,11 +981,14 @@ impl Interpreter {
         Ok(None)
     }
     pub fn run(&mut self) -> Result<Option<Value>, Located<RunTimeError>> {
+        let level = self.call_frames.len();
         loop {
             if let Some(value) = self.step()? {
-                return Ok(Some(value));
+                if self.call_frames.len() < level || self.call_frames.is_empty() {
+                    return Ok(Some(value));
+                }
             }
-            if self.call_frames.is_empty() {
+            if self.call_frames.len() < level || self.call_frames.is_empty() {
                 break;
             }
         }

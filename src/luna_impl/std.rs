@@ -195,6 +195,9 @@ pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
     set_field!(globals."safe_call" = function!(_safe_call));
     set_field!(globals."type" = function!(_type));
     set_field!(globals."require" = function!(_require));
+    set_field!(globals."raw_type" = function!(_raw_type));
+    set_field!(globals."raw_get" = function!(_raw_get));
+    set_field!(globals."raw_set" = function!(_raw_set));
     set_field!(globals."int" = object! {
         "from" = function!(_int_from),
         "from_bin" = function!(_int_from_bin),
@@ -321,15 +324,18 @@ pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
     globals
 }
 
-pub fn _print(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
-    let args = args.into_iter();
-
-    println!(
-        "{}",
-        args.map(|v| v.to_string())
-            .collect::<Vec<String>>()
-            .join(" ")
-    );
+pub fn _print(interpreter: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let args = args.into_iter().enumerate();
+    let mut strings = vec![String::default(); args.len()];
+    for (i, value) in args {
+        strings.insert(
+            i,
+            value
+                .call_tostring(interpreter)
+                .map_err(|err| Into::<Box<dyn Error>>::into(err.to_string()))?,
+        )
+    }
+    println!("{}", strings.join(" "));
     Ok(Value::default())
 }
 pub fn _input(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
@@ -413,7 +419,7 @@ pub fn _safe_call(
 pub fn _type(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let mut args = args.into_iter().enumerate();
     let value = args.next().unwrap_or_default().1;
-    Ok(Value::String(value.typ().to_string()))
+    Ok(Value::String(value.dynamic_typ()))
 }
 #[derive(Debug, Clone, PartialEq)]
 pub struct RequireError {
@@ -471,6 +477,28 @@ pub fn _require(interpreter: &mut Interpreter, args: Vec<Value>) -> Result<Value
             )
         })?
         .unwrap_or_default())
+}
+
+pub fn _raw_type(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter();
+    let v = args.next().unwrap_or_default();
+    Ok(Value::String(v.typ().to_string()))
+}
+pub fn _raw_get(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let object = typed!(args: Object);
+    let object = object.borrow();
+    let key = typed!(args: String);
+    Ok(object.get(&key).unwrap_or_default())
+}
+pub fn _raw_set(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let object = typed!(args: Object);
+    let mut object = object.borrow_mut();
+    let key = typed!(args: String);
+    let value = args.next().unwrap_or_default().1;
+    object.set(key, value);
+    Ok(Value::default())
 }
 
 pub fn _int_from(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
@@ -628,13 +656,20 @@ pub fn _char_is_upper(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Bo
     Ok(Value::Bool(value.is_ascii_uppercase()))
 }
 
-pub fn _string_from(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+pub fn _string_from(
+    interpreter: &mut Interpreter,
+    args: Vec<Value>,
+) -> Result<Value, Box<dyn Error>> {
     let args = args.into_iter().enumerate();
-    Ok(Value::String(
-        args.map(|(_, value)| value.to_string())
-            .collect::<Vec<String>>()
-            .join(""),
-    ))
+    let mut string = String::new();
+    for (_, value) in args {
+        string.push_str(
+            &value
+                .call_tostring(interpreter)
+                .map_err(|err| Into::<Box<dyn Error>>::into(err.to_string()))?,
+        );
+    }
+    Ok(Value::String(string))
 }
 pub fn _string_iter(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let mut args = args.into_iter().enumerate();

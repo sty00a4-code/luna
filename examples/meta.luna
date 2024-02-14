@@ -1,0 +1,36 @@
+let counter = setmeta({
+    count = 0
+}, {
+    __type = "counter"
+    __tostring = fn (self) {
+        return "%s(%s)":format(type(self), self.count)
+    }
+    __call = fn (self) {
+        raw_set(self, "count", self.count + 1)
+        return self.count
+    }
+    __get = fn (self, key) {
+        return raw_get(self, key)
+    }
+    __set = fn (self, key, value) {
+        if key == "count" {
+            error "can not change counter manually"
+        } else {
+            raw_set(self, key, value)
+        }
+    }
+})
+print(type(counter)) # counter
+
+print(counter) # counter(0)
+print(counter()) # 1
+print(counter) # counter(1)
+print(counter()) # 2
+print(counter) # counter(2)
+print(counter()) # 3
+print(counter) # counter(3)
+
+print("counter.count =", counter.count) # counter.count = 3
+counter.a = false
+print("counter.a =", counter.a) # counter.a = false
+counter.count += 1 # ERROR: can not change counter manually
