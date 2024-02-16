@@ -253,14 +253,16 @@ pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
         "insert" = function!(_vector_insert),
         "join" = function!(_vector_join),
         "swap" = function!(_vector_swap),
-        "copy" = function!(_vector_copy)
+        "copy" = function!(_vector_copy),
+        "clear" = function!(_vector_clear)
     });
     set_field!(globals."obj" = object! {
         "len" = function!(_object_len),
         "keys" = function!(_object_keys),
         "values" = function!(_object_values),
         "setmeta" = function!(_object_setmeta),
-        "getmeta" = function!(_object_getmeta)
+        "getmeta" = function!(_object_getmeta),
+        "clear" = function!(_object_clear)
     });
     set_field!(globals."keys" = function!(_object_keys));
     set_field!(globals."values" = function!(_object_values));
@@ -916,6 +918,13 @@ pub fn _vector_copy(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<
 
     Ok(vector.clone().into())
 }
+pub fn _vector_clear(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let vector = typed!(args: Vector);
+    let mut vector = vector.borrow_mut();
+    vector.clear();
+    Ok(Value::default())
+}
 
 pub fn _object_len(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let mut args = args.into_iter().enumerate();
@@ -977,6 +986,13 @@ pub fn _object_getmeta(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, B
         .as_ref()
         .map(|o| Value::Object(Rc::clone(o)))
         .unwrap_or_default())
+}
+pub fn _object_clear(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let object = typed!(args: Object);
+    let mut object = object.borrow_mut();
+    object.fields.clear();
+    Ok(Value::default())
 }
 pub fn _range(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let mut args = args.into_iter().enumerate();
