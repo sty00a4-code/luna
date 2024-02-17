@@ -1,0 +1,85 @@
+# deep copy
+fn vec.deep_copy(v) {
+    let new = []
+    for e in v:iter() {
+        if type(e) == "vector" {
+            new:push(e:deep_copy())
+        } else {
+            new:push(e)
+        }
+    }
+    return new
+}
+
+# state
+WIDTH = 10
+HEIGHT = 10
+let state = []
+for y in range(HEIGHT) {
+    state:push([])
+    for x in range(WIDTH) {
+        state[y]:push(math.random():round())
+    }
+}
+let new_state = state:deep_copy()
+
+# cell
+let fn cell(x, y) {
+    let row = state[y]
+    if row {
+        let cell = row[x]
+        if cell {
+            return cell
+        }
+    }
+    return 0
+}
+
+# update
+let fn update() {
+    for y in range(HEIGHT) {
+        for x in range(WIDTH) {
+            let neighbors = 0
+            neighbors += cell(x - 1, y - 1)
+            neighbors += cell(x, y - 1)
+            neighbors += cell(x + 1, y - 1)
+            neighbors += cell(x - 1, y)
+            neighbors += cell(x + 1, y)
+            neighbors += cell(x - 1, y + 1)
+            neighbors += cell(x, y + 1)
+            neighbors += cell(x + 1, y + 1)
+            if cell(x, y) {
+                if neighbors < 2 {
+                    new_state[y][x] = 0
+                }
+                if neighbors > 3 {
+                    new_state[y][x] = 0
+                }
+            } else {
+                if neighbors == 3 {
+                    new_state[y][x] = 1
+                }
+            }
+        }
+    }
+    state = new_state:deep_copy()
+}
+
+# update
+let fn draw() {
+    os.exec("clear")
+    for row in state:iter() {
+        for cell in row:iter() {
+            io.write(str.from(if cell '#' else ' ', ' '))
+        }
+        print()
+    }
+    print()
+}
+
+# main loop
+draw()
+while true {
+    update()
+    draw()
+}
