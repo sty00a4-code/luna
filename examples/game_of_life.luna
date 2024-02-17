@@ -12,8 +12,8 @@ fn vec.deep_copy(v) {
 }
 
 # state
-WIDTH = 10
-HEIGHT = 10
+WIDTH = 32
+HEIGHT = 32
 let state = []
 for y in range(HEIGHT) {
     state:push([])
@@ -25,6 +25,9 @@ let new_state = state:deep_copy()
 
 # cell
 let fn cell(x, y) {
+    if y < 0 | x < 0 {
+        return 0
+    }
     let row = state[y]
     if row {
         let cell = row[x]
@@ -74,7 +77,9 @@ let fn draw() {
         }
         print()
     }
-    print()
+    for _ in range(10) {
+        print()
+    }
 }
 
 # main loop
@@ -82,4 +87,5 @@ draw()
 while true {
     update()
     draw()
+    os.sleep(0.05)
 }

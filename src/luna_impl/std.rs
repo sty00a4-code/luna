@@ -4,7 +4,7 @@ use crate::{
     run, LunaArgs,
 };
 use std::{
-    cell::RefCell, collections::HashMap, env, error::Error, fmt::{Debug, Display}, fs::{self, File}, io::{self, Read, Stderr, Stdin, Stdout, Write}, net::{TcpListener, TcpStream}, path::Path, process::Command, rc::Rc
+    cell::RefCell, collections::HashMap, env, error::Error, fmt::{Debug, Display}, fs::{self, File}, io::{self, Read, Stderr, Stdin, Stdout, Write}, net::{TcpListener, TcpStream}, path::Path, process::Command, rc::Rc, thread, time::Duration
 };
 
 use super::interpreter::Interpreter;
@@ -315,7 +315,9 @@ pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
         "connect" = function!(_net_connect)
     });
     set_field!(globals."os" = object! {
-        "exec" = function!(_os_exec)
+        "exec" = function!(_os_exec),
+        "time" = function!(_os_time),
+        "sleep" = function!(_os_sleep)
     });
     globals
 }
@@ -1381,6 +1383,7 @@ pub fn _net_connect(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<
         .map(|stream| Value::UserObject(Rc::new(RefCell::new(Box::new(TcpStreamObject(stream))))))
         .unwrap_or_default())
 }
+
 pub fn _os_exec(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let mut args = args.into_iter().enumerate();
     let command = typed!(args: String);
@@ -1389,6 +1392,15 @@ pub fn _os_exec(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn 
         .args(args)
         .output()?;
     Ok(Value::Bool(output.status.success()))
+}
+pub fn _os_time(_: &mut Interpreter, _: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    Ok(Value::Float(chrono::Utc::now().timestamp_micros() as f64 / 1_000_000.))
+}
+pub fn _os_sleep(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let secs = option!(args: Float => secs { secs }, Int => secs { secs as f64 });
+    thread::sleep(Duration::from_secs_f64(secs));
+    Ok(Value::default())
 }
 
 fn _iter_next(_: &mut Interpreter, mut args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
