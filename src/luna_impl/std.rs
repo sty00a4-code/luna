@@ -4,16 +4,7 @@ use crate::{
     run, LunaArgs,
 };
 use std::{
-    cell::RefCell,
-    collections::HashMap,
-    env,
-    error::Error,
-    fmt::{Debug, Display},
-    fs::{self, File},
-    io::{self, Read, Stderr, Stdin, Stdout, Write},
-    net::{TcpListener, TcpStream},
-    path::Path,
-    rc::Rc,
+    cell::RefCell, collections::HashMap, env, error::Error, fmt::{Debug, Display}, fs::{self, File}, io::{self, Read, Stderr, Stdin, Stdout, Write}, net::{TcpListener, TcpStream}, path::Path, process::Command, rc::Rc
 };
 
 use super::interpreter::Interpreter;
@@ -322,6 +313,9 @@ pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
     set_field!(globals."net" = object! {
         "bind" = function!(_net_bind),
         "connect" = function!(_net_connect)
+    });
+    set_field!(globals."os" = object! {
+        "exec" = function!(_os_exec)
     });
     globals
 }
@@ -1386,6 +1380,15 @@ pub fn _net_connect(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<
     Ok(TcpStream::connect((addr, port))
         .map(|stream| Value::UserObject(Rc::new(RefCell::new(Box::new(TcpStreamObject(stream))))))
         .unwrap_or_default())
+}
+pub fn _os_exec(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let command = typed!(args: String);
+    let args = args.map(|(_, v)| v.to_string()).collect::<Vec<String>>();
+    let output = Command::new(command)
+        .args(args)
+        .output()?;
+    Ok(Value::Bool(output.status.success()))
 }
 
 fn _iter_next(_: &mut Interpreter, mut args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
