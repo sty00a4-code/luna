@@ -77,7 +77,7 @@ let fn draw() {
         }
         print()
     }
-    for _ in range(10) {
+    for _ in range(6) {
         print()
     }
 }
