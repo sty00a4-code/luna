@@ -96,9 +96,9 @@ macro_rules! set_field {
 }
 #[derive(Debug, Clone, PartialEq)]
 pub struct ExpectedType {
-    idx: usize,
-    expected: &'static str,
-    got: &'static str,
+    pub idx: usize,
+    pub expected: &'static str,
+    pub got: &'static str,
 }
 impl Display for ExpectedType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -112,9 +112,9 @@ impl Display for ExpectedType {
 impl Error for ExpectedType {}
 #[derive(Debug, Clone, PartialEq)]
 pub struct ExpectedTypes {
-    idx: usize,
-    expected: Vec<&'static str>,
-    got: &'static str,
+    pub idx: usize,
+    pub expected: Vec<&'static str>,
+    pub got: &'static str,
 }
 impl Display for ExpectedTypes {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
