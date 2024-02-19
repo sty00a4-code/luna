@@ -1,10 +1,12 @@
-use lang::{
+pub extern crate luna_rs;
+
+use luna_rs::lang::{
     ast::Chunk,
     code::Closure,
     tokens::Token,
     value::{Function, Value},
 };
-use luna_impl::{
+use luna_rs::luna_impl::{
     compiler::{Compilable, Compiler},
     interpreter::Interpreter,
     lexer::Lexer,
@@ -20,11 +22,6 @@ use std::{
     fs, process,
     rc::Rc,
 };
-
-pub mod lang;
-pub mod luna_impl;
-#[cfg(test)]
-pub mod tests;
 
 pub fn lex(text: &str, args: &LunaArgs) -> Result<Vec<Located<Token>>, Located<Box<dyn Error>>> {
     let tokens = Lexer::from(text)

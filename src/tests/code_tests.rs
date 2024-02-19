@@ -1,6 +1,6 @@
 #[test]
 fn counter() {
-    use crate::{run, LunaArgs};
+    use crate::run_str;
 
     let text = r#"
         let fn counter() {
@@ -20,11 +20,11 @@ fn counter() {
         assert(c2() == 2)
         assert(c2() == 3)
     "#;
-    dbg!(run(text, &LunaArgs::default())).expect("error happened");
+    dbg!(run_str(text)).expect("error happened");
 }
 #[test]
 fn counter_default() {
-    use crate::{run, LunaArgs};
+    use crate::run_str;
 
     let text = r#"
         let default = 1
@@ -45,5 +45,5 @@ fn counter_default() {
         assert(c2() == 2)
         assert(c2() == 3)
     "#;
-    dbg!(run(text, &LunaArgs::default())).expect("error happened");
+    dbg!(run_str(text)).expect("error happened");
 }

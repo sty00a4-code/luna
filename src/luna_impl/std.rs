@@ -1,180 +1,32 @@
 #![allow(unused_macros)]
 use crate::{
     lang::value::{FunctionKind, Object, UserObject, UserObjectError, Value},
-    run, LunaArgs,
+    run_str,
+    set_field,
+    function,
+    object,
+    typed,
+    option,
+    ExpectedType,
+    ExpectedTypes
 };
 use std::{
-    cell::RefCell, collections::HashMap, env, error::Error, fmt::{Debug, Display}, fs::{self, File}, io::{self, Read, Stderr, Stdin, Stdout, Write}, net::{TcpListener, TcpStream}, path::Path, process::Command, rc::Rc, thread, time::Duration
+    cell::RefCell,
+    collections::HashMap,
+    env,
+    error::Error,
+    fmt::{Debug, Display},
+    fs::{self, File},
+    io::{self, Read, Stderr, Stdin, Stdout, Write},
+    net::{TcpListener, TcpStream},
+    path::Path,
+    process::Command,
+    rc::Rc,
+    thread,
+    time::Duration,
 };
 
 use super::interpreter::Interpreter;
-
-macro_rules! int {
-    ($v:literal) => {
-        Value::Int($v.into())
-    };
-}
-macro_rules! float {
-    ($v:literal) => {
-        Value::Float($v.into())
-    };
-}
-macro_rules! bool {
-    ($v:literal) => {
-        Value::Bool($v.into())
-    };
-}
-macro_rules! char {
-    ($v:literal) => {
-        Value::Char($v.into())
-    };
-}
-macro_rules! string {
-    ($v:literal) => {
-        Value::String($v.to_string())
-    };
-}
-macro_rules! vector {
-    [$($v:literal),*] => {
-        Value::Vector(Rc::new(RefCell::new(vec![$($v.into()),*])))
-    };
-}
-macro_rules! object {
-    {$($k:literal = $v:expr),*} => {
-        {
-            #[allow(unused_variables, unused_mut)]
-            let mut map = HashMap::new();
-            $(
-                map.insert($k.into(), $v.into());
-            ) *
-            Value::Object(Rc::new(RefCell::new(Object::new(map))))
-        }
-    };
-}
-macro_rules! function {
-    ($name:ident) => {
-        Value::Function(FunctionKind::UserFunction(Rc::new($name)))
-    };
-}
-macro_rules! set_field {
-    ($map:ident . $field:literal = $value:expr) => {
-        $map.insert($field.to_string(), Rc::new(RefCell::new($value)));
-    };
-}
-#[derive(Debug, Clone, PartialEq)]
-pub struct ExpectedType {
-    idx: usize,
-    expected: &'static str,
-    got: &'static str,
-}
-impl Display for ExpectedType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "expected {} for argument #{}, got {}",
-            self.expected, self.idx, self.got
-        )
-    }
-}
-impl Error for ExpectedType {}
-#[derive(Debug, Clone, PartialEq)]
-pub struct ExpectedTypes {
-    idx: usize,
-    expected: Vec<&'static str>,
-    got: &'static str,
-}
-impl Display for ExpectedTypes {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "expected {} for argument #{}, got {}",
-            self.expected.join("/"),
-            self.idx,
-            self.got
-        )
-    }
-}
-impl Error for ExpectedTypes {}
-macro_rules! typed {
-    ($args:ident : $type:ident) => {{
-        let (idx, arg) = $args.next().unwrap_or(($args.len(), Value::default()));
-        if let Value::$type(value) = arg {
-            value
-        } else {
-            return Err(ExpectedType {
-                idx,
-                expected: Value::$type(Default::default()).typ(),
-                got: arg.typ(),
-            }
-            .into());
-        }
-    }};
-    ($args:ident : $type:ident ?) => {{
-        let (idx, arg) = $args.next().unwrap_or(($args.len(), Value::default()));
-        if arg == Value::default() {
-            None
-        } else {
-            if let Value::$type(value) = arg {
-                Some(value)
-            } else {
-                return Err(ExpectedType {
-                    idx,
-                    expected: Value::$type(Default::default()).typ(),
-                    got: arg.typ(),
-                }
-                .into());
-            }
-        }
-    }};
-    ($args:ident : $type:ident $param:ident => $value:expr) => {{
-        let (idx, arg) = $args.next().unwrap_or(($args.len(), Value::default()));
-        if let Value::$type($param) = arg {
-            $value
-        } else {
-            return Err(ExpectedType {
-                idx,
-                expected: Value::$type(Default::default()).typ(),
-                got: arg.typ(),
-            }
-            .into());
-        }
-    }};
-    ($args:ident : $type:ident ? $param:ident => $value:expr) => {{
-        let (idx, arg) = $args.next().unwrap_or(($args.len(), Value::default()));
-        if arg == Value::default() {
-            None
-        } else {
-            if let Value::$type($param) = arg {
-                Some($value)
-            } else {
-                return Err(ExpectedType {
-                    idx,
-                    expected: Value::$type(Default::default()).typ(),
-                    got: arg.typ(),
-                }
-                .into());
-            }
-        }
-    }};
-}
-macro_rules! option {
-    ($args:ident : $($type:ident => $value:ident $body:block),+) => {{
-        let (idx, arg) = $args.next().unwrap_or(($args.len(), Value::default()));
-        match arg {
-            $(
-                Value::$type($value) => $body,
-            ) +
-            arg => {
-                return Err(ExpectedTypes {
-                    idx,
-                    expected: vec![$(Value::$type(Default::default()).typ()),+],
-                    got: arg.typ(),
-                }
-                .into())
-            }
-        }
-    }};
-}
 
 pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
     let mut globals = HashMap::new();
@@ -465,7 +317,7 @@ pub fn _require(interpreter: &mut Interpreter, args: Vec<Value>) -> Result<Value
             global_path: None,
         }));
     };
-    Ok(run(&text, &LunaArgs::default())
+    Ok(run_str(&text)
         .map_err(|err| {
             format!(
                 "{full_path}:{}:{}: {}",
@@ -1388,13 +1240,13 @@ pub fn _os_exec(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn 
     let mut args = args.into_iter().enumerate();
     let command = typed!(args: String);
     let args = args.map(|(_, v)| v.to_string()).collect::<Vec<String>>();
-    let output = Command::new(command)
-        .args(args)
-        .output()?;
+    let output = Command::new(command).args(args).output()?;
     Ok(Value::Bool(output.status.success()))
 }
 pub fn _os_time(_: &mut Interpreter, _: Vec<Value>) -> Result<Value, Box<dyn Error>> {
-    Ok(Value::Float(chrono::Utc::now().timestamp_micros() as f64 / 1_000_000.))
+    Ok(Value::Float(
+        chrono::Utc::now().timestamp_micros() as f64 / 1_000_000.,
+    ))
 }
 pub fn _os_sleep(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let mut args = args.into_iter().enumerate();

@@ -71,8 +71,8 @@ pub enum FunctionKind {
 }
 #[derive(Debug, Clone, Default)]
 pub struct Function {
-    pub(crate) closure: Rc<RefCell<Closure>>,
-    pub(crate) upvalues: Vec<Rc<RefCell<Value>>>,
+    pub closure: Rc<RefCell<Closure>>,
+    pub upvalues: Vec<Rc<RefCell<Value>>>,
 }
 pub type UserFunction = dyn Fn(&mut Interpreter, Vec<Value>) -> Result<Value, Box<dyn Error>>;
 
