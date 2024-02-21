@@ -120,7 +120,7 @@ impl Value {
                     self.typ().to_string()
                 }
             }
-            _ => self.typ().to_string()
+            _ => self.typ().to_string(),
         }
     }
     pub fn call_tostring(
@@ -331,5 +331,160 @@ impl From<Rc<UserFunction>> for Value {
 impl From<Box<UserFunction>> for Value {
     fn from(value: Box<UserFunction>) -> Self {
         Self::Function(FunctionKind::UserFunction(Rc::new(value)))
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum FromValueError<E> {
+    ConversionError(E),
+    InvalidType(&'static str),
+}
+impl<E: Display> Display for FromValueError<E> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            FromValueError::ConversionError(err) => write!(f, "error while converting {err}"),
+            FromValueError::InvalidType(typ) => write!(f, "cannot transform from {typ}"),
+        }
+    }
+}
+impl<E: Display + Debug> Error for FromValueError<E> {}
+impl TryInto<u8> for Value {
+    type Error = FromValueError<<u8 as TryFrom<i64>>::Error>;
+    fn try_into(self) -> Result<u8, Self::Error> {
+        match self {
+            Value::Int(v) => v.try_into().map_err(FromValueError::ConversionError),
+            value => Err(FromValueError::InvalidType(value.typ())),
+        }
+    }
+}
+impl TryInto<u16> for Value {
+    type Error = FromValueError<<u16 as TryFrom<i64>>::Error>;
+    fn try_into(self) -> Result<u16, Self::Error> {
+        match self {
+            Value::Int(v) => v.try_into().map_err(FromValueError::ConversionError),
+            value => Err(FromValueError::InvalidType(value.typ())),
+        }
+    }
+}
+impl TryInto<u32> for Value {
+    type Error = FromValueError<<u32 as TryFrom<i64>>::Error>;
+    fn try_into(self) -> Result<u32, Self::Error> {
+        match self {
+            Value::Int(v) => v.try_into().map_err(FromValueError::ConversionError),
+            value => Err(FromValueError::InvalidType(value.typ())),
+        }
+    }
+}
+impl TryInto<u64> for Value {
+    type Error = FromValueError<<u64 as TryFrom<i64>>::Error>;
+    fn try_into(self) -> Result<u64, Self::Error> {
+        match self {
+            Value::Int(v) => v.try_into().map_err(FromValueError::ConversionError),
+            value => Err(FromValueError::InvalidType(value.typ())),
+        }
+    }
+}
+impl TryInto<u128> for Value {
+    type Error = FromValueError<<u128 as TryFrom<i64>>::Error>;
+    fn try_into(self) -> Result<u128, Self::Error> {
+        match self {
+            Value::Int(v) => v.try_into().map_err(FromValueError::ConversionError),
+            value => Err(FromValueError::InvalidType(value.typ())),
+        }
+    }
+}
+impl TryInto<i8> for Value {
+    type Error = FromValueError<<i8 as TryFrom<i64>>::Error>;
+    fn try_into(self) -> Result<i8, Self::Error> {
+        match self {
+            Value::Int(v) => v.try_into().map_err(FromValueError::ConversionError),
+            value => Err(FromValueError::InvalidType(value.typ())),
+        }
+    }
+}
+impl TryInto<i16> for Value {
+    type Error = FromValueError<<i16 as TryFrom<i64>>::Error>;
+    fn try_into(self) -> Result<i16, Self::Error> {
+        match self {
+            Value::Int(v) => v.try_into().map_err(FromValueError::ConversionError),
+            value => Err(FromValueError::InvalidType(value.typ())),
+        }
+    }
+}
+impl TryInto<i32> for Value {
+    type Error = FromValueError<<i32 as TryFrom<i64>>::Error>;
+    fn try_into(self) -> Result<i32, Self::Error> {
+        match self {
+            Value::Int(v) => v.try_into().map_err(FromValueError::ConversionError),
+            value => Err(FromValueError::InvalidType(value.typ())),
+        }
+    }
+}
+impl TryInto<i64> for Value {
+    type Error = FromValueError<<i64 as TryFrom<i64>>::Error>;
+    fn try_into(self) -> Result<i64, Self::Error> {
+        match self {
+            Value::Int(v) => Ok(v),
+            value => Err(FromValueError::InvalidType(value.typ())),
+        }
+    }
+}
+impl TryInto<i128> for Value {
+    type Error = FromValueError<<i128 as TryFrom<i64>>::Error>;
+    fn try_into(self) -> Result<i128, Self::Error> {
+        match self {
+            Value::Int(v) => Ok(v as i128),
+            value => Err(FromValueError::InvalidType(value.typ())),
+        }
+    }
+}
+impl TryInto<isize> for Value {
+    type Error = FromValueError<<isize as TryFrom<i64>>::Error>;
+    fn try_into(self) -> Result<isize, Self::Error> {
+        match self {
+            Value::Int(v) => v.try_into().map_err(FromValueError::ConversionError),
+            value => Err(FromValueError::InvalidType(value.typ())),
+        }
+    }
+}
+impl TryInto<char> for Value {
+    type Error = FromValueError<<char as TryFrom<char>>::Error>;
+    fn try_into(self) -> Result<char, Self::Error> {
+        match self {
+            Value::Char(v) => Ok(v),
+            value => Err(FromValueError::InvalidType(value.typ())),
+        }
+    }
+}
+impl TryInto<String> for Value {
+    type Error = FromValueError<<String as TryFrom<String>>::Error>;
+    fn try_into(self) -> Result<String, Self::Error> {
+        match self {
+            Value::String(v) => Ok(v),
+            value => Err(FromValueError::InvalidType(value.typ())),
+        }
+    }
+}
+impl<V: From<Value>> TryInto<Vec<V>> for Value {
+    type Error = FromValueError<<V as TryFrom<V>>::Error>;
+    fn try_into(self) -> Result<Vec<V>, Self::Error> {
+        match self {
+            Value::Vector(vector) => Ok(vector.take().into_iter().map(|v| v.into()).collect()),
+            value => Err(FromValueError::InvalidType(value.typ())),
+        }
+    }
+}
+impl<V: From<Value>> TryInto<HashMap<String, V>> for Value {
+    type Error = FromValueError<<V as TryFrom<V>>::Error>;
+    fn try_into(self) -> Result<HashMap<String, V>, Self::Error> {
+        match self {
+            Value::Object(object) => Ok(object
+                .take()
+                .fields
+                .into_iter()
+                .map(|(k, v)| (k, v.into()))
+                .collect()),
+            value => Err(FromValueError::InvalidType(value.typ())),
+        }
     }
 }
