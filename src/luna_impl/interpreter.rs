@@ -63,7 +63,6 @@ impl Interpreter {
 }
 impl Interpreter {
     pub fn path(&self) -> Option<String> {
-        dbg!(&self.call_frames);
         self.call_frames.last()?.function.closure.borrow().path.clone()
     }
     pub fn call(&mut self, function: &Rc<Function>, args: Vec<Value>, dst: Option<Location>) {

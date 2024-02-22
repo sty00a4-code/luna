@@ -295,7 +295,7 @@ pub fn _require(interpreter: &mut Interpreter, args: Vec<Value>) -> Result<Value
         (text, format!("{path}/mod.luna"))
     } else if let Some(global_path) = &interpreter.global_path {
         let current_path = env::current_dir().map_err(|_| "couldn't resolve current directory")?;
-        let root_path = format!("/{}", env::var("HOME")?);
+        let root_path = "/";
         let root_path = Path::new(&root_path);
         env::set_current_dir(root_path).map_err(|_| "couldn't change directory to root")?;
         if let Ok(text) = fs::read_to_string(format!("{global_path}/{path}.luna")) {
