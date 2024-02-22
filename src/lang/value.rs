@@ -14,7 +14,7 @@ use std::{
 
 pub const META_NAME: &str = "__name";
 pub const META_TYPE: &str = "__type";
-pub const META_TOSTRING: &str = "__tostring";
+pub const META_TOSTRING: &str = "__str";
 pub const META_CALL: &str = "__call";
 pub const META_GET: &str = "__get";
 pub const META_SET: &str = "__set";
