@@ -317,7 +317,7 @@ pub fn _require(interpreter: &mut Interpreter, args: Vec<Value>) -> Result<Value
             global_path: None,
         }));
     };
-    Ok(run_str(&text)
+    Ok(run_str(&text, Some(&full_path))
         .map_err(|err| {
             format!(
                 "{full_path}:{}:{}: {}",

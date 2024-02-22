@@ -62,6 +62,10 @@ impl Interpreter {
     }
 }
 impl Interpreter {
+    pub fn path(&self) -> Option<String> {
+        dbg!(&self.call_frames);
+        self.call_frames.last()?.function.closure.borrow().path.clone()
+    }
     pub fn call(&mut self, function: &Rc<Function>, args: Vec<Value>, dst: Option<Location>) {
         let mut stack = vec![];
         let len = args.len();
@@ -999,6 +1003,9 @@ impl Interpreter {
     }
 }
 impl CallFrame {
+    pub fn path(&self) -> Option<String> {
+        self.function.closure.borrow().path.clone()
+    }
     pub fn register(&self, register: usize) -> Option<Rc<RefCell<Value>>> {
         self.stack.get(register).cloned()
     }

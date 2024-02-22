@@ -1,17 +1,20 @@
 pub extern crate luna_rs;
 
-use luna_rs::lang::{
-    ast::Chunk,
-    code::Closure,
-    tokens::Token,
-    value::{Function, Value},
-};
 use luna_rs::luna_impl::{
     compiler::{Compilable, Compiler},
     interpreter::Interpreter,
     lexer::Lexer,
     parser::Parsable,
     position::Located,
+};
+use luna_rs::{
+    lang::{
+        ast::Chunk,
+        code::Closure,
+        tokens::Token,
+        value::{Function, Value},
+    },
+    luna_impl::position::PathLocated,
 };
 use std::{
     cell::RefCell,
@@ -49,22 +52,28 @@ pub fn compile(
     args: &LunaArgs,
 ) -> Result<Rc<RefCell<Closure>>, Located<Box<dyn Error>>> {
     let ast = parse(text, args)?;
-    let closure = ast.compile(&mut Compiler::default())?;
+    let closure = ast.compile(&mut Compiler {
+        path: Some(args.path.clone()),
+        ..Default::default()
+    })?;
     if args.code {
         println!("CODE:");
         println!("{}", closure.borrow());
     }
     Ok(closure)
 }
-pub fn run(text: &str, args: &LunaArgs) -> Result<Option<Value>, Located<Box<dyn Error>>> {
-    let closure = compile(text, args)?;
+pub fn run(text: &str, args: &LunaArgs) -> Result<Option<Value>, PathLocated<Box<dyn Error>>> {
+    let closure = compile(text, args).map_err(|err| err.with_path(args.path.clone()))?;
     let function = Rc::new(Function {
         closure,
         upvalues: vec![],
     });
     let mut interpreter = Interpreter::default().with_global_path(env::var("LUNA_PATH").ok());
     interpreter.call(&function, vec![], None);
-    interpreter.run().map_err(|err| err.map(|err| err.into()))
+    interpreter.run().map_err(|err| {
+        err.map(|err| err.into())
+            .with_path(interpreter.path().unwrap_or("<input>".to_string()))
+    })
 }
 
 fn main() {
@@ -81,15 +90,20 @@ fn main() {
         })
         .unwrap();
     let value = run(&text, &args)
-        .map_err(|Located { value: err, pos }| {
-            eprintln!(
-                "ERROR {}:{}:{}: {err}",
-                args.path,
-                pos.ln.start + 1,
-                pos.col.start + 1
-            );
-            process::exit(1);
-        })
+        .map_err(
+            |PathLocated {
+                 value: err,
+                 path,
+                 pos,
+             }| {
+                eprintln!(
+                    "ERROR {path}:{}:{}: {err}",
+                    pos.ln.start + 1,
+                    pos.col.start + 1
+                );
+                process::exit(1);
+            },
+        )
         .unwrap();
     if let Some(value) = value {
         println!("{value}");

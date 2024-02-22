@@ -20,7 +20,7 @@ fn counter() {
         assert(c2() == 2)
         assert(c2() == 3)
     "#;
-    dbg!(run_str(text)).expect("error happened");
+    dbg!(run_str(text, None)).expect("error happened");
 }
 #[test]
 fn counter_default() {
@@ -45,5 +45,5 @@ fn counter_default() {
         assert(c2() == 2)
         assert(c2() == 3)
     "#;
-    dbg!(run_str(text)).expect("error happened");
+    dbg!(run_str(text, None)).expect("error happened");
 }

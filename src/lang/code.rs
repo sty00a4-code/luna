@@ -131,6 +131,7 @@ pub struct Closure {
     pub closures: Vec<Rc<RefCell<Self>>>,
     pub upvalues: Vec<Upvalue>,
     pub consts: Vec<Value>,
+    pub path: Option<String>
 }
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Upvalue {

@@ -15,7 +15,8 @@ use super::position::{Located, Position};
 
 #[derive(Debug, Default)]
 pub struct Compiler {
-    pub(crate) frames: Vec<CompilerFrame>,
+    pub frames: Vec<CompilerFrame>,
+    pub path: Option<String>,
 }
 #[derive(Debug, Default)]
 pub struct CompilerFrame {
@@ -36,24 +37,20 @@ pub trait Compilable {
 }
 
 impl Compiler {
-    pub fn new() -> Self {
+    pub fn new(path: Option<String>) -> Self {
         Self {
             frames: vec![CompilerFrame {
-                closure: Rc::new(RefCell::new(Closure::default())),
+                closure: Rc::new(RefCell::new(Closure {
+                    path: path.clone(),
+                    ..Default::default()
+                })),
                 scopes: vec![Scope::default()],
                 registers: 0,
             }],
+            path
         }
     }
     pub fn push_frame(&mut self, frame: CompilerFrame) {
-        // if let Some(parent_frame) = self.frame_mut() {
-        //     parent_frame
-        //         .closure
-        //         .borrow_mut()
-        //         .children
-        //         .push(Rc::clone(&frame.closure));
-        //     frame.closure.borrow_mut().parent = Some(Rc::clone(&frame.closure));
-        // }
         self.frames.push(frame);
     }
     pub fn pop_frame(&mut self) -> Option<CompilerFrame> {
@@ -178,7 +175,10 @@ impl Compilable for Located<Chunk> {
     fn compile(self, compiler: &mut Compiler) -> Result<Self::Output, Located<Box<dyn Error>>> {
         let Located { value: chunk, pos } = self;
         compiler.push_frame(CompilerFrame {
-            closure: Rc::new(RefCell::new(Closure::default())),
+            closure: Rc::new(RefCell::new(Closure {
+                path: compiler.path.clone(),
+                ..Default::default()
+            })),
             scopes: vec![Scope::default()],
             registers: 0,
         });
@@ -607,7 +607,10 @@ impl Compilable for Located<Statement> {
                 body,
             } => {
                 compiler.push_frame(CompilerFrame {
-                    closure: Rc::new(RefCell::new(Closure::default())),
+                    closure: Rc::new(RefCell::new(Closure {
+                        path: compiler.path.clone(),
+                        ..Default::default()
+                    })),
                     scopes: vec![Scope::default()],
                     registers: 0,
                 });

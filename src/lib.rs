@@ -5,8 +5,19 @@ pub mod tests;
 
 use std::{cell::RefCell, env, error::Error, fmt::Display, rc::Rc};
 
-use lang::{ast::Chunk, code::Closure, tokens::Token, value::{Function, Value}};
-use luna_impl::{compiler::{Compilable, Compiler}, interpreter::Interpreter, lexer::Lexer, parser::Parsable, position::Located};
+use lang::{
+    ast::Chunk,
+    code::Closure,
+    tokens::Token,
+    value::{Function, Value},
+};
+use luna_impl::{
+    compiler::{Compilable, Compiler},
+    interpreter::Interpreter,
+    lexer::Lexer,
+    parser::Parsable,
+    position::{Located, PathLocated},
+};
 
 pub fn lex_str(text: &str) -> Result<Vec<Located<Token>>, Located<Box<dyn Error>>> {
     Lexer::from(text)
@@ -17,20 +28,37 @@ pub fn parse_str(text: &str) -> Result<Located<Chunk>, Located<Box<dyn Error>>> 
     Chunk::parse(&mut lex_str(text)?.into_iter().peekable())
         .map_err(|err| err.map(|err| err.into()))
 }
-pub fn compile_str(text: &str) -> Result<Rc<RefCell<Closure>>, Located<Box<dyn Error>>> {
+pub fn compile_str(
+    text: &str,
+    path: Option<&str>,
+) -> Result<Rc<RefCell<Closure>>, Located<Box<dyn Error>>> {
     let ast = parse_str(text)?;
-    let closure = ast.compile(&mut Compiler::default())?;
+    let closure = ast.compile(&mut Compiler {
+        path: path.map(|s| s.to_string()),
+        ..Default::default()
+    })?;
     Ok(closure)
 }
-pub fn run_str(text: &str) -> Result<Option<Value>, Located<Box<dyn Error>>> {
-    let closure = compile_str(text)?;
+pub fn run_str(
+    text: &str,
+    path: Option<&str>,
+) -> Result<Option<Value>, PathLocated<Box<dyn Error>>> {
+    let closure = compile_str(text, path).map_err(|err| {
+        err.with_path(
+            path.map(|path| path.to_string())
+                .unwrap_or("<input>".to_string()),
+        )
+    })?;
     let function = Rc::new(Function {
         closure,
         upvalues: vec![],
     });
     let mut interpreter = Interpreter::default().with_global_path(env::var("LUNA_PATH").ok());
     interpreter.call(&function, vec![], None);
-    interpreter.run().map_err(|err| err.map(|err| err.into()))
+    interpreter.run().map_err(|err| {
+        err.map(|err| err.into())
+            .with_path(interpreter.path().unwrap_or("<input>".to_string()))
+    })
 }
 
 #[macro_export]
