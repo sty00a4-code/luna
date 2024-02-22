@@ -1,5 +1,5 @@
 [package]
-name = "luna-lib"
+name = "luna"
 version = "0.4.2"
 edition = "2021"
 description = "a light weight interpreted programming language"
