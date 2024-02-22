@@ -97,7 +97,10 @@ impl Interpreter {
     }
     pub fn call_kind(&mut self, kind: FunctionKind, args: Vec<Value>, dst: Option<Location>, pos: Position) -> Result<(), Located<RunTimeError>> {
         match kind {
-            FunctionKind::Function(function) => Ok(self.call(&function, args, dst)),
+            FunctionKind::Function(function) => {
+                self.call(&function, args, dst);
+                Ok(())
+            },
             FunctionKind::UserFunction(func) => {
                 let dst = dst.map(|dst| {
                     self.call_frames
@@ -222,7 +225,7 @@ impl Interpreter {
                     }
                     Value::Function(kind) => match kind {
                         FunctionKind::Function(function) => {
-                            self.call(&function, vec![], Some(dst));
+                            self.call(function, vec![], Some(dst));
                             return Ok(None);
                         }
                         FunctionKind::UserFunction(func) => func(self, vec![])
