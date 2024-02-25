@@ -758,6 +758,10 @@ impl Interpreter {
                             Value::Float(left + right as f64)
                         }
                         (Value::String(left), Value::String(right)) => Value::String(left + &right),
+                        (Value::String(mut left), Value::Char(right)) => {
+                            left.push(right);
+                            Value::String(left)
+                        }
                         (left, right) => {
                             return Err(Located::new(
                                 RunTimeError::InvalidBinary {
