@@ -13,72 +13,72 @@ use super::{
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum ByteCode {
     #[default]
-    None,
+    None, // 0
 
-    Jump {
+    Jump { // 1
         addr: usize,
     },
-    JumpIf {
+    JumpIf { // 2 - 15 : u32 u32
         negative: bool,
         cond: Source,
         addr: usize,
     },
-    JumpNull {
+    JumpNull { // 16 - 22 : u32 u32
         cond: Source,
         addr: usize,
     },
-    Next {
+    Next { // 23 - 43 : u32 u32
         dst: Location,
         src: Source,
     },
 
-    Call {
+    Call { // 44 - 71 : u32 u32 u32 u32
         dst: Option<Location>,
         func: Source,
         offset: usize,
         amount: usize,
     },
-    Return {
+    Return { // 72 - 79 : u32
         src: Option<Source>,
     },
 
-    Move {
+    Move { // 80 - 100 : u32 u32
         dst: Location,
         src: Source,
     },
-    Field {
+    Field { // 101 - 247 : u32 u32 u32
         dst: Location,
         head: Source,
         field: Source,
     },
-    SetField {
+    SetField { // 248 - 590 : u32 u32 u32
         head: Source,
         field: Source,
         src: Source,
     },
 
-    Vector {
+    Vector { // 591 - 593 : u32 u32 u32
         dst: Location,
         start: usize,
         amount: usize,
     },
-    Object {
+    Object { // 594 - 596 : u32 u32 u32
         dst: Location,
         start: usize,
         amount: usize,
     },
-    Function {
+    Function { // 597 - 599 : u32 u32
         dst: Location,
         addr: usize,
     },
 
-    Binary {
+    Binary { // 600 - 746 : u8 u32 u32 u32
         op: BinaryOperation,
         dst: Location,
         left: Source,
         right: Source,
     },
-    Unary {
+    Unary { // 747 - 767 : u8 u32 u32
         op: UnaryOperation,
         dst: Location,
         src: Source,
