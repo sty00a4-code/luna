@@ -28,6 +28,14 @@ use std::{
 
 use super::interpreter::Interpreter;
 
+pub const INT_MODULE: &str = "int";
+pub const FLOAT_MODULE: &str = "float";
+pub const BOOL_MODULE: &str = "bool";
+pub const CHAR_MODULE: &str = "char";
+pub const STRING_MODULE: &str = "string";
+pub const VECTOR_MODULE: &str = "vector";
+pub const OBJECT_MODULE: &str = "object";
+
 pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
     let mut globals = HashMap::new();
     set_field!(globals."print" = function!(_print));
@@ -41,22 +49,22 @@ pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
     set_field!(globals."raw_type" = function!(_raw_type));
     set_field!(globals."raw_get" = function!(_raw_get));
     set_field!(globals."raw_set" = function!(_raw_set));
-    set_field!(globals."int" = object! {
+    set_field!(globals.INT_MODULE = object! {
         "from" = function!(_int_from),
         "from_bin" = function!(_int_from_bin),
         "from_hex" = function!(_int_from_hex),
         "bytes" = function!(_int_bytes)
     });
-    set_field!(globals."float" = object! {
+    set_field!(globals.FLOAT_MODULE = object! {
         "from" = function!(_float_from),
         "floor" = function!(_float_floor),
         "ceil" = function!(_float_ceil),
         "round" = function!(_float_round)
     });
-    set_field!(globals."bool" = object! {
+    set_field!(globals.BOOL_MODULE = object! {
         "from" = function!(_bool_from)
     });
-    set_field!(globals."char" = object! {
+    set_field!(globals.CHAR_MODULE = object! {
         "from" = function!(_char_from),
         "byte" = function!(_char_byte),
         "is_whitespace" = function!(_char_is_whitespace),
@@ -69,7 +77,8 @@ pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
         "is_lower" = function!(_char_is_lower),
         "is_upper" = function!(_char_is_upper)
     });
-    set_field!(globals."str" = object! {
+    set_field!(globals."str" = function!(_string_from));
+    set_field!(globals.STRING_MODULE = object! {
         "lowercase" = ('a'..='z').collect::<Vec<char>>(),
         "uppercase" = ('A'..='Z').collect::<Vec<char>>(),
         "letters" = ('a'..='z').chain('A'..='Z').collect::<Vec<char>>(),
@@ -86,7 +95,7 @@ pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
         "bin" = function!(_int_from_bin),
         "hex" = function!(_int_from_hex)
     });
-    set_field!(globals."vec" = object! {
+    set_field!(globals.VECTOR_MODULE = object! {
         "iter" = function!(_vector_iter),
         "len" = function!(_vector_len),
         "get" = function!(_vector_get),
@@ -99,7 +108,7 @@ pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
         "copy" = function!(_vector_copy),
         "clear" = function!(_vector_clear)
     });
-    set_field!(globals."obj" = object! {
+    set_field!(globals.OBJECT_MODULE = object! {
         "len" = function!(_object_len),
         "keys" = function!(_object_keys),
         "values" = function!(_object_values),

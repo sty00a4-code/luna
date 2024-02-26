@@ -1,4 +1,4 @@
-use super::{position::{Located, Position}, std::globals};
+use super::{position::{Located, Position}, std::{globals, BOOL_MODULE, CHAR_MODULE, FLOAT_MODULE, INT_MODULE, STRING_MODULE, VECTOR_MODULE}};
 use crate::lang::{
     code::{BinaryOperation, ByteCode, Location, Source, UnaryOperation},
     value::{Function, FunctionKind, Object, Value, META_CALL, META_GET, META_NEXT, META_SET},
@@ -360,7 +360,7 @@ impl Interpreter {
                             if let Value::Object(object) = self
                                 .globals
                                 .borrow()
-                                .get("vec")
+                                .get(VECTOR_MODULE)
                                 .cloned()
                                 .unwrap_or_default()
                                 .borrow()
@@ -404,7 +404,7 @@ impl Interpreter {
                             if let Value::Object(object) = self
                                 .globals
                                 .borrow()
-                                .get("str")
+                                .get(STRING_MODULE)
                                 .cloned()
                                 .unwrap_or_default()
                                 .borrow()
@@ -431,7 +431,7 @@ impl Interpreter {
                             if let Value::Object(object) = self
                                 .globals
                                 .borrow()
-                                .get("int")
+                                .get(INT_MODULE)
                                 .cloned()
                                 .unwrap_or_default()
                                 .borrow()
@@ -458,7 +458,7 @@ impl Interpreter {
                             if let Value::Object(object) = self
                                 .globals
                                 .borrow()
-                                .get("float")
+                                .get(FLOAT_MODULE)
                                 .cloned()
                                 .unwrap_or_default()
                                 .borrow()
@@ -485,7 +485,7 @@ impl Interpreter {
                             if let Value::Object(object) = self
                                 .globals
                                 .borrow()
-                                .get("bool")
+                                .get(BOOL_MODULE)
                                 .cloned()
                                 .unwrap_or_default()
                                 .borrow()
@@ -512,7 +512,7 @@ impl Interpreter {
                             if let Value::Object(object) = self
                                 .globals
                                 .borrow()
-                                .get("char")
+                                .get(CHAR_MODULE)
                                 .cloned()
                                 .unwrap_or_default()
                                 .borrow()

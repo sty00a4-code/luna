@@ -121,6 +121,9 @@ macro_rules! set_field {
     ($map:ident . $field:literal = $value:expr) => {
         $map.insert($field.to_string(), Rc::new(RefCell::new($value)));
     };
+    ($map:ident . $field:ident = $value:expr) => {
+        $map.insert($field.to_string(), Rc::new(RefCell::new($value)));
+    };
 }
 #[derive(Debug, Clone, PartialEq)]
 pub struct ExpectedType {

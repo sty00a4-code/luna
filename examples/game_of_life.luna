@@ -1,5 +1,5 @@
 # deep copy
-fn vec.deep_copy(v) {
+fn vector.deep_copy(v) {
     let new = []
     for e in v:iter() {
         if type(e) == "vector" {
@@ -73,7 +73,7 @@ let fn draw() {
     os.exec("clear")
     for row in state:iter() {
         for cell in row:iter() {
-            io.write(str.from(if cell '#' else ' ', ' '))
+            io.write(str(if cell '#' else ' ', ' '))
         }
         print()
     }
