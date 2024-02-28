@@ -21,27 +21,27 @@ pub struct CallFrame {
 }
 #[derive(Debug, Clone, PartialEq)]
 pub enum RunTimeError {
-    CannotCall(&'static str),
-    CannotIter(&'static str),
+    CannotCall(String),
+    CannotIter(String),
     CannotFieldInto {
-        head: &'static str,
-        field: &'static str,
+        head: String,
+        field: String,
     },
-    CannotField(&'static str),
+    CannotField(String),
     CannotSetFieldWith {
-        head: &'static str,
-        field: &'static str,
+        head: String,
+        field: String,
     },
-    CannotSetField(&'static str),
+    CannotSetField(String),
     InvalidSetIndex(usize),
     InvalidBinary {
         op: BinaryOperation,
-        left: &'static str,
-        right: &'static str,
+        left: String,
+        right: String,
     },
     InvalidUnary {
         op: UnaryOperation,
-        right: &'static str,
+        right: String,
     },
     Custom(String),
 }
@@ -246,7 +246,7 @@ impl Interpreter {
                             .map_err(|err| RunTimeError::Custom(err.to_string()))
                             .map_err(|err| Located::new(err, pos))?,
                     },
-                    iter => return Err(Located::new(RunTimeError::CannotIter(iter.typ()), pos)),
+                    iter => return Err(Located::new(RunTimeError::CannotIter(iter.dynamic_typ()), pos)),
                 };
             }
             ByteCode::Call {
@@ -282,7 +282,7 @@ impl Interpreter {
                             self.call_kind(kind, args, dst, pos)?;
                         }
                     }
-                    value => return Err(Located::new(RunTimeError::CannotCall(value.typ()), pos)),
+                    value => return Err(Located::new(RunTimeError::CannotCall(value.dynamic_typ()), pos)),
                 };
             }
             ByteCode::Return { src } => return Ok(self.return_call(src)),
@@ -336,8 +336,8 @@ impl Interpreter {
                             field => {
                                 return Err(Located::new(
                                     RunTimeError::CannotFieldInto {
-                                        head: Value::Object(Default::default()).typ(),
-                                        field: field.typ(),
+                                        head: Value::Object(Default::default()).dynamic_typ(),
+                                        field: field.dynamic_typ(),
                                     },
                                     pos,
                                 ))
@@ -349,8 +349,8 @@ impl Interpreter {
                         field => {
                             return Err(Located::new(
                                 RunTimeError::CannotFieldInto {
-                                    head: Value::Object(Default::default()).typ(),
-                                    field: field.typ(),
+                                    head: Value::Object(Default::default()).dynamic_typ(),
+                                    field: field.dynamic_typ(),
                                 },
                                 pos,
                             ))
@@ -391,8 +391,8 @@ impl Interpreter {
                         field => {
                             return Err(Located::new(
                                 RunTimeError::CannotFieldInto {
-                                    head: Value::Vector(Default::default()).typ(),
-                                    field: field.typ(),
+                                    head: Value::Vector(Default::default()).dynamic_typ(),
+                                    field: field.dynamic_typ(),
                                 },
                                 pos,
                             ))
@@ -435,8 +435,8 @@ impl Interpreter {
                         field => {
                             return Err(Located::new(
                                 RunTimeError::CannotFieldInto {
-                                    head: Value::String(Default::default()).typ(),
-                                    field: field.typ(),
+                                    head: Value::String(Default::default()).dynamic_typ(),
+                                    field: field.dynamic_typ(),
                                 },
                                 pos,
                             ))
@@ -462,8 +462,8 @@ impl Interpreter {
                         field => {
                             return Err(Located::new(
                                 RunTimeError::CannotFieldInto {
-                                    head: Value::String(Default::default()).typ(),
-                                    field: field.typ(),
+                                    head: Value::String(Default::default()).dynamic_typ(),
+                                    field: field.dynamic_typ(),
                                 },
                                 pos,
                             ))
@@ -489,8 +489,8 @@ impl Interpreter {
                         field => {
                             return Err(Located::new(
                                 RunTimeError::CannotFieldInto {
-                                    head: Value::String(Default::default()).typ(),
-                                    field: field.typ(),
+                                    head: Value::String(Default::default()).dynamic_typ(),
+                                    field: field.dynamic_typ(),
                                 },
                                 pos,
                             ))
@@ -516,8 +516,8 @@ impl Interpreter {
                         field => {
                             return Err(Located::new(
                                 RunTimeError::CannotFieldInto {
-                                    head: Value::String(Default::default()).typ(),
-                                    field: field.typ(),
+                                    head: Value::String(Default::default()).dynamic_typ(),
+                                    field: field.dynamic_typ(),
                                 },
                                 pos,
                             ))
@@ -543,14 +543,14 @@ impl Interpreter {
                         field => {
                             return Err(Located::new(
                                 RunTimeError::CannotFieldInto {
-                                    head: Value::String(Default::default()).typ(),
-                                    field: field.typ(),
+                                    head: Value::String(Default::default()).dynamic_typ(),
+                                    field: field.dynamic_typ(),
                                 },
                                 pos,
                             ))
                         }
                     },
-                    head => return Err(Located::new(RunTimeError::CannotField(head.typ()), pos)),
+                    head => return Err(Located::new(RunTimeError::CannotField(head.dynamic_typ()), pos)),
                 }
                 .unwrap_or_default();
             }
@@ -597,8 +597,8 @@ impl Interpreter {
                             field => {
                                 return Err(Located::new(
                                     RunTimeError::CannotSetFieldWith {
-                                        head: Value::Object(Default::default()).typ(),
-                                        field: field.typ(),
+                                        head: Value::Object(Default::default()).dynamic_typ(),
+                                        field: field.dynamic_typ(),
                                     },
                                     pos,
                                 ))
@@ -633,8 +633,8 @@ impl Interpreter {
                             field => {
                                 return Err(Located::new(
                                     RunTimeError::CannotSetFieldWith {
-                                        head: Value::Vector(Default::default()).typ(),
-                                        field: field.typ(),
+                                        head: Value::Vector(Default::default()).dynamic_typ(),
+                                        field: field.dynamic_typ(),
                                     },
                                     pos,
                                 ))
@@ -642,7 +642,7 @@ impl Interpreter {
                         }
                     }
                     head => {
-                        return Err(Located::new(RunTimeError::CannotSetField(head.typ()), pos))
+                        return Err(Located::new(RunTimeError::CannotSetField(head.dynamic_typ()), pos))
                     }
                 }
             }
@@ -750,7 +750,7 @@ impl Interpreter {
                 left,
                 right,
             } => {
-                let dst = self
+                let dst_value = self
                     .call_frames
                     .last_mut()
                     .expect("no call frame")
@@ -768,7 +768,24 @@ impl Interpreter {
                     .expect("no call frame")
                     .source(&right)
                     .expect("source not found");
-                *dst.borrow_mut() = match op {
+                if let Value::Object(object) = &left {
+                    if let Some(Value::Function(kind)) = {
+                        let object = object.borrow();
+                        object.get_meta(&format!("__{}", op))
+                    } {
+                        self.call_kind(kind, vec![left, right], Some(dst), pos)?;
+                        return Ok(None)
+                    }
+                    return Err(Located::new(
+                        RunTimeError::InvalidBinary {
+                            op,
+                            left: left.dynamic_typ(),
+                            right: right.dynamic_typ(),
+                        },
+                        pos,
+                    ))
+                }
+                *dst_value.borrow_mut() = match op {
                     BinaryOperation::Add => match (left, right) {
                         (Value::Int(left), Value::Int(right)) => Value::Int(left + right),
                         (Value::Float(left), Value::Float(right)) => Value::Float(left + right),
@@ -787,8 +804,8 @@ impl Interpreter {
                             return Err(Located::new(
                                 RunTimeError::InvalidBinary {
                                     op,
-                                    left: left.typ(),
-                                    right: right.typ(),
+                                    left: left.dynamic_typ(),
+                                    right: right.dynamic_typ(),
                                 },
                                 pos,
                             ))
@@ -807,8 +824,8 @@ impl Interpreter {
                             return Err(Located::new(
                                 RunTimeError::InvalidBinary {
                                     op,
-                                    left: left.typ(),
-                                    right: right.typ(),
+                                    left: left.dynamic_typ(),
+                                    right: right.dynamic_typ(),
                                 },
                                 pos,
                             ))
@@ -827,8 +844,8 @@ impl Interpreter {
                             return Err(Located::new(
                                 RunTimeError::InvalidBinary {
                                     op,
-                                    left: left.typ(),
-                                    right: right.typ(),
+                                    left: left.dynamic_typ(),
+                                    right: right.dynamic_typ(),
                                 },
                                 pos,
                             ))
@@ -849,8 +866,8 @@ impl Interpreter {
                             return Err(Located::new(
                                 RunTimeError::InvalidBinary {
                                     op,
-                                    left: left.typ(),
-                                    right: right.typ(),
+                                    left: left.dynamic_typ(),
+                                    right: right.dynamic_typ(),
                                 },
                                 pos,
                             ))
@@ -871,8 +888,8 @@ impl Interpreter {
                             return Err(Located::new(
                                 RunTimeError::InvalidBinary {
                                     op,
-                                    left: left.typ(),
-                                    right: right.typ(),
+                                    left: left.dynamic_typ(),
+                                    right: right.dynamic_typ(),
                                 },
                                 pos,
                             ))
@@ -891,8 +908,8 @@ impl Interpreter {
                             return Err(Located::new(
                                 RunTimeError::InvalidBinary {
                                     op,
-                                    left: left.typ(),
-                                    right: right.typ(),
+                                    left: left.dynamic_typ(),
+                                    right: right.dynamic_typ(),
                                 },
                                 pos,
                             ))
@@ -911,8 +928,8 @@ impl Interpreter {
                             return Err(Located::new(
                                 RunTimeError::InvalidBinary {
                                     op,
-                                    left: left.typ(),
-                                    right: right.typ(),
+                                    left: left.dynamic_typ(),
+                                    right: right.dynamic_typ(),
                                 },
                                 pos,
                             ))
@@ -927,8 +944,8 @@ impl Interpreter {
                             return Err(Located::new(
                                 RunTimeError::InvalidBinary {
                                     op,
-                                    left: left.typ(),
-                                    right: right.typ(),
+                                    left: left.dynamic_typ(),
+                                    right: right.dynamic_typ(),
                                 },
                                 pos,
                             ))
@@ -947,8 +964,8 @@ impl Interpreter {
                             return Err(Located::new(
                                 RunTimeError::InvalidBinary {
                                     op,
-                                    left: left.typ(),
-                                    right: right.typ(),
+                                    left: left.dynamic_typ(),
+                                    right: right.dynamic_typ(),
                                 },
                                 pos,
                             ))
@@ -967,8 +984,8 @@ impl Interpreter {
                             return Err(Located::new(
                                 RunTimeError::InvalidBinary {
                                     op,
-                                    left: left.typ(),
-                                    right: right.typ(),
+                                    left: left.dynamic_typ(),
+                                    right: right.dynamic_typ(),
                                 },
                                 pos,
                             ))
@@ -979,7 +996,7 @@ impl Interpreter {
                 };
             }
             ByteCode::Unary { op, dst, src } => {
-                let dst = self
+                let dst_value = self
                     .call_frames
                     .last_mut()
                     .expect("no call frame")
@@ -991,7 +1008,23 @@ impl Interpreter {
                     .expect("no call frame")
                     .source(&src)
                     .expect("source not found");
-                *dst.borrow_mut() = match op {
+                if let Value::Object(object) = &src {
+                    if let Some(Value::Function(kind)) = {
+                        let object = object.borrow();
+                        object.get_meta(&format!("__{}", op))
+                    } {
+                        self.call_kind(kind, vec![src], Some(dst), pos)?;
+                        return Ok(None)
+                    }
+                    return Err(Located::new(
+                        RunTimeError::InvalidUnary {
+                            op,
+                            right: src.dynamic_typ(),
+                        },
+                        pos,
+                    ))
+                }
+                *dst_value.borrow_mut() = match op {
                     UnaryOperation::Neg => match src {
                         Value::Int(v) => Value::Int(-v),
                         Value::Float(v) => Value::Float(-v),
@@ -999,7 +1032,7 @@ impl Interpreter {
                             return Err(Located::new(
                                 RunTimeError::InvalidUnary {
                                     op,
-                                    right: src.typ(),
+                                    right: src.dynamic_typ(),
                                 },
                                 pos,
                             ))
