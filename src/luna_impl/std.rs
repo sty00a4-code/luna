@@ -1,14 +1,8 @@
 #![allow(unused_macros)]
 use crate::{
-    lang::value::{FunctionKind, Object, UserObject, UserObjectError, Value},
-    run_str,
-    set_field,
     function,
-    object,
-    typed,
-    option,
-    ExpectedType,
-    ExpectedTypes
+    lang::value::{FunctionKind, Object, UserObject, UserObjectError, Value},
+    object, option, run_str, set_field, typed, ExpectedType, ExpectedTypes,
 };
 use std::{
     cell::RefCell,
@@ -49,73 +43,87 @@ pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
     set_field!(globals."raw_type" = function!(_raw_type));
     set_field!(globals."raw_get" = function!(_raw_get));
     set_field!(globals."raw_set" = function!(_raw_set));
-    set_field!(globals.INT_MODULE = object! {
-        "from" = function!(_int_from),
-        "from_bin" = function!(_int_from_bin),
-        "from_hex" = function!(_int_from_hex),
-        "bytes" = function!(_int_bytes)
-    });
-    set_field!(globals.FLOAT_MODULE = object! {
-        "from" = function!(_float_from),
-        "floor" = function!(_float_floor),
-        "ceil" = function!(_float_ceil),
-        "round" = function!(_float_round)
-    });
-    set_field!(globals.BOOL_MODULE = object! {
-        "from" = function!(_bool_from)
-    });
-    set_field!(globals.CHAR_MODULE = object! {
-        "from" = function!(_char_from),
-        "byte" = function!(_char_byte),
-        "is_whitespace" = function!(_char_is_whitespace),
-        "is_alphabetic" = function!(_char_is_alphabetic),
-        "is_alphanumeric" = function!(_char_is_alphanumeric),
-        "is_control" = function!(_char_is_control),
-        "is_digit" = function!(_char_is_digit),
-        "is_graphic" = function!(_char_is_graphic),
-        "is_hex" = function!(_char_is_hex),
-        "is_lower" = function!(_char_is_lower),
-        "is_upper" = function!(_char_is_upper)
-    });
+    set_field!(
+        globals.INT_MODULE = object! {
+            "from" = function!(_int_from),
+            "from_bin" = function!(_int_from_bin),
+            "from_hex" = function!(_int_from_hex),
+            "bytes" = function!(_int_bytes)
+        }
+    );
+    set_field!(
+        globals.FLOAT_MODULE = object! {
+            "from" = function!(_float_from),
+            "floor" = function!(_float_floor),
+            "ceil" = function!(_float_ceil),
+            "round" = function!(_float_round)
+        }
+    );
+    set_field!(
+        globals.BOOL_MODULE = object! {
+            "from" = function!(_bool_from)
+        }
+    );
+    set_field!(
+        globals.CHAR_MODULE = object! {
+            "from" = function!(_char_from),
+            "byte" = function!(_char_byte),
+            "is_whitespace" = function!(_char_is_whitespace),
+            "is_alphabetic" = function!(_char_is_alphabetic),
+            "is_alphanumeric" = function!(_char_is_alphanumeric),
+            "is_control" = function!(_char_is_control),
+            "is_digit" = function!(_char_is_digit),
+            "is_graphic" = function!(_char_is_graphic),
+            "is_hex" = function!(_char_is_hex),
+            "is_lower" = function!(_char_is_lower),
+            "is_upper" = function!(_char_is_upper)
+        }
+    );
     set_field!(globals."str" = function!(_string_from));
-    set_field!(globals.STRING_MODULE = object! {
-        "lowercase" = ('a'..='z').collect::<Vec<char>>(),
-        "uppercase" = ('A'..='Z').collect::<Vec<char>>(),
-        "letters" = ('a'..='z').chain('A'..='Z').collect::<Vec<char>>(),
-        "from" = function!(_string_from),
-        "len" = function!(_string_len),
-        "iter" = function!(_string_iter),
-        "get" = function!(_string_get),
-        "sub" = function!(_string_sub),
-        "sep" = function!(_string_sep),
-        "rep" = function!(_string_rep),
-        "rev" = function!(_string_rev),
-        "find" = function!(_string_find),
-        "format" = function!(_string_format),
-        "bin" = function!(_int_from_bin),
-        "hex" = function!(_int_from_hex)
-    });
-    set_field!(globals.VECTOR_MODULE = object! {
-        "iter" = function!(_vector_iter),
-        "len" = function!(_vector_len),
-        "get" = function!(_vector_get),
-        "contains" = function!(_vector_contains),
-        "push" = function!(_vector_push),
-        "pop" = function!(_vector_pop),
-        "insert" = function!(_vector_insert),
-        "join" = function!(_vector_join),
-        "swap" = function!(_vector_swap),
-        "copy" = function!(_vector_copy),
-        "clear" = function!(_vector_clear)
-    });
-    set_field!(globals.OBJECT_MODULE = object! {
-        "len" = function!(_object_len),
-        "keys" = function!(_object_keys),
-        "values" = function!(_object_values),
-        "setmeta" = function!(_object_setmeta),
-        "getmeta" = function!(_object_getmeta),
-        "clear" = function!(_object_clear)
-    });
+    set_field!(
+        globals.STRING_MODULE = object! {
+            "lowercase" = ('a'..='z').collect::<Vec<char>>(),
+            "uppercase" = ('A'..='Z').collect::<Vec<char>>(),
+            "letters" = ('a'..='z').chain('A'..='Z').collect::<Vec<char>>(),
+            "from" = function!(_string_from),
+            "len" = function!(_string_len),
+            "iter" = function!(_string_iter),
+            "get" = function!(_string_get),
+            "sub" = function!(_string_sub),
+            "sep" = function!(_string_sep),
+            "rep" = function!(_string_rep),
+            "rev" = function!(_string_rev),
+            "find" = function!(_string_find),
+            "format" = function!(_string_format),
+            "bin" = function!(_int_from_bin),
+            "hex" = function!(_int_from_hex)
+        }
+    );
+    set_field!(
+        globals.VECTOR_MODULE = object! {
+            "iter" = function!(_vector_iter),
+            "len" = function!(_vector_len),
+            "get" = function!(_vector_get),
+            "contains" = function!(_vector_contains),
+            "push" = function!(_vector_push),
+            "pop" = function!(_vector_pop),
+            "insert" = function!(_vector_insert),
+            "join" = function!(_vector_join),
+            "swap" = function!(_vector_swap),
+            "copy" = function!(_vector_copy),
+            "clear" = function!(_vector_clear)
+        }
+    );
+    set_field!(
+        globals.OBJECT_MODULE = object! {
+            "len" = function!(_object_len),
+            "keys" = function!(_object_keys),
+            "values" = function!(_object_values),
+            "setmeta" = function!(_object_setmeta),
+            "getmeta" = function!(_object_getmeta),
+            "clear" = function!(_object_clear)
+        }
+    );
     set_field!(globals."keys" = function!(_object_keys));
     set_field!(globals."values" = function!(_object_values));
     set_field!(globals."setmeta" = function!(_object_setmeta));
@@ -635,7 +643,10 @@ impl Display for FormatError {
     }
 }
 impl Error for FormatError {}
-pub fn _string_format(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+pub fn _string_format(
+    interpreter: &mut Interpreter,
+    args: Vec<Value>,
+) -> Result<Value, Box<dyn Error>> {
     let mut args = args.into_iter().enumerate();
     let string = typed!(args: String);
     let mut formatted = String::new();
@@ -651,11 +662,23 @@ pub fn _string_format(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Bo
                 };
                 formatted.push_str(&match c {
                     '%' => "%".to_string(),
-                    's' => args.next().map(|(_, v)| v).unwrap_or_default().to_string(),
-                    'q' => format!("{:?}", args.next().map(|(_, v)| v).unwrap_or_default()),
+                    's' => args
+                        .next()
+                        .map(|(_, v)| v)
+                        .unwrap_or_default()
+                        .call_tostring(interpreter)
+                        .map_err(|err| Into::<Box<dyn Error>>::into(err.to_string()))?,
+                    'q' => match args.next().map(|(_, v)| v).unwrap_or_default() {
+                        Value::String(v) => format!("{v:?}"),
+                        value => value
+                            .call_tostring(interpreter)
+                            .map_err(|err| Into::<Box<dyn Error>>::into(err.to_string()))?,
+                    },
                     'x' => match args.next().map(|(_, v)| v).unwrap_or_default() {
                         Value::Int(v) => format!("{v:x?}"),
-                        value => value.to_string(),
+                        value => value
+                            .call_tostring(interpreter)
+                            .map_err(|err| Into::<Box<dyn Error>>::into(err.to_string()))?,
                     },
                     c => {
                         return Err(Box::new(FormatError {

@@ -1,0 +1,78 @@
+let vec2 = {
+    mt = {
+        __type = "vec2"
+    }
+}
+fn vec2.new(x, y) {
+    return setmeta({
+        x = x,
+        y = y,
+    }, vec2.mt)
+}
+fn vec2.mt.__str(self) {
+    return "(%s, %s)":format(self.x, self.y)
+}
+fn vec2.mt.__add(left, right) {
+    return vec2.new(
+        left.x + right.x,
+        left.y + right.y
+    )
+}
+fn vec2.mt.__sub(left, right) {
+    return vec2.new(
+        left.x - right.x,
+        left.y - right.y
+    )
+}
+fn vec2.mt.__mul(left, right) {
+    return vec2.new(
+        left.x * right.x,
+        left.y * right.y
+    )
+}
+fn vec2.mt.__div(left, right) {
+    return vec2.new(
+        left.x / right.x,
+        left.y / right.y
+    )
+}
+fn vec2.mt.__mod(left, right) {
+    return vec2.new(
+        left.x % right.x,
+        left.y % right.y
+    )
+}
+fn vec2.mt.__pow(left, right) {
+    return vec2.new(
+        left.x ^ right.x,
+        left.y ^ right.y
+    )
+}
+fn vec2.mt.__eq(left, right) {
+    return 
+        left.x == right.x &
+        left.y == right.y
+}
+fn vec2.mt.__ne(left, right) {
+    return !vec2.mt.__eq(left, right)
+}
+fn vec2.mt.__neg(self) {
+    return vec2.new(
+        -self.x,
+        -self.y
+    )
+}
+
+let v1 = vec2.new(2, -3)
+let v2 = vec2.new(10, 5)
+print(v1, v2)
+print("%s + %s  = %s" :format(v1, v2, v1 + v2))
+print("%s - %s  = %s" :format(v1, v2, v1 - v2))
+print("%s * %s  = %s" :format(v1, v2, v1 * v2))
+print("%s / %s  = %s" :format(v1, v2, v1 / v2))
+print("%s %% %s  = %s":format(v1, v2, v1 % v2))
+print("%s ^ %s  = %s" :format(v1, v2, v1 ^ v2))
+print("%s == %s = %s" :format(v1, v2, v1 == v2))
+print("%s != %s = %s" :format(v1, v2, v1 != v2))
+print("-%s = %s"      :format(v1, -v1))
+print("-%s = %s"      :format(v2, -v2))
