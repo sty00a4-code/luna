@@ -47,7 +47,7 @@ impl Compiler {
                 scopes: vec![Scope::default()],
                 registers: 0,
             }],
-            path
+            path,
         }
     }
     pub fn push_frame(&mut self, frame: CompilerFrame) {
@@ -495,6 +495,10 @@ impl Compilable for Located<Statement> {
                 compiler
                     .frame_mut()
                     .expect("no compiler frame on stack")
+                    .registers = offset;
+                compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
                     .write(
                         ByteCode::Call {
                             dst: None,
@@ -582,6 +586,10 @@ impl Compilable for Located<Statement> {
                             pos,
                         );
                 }
+                compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .registers = offset;
                 compiler
                     .frame_mut()
                     .expect("no compiler frame on stack")
@@ -689,6 +697,10 @@ impl Compilable for Located<Statement> {
                                 },
                                 path_pos,
                             );
+                        compiler
+                            .frame_mut()
+                            .expect("no compiler frame on stack")
+                            .registers = register;
                     }
                     Path::Index { head, index } => {
                         let head = head.compile(compiler)?;
@@ -718,6 +730,10 @@ impl Compilable for Located<Statement> {
                                 },
                                 path_pos,
                             );
+                        compiler
+                            .frame_mut()
+                            .expect("no compiler frame on stack")
+                            .registers = register;
                     }
                 }
                 Ok(None)
@@ -1059,12 +1075,11 @@ impl Compilable for Located<Expression> {
             Expression::Binary { op, left, right } => {
                 let left = left.compile(compiler)?;
                 let right = right.compile(compiler)?;
-                let dst = Location::Register(
-                    compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
-                        .new_register(),
-                );
+                let register = compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .new_register();
+                let dst = Location::Register(register);
                 compiler
                     .frame_mut()
                     .expect("no compiler frame on stack")
@@ -1081,12 +1096,11 @@ impl Compilable for Located<Expression> {
             }
             Expression::Unary { op, right } => {
                 let right = right.compile(compiler)?;
-                let dst = Location::Register(
-                    compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
-                        .new_register(),
-                );
+                let register = compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .new_register();
+                let dst = Location::Register(register);
                 compiler
                     .frame_mut()
                     .expect("no compiler frame on stack")
@@ -1130,6 +1144,10 @@ impl Compilable for Located<Expression> {
                             pos,
                         );
                 }
+                compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .registers = offset;
                 let dst = compiler
                     .frame_mut()
                     .expect("no compiler frame on stack")
@@ -1223,6 +1241,10 @@ impl Compilable for Located<Expression> {
                             pos,
                         );
                 }
+                compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .registers = offset;
                 let dst = compiler
                     .frame_mut()
                     .expect("no compiler frame on stack")
@@ -1274,12 +1296,11 @@ impl Compilable for Located<Atom> {
             Atom::Expression(expr) => expr.compile(compiler),
             Atom::Vector(exprs) => {
                 let amount = exprs.len();
-                let dst = Location::Register(
-                    compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
-                        .new_register(),
-                );
+                let register = compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .new_register();
+                let dst = Location::Register(register);
                 let start = compiler
                     .frame_mut()
                     .expect("no compiler frame on stack")
@@ -1309,17 +1330,20 @@ impl Compilable for Located<Atom> {
                 compiler
                     .frame_mut()
                     .expect("no compiler frame on stack")
+                    .registers = start;
+                compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
                     .write(ByteCode::Vector { dst, start, amount }, pos);
                 Ok(dst.into())
             }
             Atom::Object(entries) => {
                 let amount = entries.len();
-                let dst = Location::Register(
-                    compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
-                        .new_register(),
-                );
+                let register = compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .new_register();
+                let dst = Location::Register(register);
                 let start = compiler
                     .frame_mut()
                     .expect("no compiler frame on stack")
@@ -1370,6 +1394,10 @@ impl Compilable for Located<Atom> {
                             expr_pos,
                         );
                 }
+                compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .registers = start;
                 compiler
                     .frame_mut()
                     .expect("no compiler frame on stack")
