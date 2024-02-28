@@ -294,3 +294,31 @@ impl From<UnaryOperator> for UnaryOperation {
         }
     }
 }
+impl Display for BinaryOperation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Add => write!(f, "add"),
+            Self::Sub => write!(f, "sub"),
+            Self::Mul => write!(f, "mul"),
+            Self::Div => write!(f, "div"),
+            Self::Pow => write!(f, "pow"),
+            Self::Mod => write!(f, "mod"),
+            Self::EQ => write!(f, "eq"),
+            Self::NE => write!(f, "ne"),
+            Self::LT => write!(f, "lt"),
+            Self::GT => write!(f, "gt"),
+            Self::LE => write!(f, "le"),
+            Self::GE => write!(f, "ge"),
+            Self::And => write!(f, "and"),
+            Self::Or => write!(f, "or"),
+        }
+    }
+}
+impl Display for UnaryOperation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            UnaryOperation::Neg => write!(f, "neg"),
+            UnaryOperation::Not => write!(f, "not"),
+        }
+    }
+}

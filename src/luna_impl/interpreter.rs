@@ -63,7 +63,13 @@ impl Interpreter {
 }
 impl Interpreter {
     pub fn path(&self) -> Option<String> {
-        self.call_frames.last()?.function.closure.borrow().path.clone()
+        self.call_frames
+            .last()?
+            .function
+            .closure
+            .borrow()
+            .path
+            .clone()
     }
     pub fn call(&mut self, function: &Rc<Function>, args: Vec<Value>, dst: Option<Location>) {
         let mut stack = vec![];
@@ -98,12 +104,18 @@ impl Interpreter {
         }
         None
     }
-    pub fn call_kind(&mut self, kind: FunctionKind, args: Vec<Value>, dst: Option<Location>, pos: Position) -> Result<(), Located<RunTimeError>> {
+    pub fn call_kind(
+        &mut self,
+        kind: FunctionKind,
+        args: Vec<Value>,
+        dst: Option<Location>,
+        pos: Position,
+    ) -> Result<(), Located<RunTimeError>> {
         match kind {
             FunctionKind::Function(function) => {
                 self.call(&function, args, dst);
                 Ok(())
-            },
+            }
             FunctionKind::UserFunction(func) => {
                 let dst = dst.map(|dst| {
                     self.call_frames
@@ -112,9 +124,8 @@ impl Interpreter {
                         .location(&dst)
                         .expect("dst not found")
                 });
-                let value = func(self, args).map_err(|err| {
-                    Located::new(RunTimeError::Custom(err.to_string()), pos)
-                })?;
+                let value = func(self, args)
+                    .map_err(|err| Located::new(RunTimeError::Custom(err.to_string()), pos))?;
                 if let Some(dst) = dst {
                     *dst.borrow_mut() = value;
                 }
@@ -312,7 +323,12 @@ impl Interpreter {
                 *dst_value.borrow_mut() = match &head {
                     Value::Object(object) => {
                         if let Some(Value::Function(kind)) = object.borrow().get_meta(META_GET) {
-                            self.call_kind(kind, vec![head.clone(), field], Some(dst), pos.clone())?;
+                            self.call_kind(
+                                kind,
+                                vec![head.clone(), field],
+                                Some(dst),
+                                pos.clone(),
+                            )?;
                             return Ok(None);
                         }
                         match field {
@@ -327,7 +343,7 @@ impl Interpreter {
                                 ))
                             }
                         }
-                    },
+                    }
                     Value::UserObject(object) => match field {
                         Value::String(key) => object.borrow_mut().get(&key),
                         field => {
@@ -560,7 +576,12 @@ impl Interpreter {
                 match &head {
                     Value::Object(object) => {
                         if let Some(Value::Function(kind)) = object.borrow().get_meta(META_SET) {
-                            self.call_kind(kind, vec![head.clone(), field, value], None, pos.clone())?;
+                            self.call_kind(
+                                kind,
+                                vec![head.clone(), field, value],
+                                None,
+                                pos.clone(),
+                            )?;
                             return Ok(None);
                         }
                         let mut object = object.borrow_mut();
