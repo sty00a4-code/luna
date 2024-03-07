@@ -1,4 +1,9 @@
-use super::{position::{Located, Position}, std::{globals, BOOL_MODULE, CHAR_MODULE, FLOAT_MODULE, INT_MODULE, STRING_MODULE, VECTOR_MODULE}};
+use super::{
+    position::{Located, Position},
+    std::{
+        globals, BOOL_MODULE, CHAR_MODULE, FLOAT_MODULE, INT_MODULE, STRING_MODULE, VECTOR_MODULE,
+    },
+};
 use crate::lang::{
     code::{BinaryOperation, ByteCode, Location, Source, UnaryOperation},
     value::{Function, FunctionKind, Object, Value, META_CALL, META_GET, META_NEXT, META_SET},
@@ -56,12 +61,14 @@ impl Default for Interpreter {
     }
 }
 impl Interpreter {
+    #[inline(always)]
     pub fn with_global_path(mut self, path: Option<String>) -> Self {
         self.global_path = path;
         self
     }
 }
 impl Interpreter {
+    #[inline(always)]
     pub fn path(&self) -> Option<String> {
         self.call_frames
             .last()?
@@ -73,13 +80,9 @@ impl Interpreter {
     }
     pub fn call(&mut self, function: &Rc<Function>, args: Vec<Value>, dst: Option<Location>) {
         let mut stack = vec![];
-        let len = args.len();
-        for value in args {
-            stack.push(Rc::new(RefCell::new(value)));
-        }
-        for _ in 0..function.closure.borrow().registers - len {
-            stack.push(Rc::new(RefCell::new(Value::default())));
-        }
+        let remaining = function.closure.borrow().registers - args.len();
+        stack.extend(args.into_iter().map(|v| Rc::new(RefCell::new(v))));
+        stack.resize_with(remaining + 1, || Rc::default());
         self.call_frames.push(CallFrame {
             function: Rc::clone(function),
             stack,
@@ -246,7 +249,12 @@ impl Interpreter {
                             .map_err(|err| RunTimeError::Custom(err.to_string()))
                             .map_err(|err| Located::new(err, pos))?,
                     },
-                    iter => return Err(Located::new(RunTimeError::CannotIter(iter.dynamic_typ()), pos)),
+                    iter => {
+                        return Err(Located::new(
+                            RunTimeError::CannotIter(iter.dynamic_typ()),
+                            pos,
+                        ))
+                    }
                 };
             }
             ByteCode::Call {
@@ -261,7 +269,7 @@ impl Interpreter {
                     .expect("no call frame")
                     .source(&func)
                     .expect("func not found");
-                let mut args = vec![];
+                let mut args = Vec::with_capacity(amount);
                 for register in offset..offset + amount {
                     args.push(
                         self.call_frames
@@ -282,7 +290,12 @@ impl Interpreter {
                             self.call_kind(kind, args, dst, pos)?;
                         }
                     }
-                    value => return Err(Located::new(RunTimeError::CannotCall(value.dynamic_typ()), pos)),
+                    value => {
+                        return Err(Located::new(
+                            RunTimeError::CannotCall(value.dynamic_typ()),
+                            pos,
+                        ))
+                    }
                 };
             }
             ByteCode::Return { src } => return Ok(self.return_call(src)),
@@ -550,7 +563,12 @@ impl Interpreter {
                             ))
                         }
                     },
-                    head => return Err(Located::new(RunTimeError::CannotField(head.dynamic_typ()), pos)),
+                    head => {
+                        return Err(Located::new(
+                            RunTimeError::CannotField(head.dynamic_typ()),
+                            pos,
+                        ))
+                    }
                 }
                 .unwrap_or_default();
             }
@@ -642,7 +660,10 @@ impl Interpreter {
                         }
                     }
                     head => {
-                        return Err(Located::new(RunTimeError::CannotSetField(head.dynamic_typ()), pos))
+                        return Err(Located::new(
+                            RunTimeError::CannotSetField(head.dynamic_typ()),
+                            pos,
+                        ))
                     }
                 }
             }
@@ -774,7 +795,7 @@ impl Interpreter {
                         object.get_meta(&format!("__{}", op))
                     } {
                         self.call_kind(kind, vec![left, right], Some(dst), pos)?;
-                        return Ok(None)
+                        return Ok(None);
                     }
                     return Err(Located::new(
                         RunTimeError::InvalidBinary {
@@ -783,7 +804,7 @@ impl Interpreter {
                             right: right.dynamic_typ(),
                         },
                         pos,
-                    ))
+                    ));
                 }
                 *dst_value.borrow_mut() = match op {
                     BinaryOperation::Add => match (left, right) {
@@ -1014,7 +1035,7 @@ impl Interpreter {
                         object.get_meta(&format!("__{}", op))
                     } {
                         self.call_kind(kind, vec![src], Some(dst), pos)?;
-                        return Ok(None)
+                        return Ok(None);
                     }
                     return Err(Located::new(
                         RunTimeError::InvalidUnary {
@@ -1022,7 +1043,7 @@ impl Interpreter {
                             right: src.dynamic_typ(),
                         },
                         pos,
-                    ))
+                    ));
                 }
                 *dst_value.borrow_mut() = match op {
                     UnaryOperation::Neg => match src {
@@ -1060,12 +1081,15 @@ impl Interpreter {
     }
 }
 impl CallFrame {
+    #[inline(always)]
     pub fn path(&self) -> Option<String> {
         self.function.closure.borrow().path.clone()
     }
+    #[inline(always)]
     pub fn register(&self, register: usize) -> Option<Rc<RefCell<Value>>> {
         self.stack.get(register).cloned()
     }
+    #[inline(always)]
     pub fn source(&self, source: &Source) -> Option<Value> {
         match source {
             Source::Register(register) => {
@@ -1102,6 +1126,7 @@ impl CallFrame {
             Source::Char(v) => Some(Value::Char(*v)),
         }
     }
+    #[inline(always)]
     pub fn location(&mut self, location: &Location) -> Option<Rc<RefCell<Value>>> {
         match location {
             Location::Register(register) => self.register(*register),
