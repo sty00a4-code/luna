@@ -80,9 +80,8 @@ impl Interpreter {
     }
     pub fn call(&mut self, function: &Rc<Function>, args: Vec<Value>, dst: Option<Location>) {
         let mut stack = vec![];
-        let remaining = function.closure.borrow().registers - args.len();
         stack.extend(args.into_iter().map(|v| Rc::new(RefCell::new(v))));
-        stack.resize_with(remaining + 1, || Rc::default());
+        stack.resize_with(function.closure.borrow().registers, || Rc::default());
         self.call_frames.push(CallFrame {
             function: Rc::clone(function),
             stack,
