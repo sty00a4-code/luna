@@ -737,7 +737,7 @@ impl Interpreter {
                         .get(addr)
                         .expect("closure not found"),
                 );
-                let mut upvalues = vec![];
+                let mut upvalues = Vec::with_capacity(closure.borrow().upvalues.len());
                 for upvalue in closure.borrow().upvalues.iter() {
                     upvalues.push(if upvalue.depth == 0 {
                         self.call_frames
