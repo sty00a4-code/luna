@@ -96,6 +96,9 @@ macro_rules! vector {
     [$($v:literal),*] => {
         Value::Vector(Rc::new(RefCell::new(vec![$($v.into()),*])))
     };
+    ($v:expr) => {
+        Value::Vector(Rc::new(RefCell::new($v.into())))
+    };
 }
 #[macro_export]
 macro_rules! object {
@@ -108,6 +111,9 @@ macro_rules! object {
             ) *
             Value::Object(Rc::new(RefCell::new(Object::new(map))))
         }
+    };
+    ($v:expr) => {
+        Value::Object(Rc::new(RefCell::new(Object::new($v))))
     };
 }
 #[macro_export]
