@@ -7,7 +7,7 @@ use std::{
 
 use crate::lang::{
     ast::*,
-    code::{ByteCode, Closure, Location, Source, Upvalue},
+    code::{Address, ByteCode, Closure, Location, ObjectSize, Register, Source, Upvalue, VectorSize},
     value::Value,
 };
 
@@ -22,14 +22,14 @@ pub struct Compiler {
 pub struct CompilerFrame {
     pub(crate) closure: Rc<RefCell<Closure>>,
     pub(crate) scopes: Vec<Scope>,
-    pub(crate) registers: usize,
+    pub(crate) registers: Register,
 }
 #[derive(Debug, Clone, Default)]
 pub struct Scope {
-    pub(crate) locals: HashMap<String, usize>,
-    pub(crate) register_offset: usize,
-    pub(crate) breaks: HashSet<usize>,
-    pub(crate) continues: HashSet<usize>,
+    pub(crate) locals: HashMap<String, Register>,
+    pub(crate) register_offset: Register,
+    pub(crate) breaks: HashSet<Address>,
+    pub(crate) continues: HashSet<Address>,
 }
 pub trait Compilable {
     type Output;
@@ -69,8 +69,11 @@ impl Compiler {
         for (depth, other_frame) in self.frames.iter_mut().rev().skip(1).enumerate() {
             if let Some(register) = other_frame.get_local(ident) {
                 let frame = self.frame_mut().expect("no frame");
-                let addr = frame.closure.borrow().upvalues.len();
-                let upvalue = Upvalue { register, depth };
+                let addr = frame.closure.borrow().upvalues.len() as Address;
+                let upvalue = Upvalue {
+                    register,
+                    depth: depth as u8,
+                };
                 if let Some(addr) = frame
                     .closure
                     .borrow_mut()
@@ -78,7 +81,7 @@ impl Compiler {
                     .iter()
                     .position(|upv| upv == &upvalue)
                 {
-                    return Some(Location::Upvalue(addr));
+                    return Some(Location::Upvalue(addr as Address));
                 }
                 frame.closure.borrow_mut().upvalues.push(upvalue);
                 return Some(Location::Upvalue(addr));
@@ -88,38 +91,38 @@ impl Compiler {
     }
 }
 impl CompilerFrame {
-    pub fn write(&mut self, bytecode: ByteCode, pos: Position) -> usize {
-        let addr = self.closure.borrow().code.len();
+    pub fn write(&mut self, bytecode: ByteCode, pos: Position) -> Address {
+        let addr = self.closure.borrow().code.len() as Address;
         self.closure
             .borrow_mut()
             .code
             .push(Located::new(bytecode, pos));
         addr
     }
-    pub fn overwrite(&mut self, addr: usize, bytecode: ByteCode, pos: Option<Position>) {
+    pub fn overwrite(&mut self, addr: Address, bytecode: ByteCode, pos: Option<Position>) {
         let mut closure = self.closure.borrow_mut();
-        let old = closure.code.get_mut(addr).expect("invalid addr");
+        let old = closure.code.get_mut(addr as usize).expect("invalid addr");
         *old = Located::new(bytecode, pos.unwrap_or(old.pos.clone()));
     }
-    pub fn addr(&self) -> usize {
-        self.closure.borrow().code.len()
+    pub fn addr(&self) -> Address {
+        self.closure.borrow().code.len() as Address
     }
-    pub fn new_const(&mut self, value: Value) -> usize {
+    pub fn new_const(&mut self, value: Value) -> Address {
         let consts = &mut self.closure.borrow_mut().consts;
         if let Some(pos) = consts.iter().position(|v| v == &value) {
-            return pos;
+            return pos as Address;
         }
         let addr = consts.len();
         consts.push(value);
-        addr
+        addr as Address
     }
-    pub fn new_closure(&mut self, value: Rc<RefCell<Closure>>) -> usize {
+    pub fn new_closure(&mut self, value: Rc<RefCell<Closure>>) -> Address {
         let closures = &mut self.closure.borrow_mut().closures;
         let addr = closures.len();
         closures.push(value);
-        addr
+        addr as Address
     }
-    pub fn new_register(&mut self) -> usize {
+    pub fn new_register(&mut self) -> Register {
         let addr = self.registers;
         self.registers += 1;
         if self.registers > self.closure.borrow().registers {
@@ -147,13 +150,13 @@ impl CompilerFrame {
     pub fn scope_mut(&mut self) -> Option<&mut Scope> {
         self.scopes.last_mut()
     }
-    pub fn new_local(&mut self, ident: String) -> usize {
+    pub fn new_local(&mut self, ident: String) -> Register {
         let register = self.new_register();
         let scope = self.scope_mut().expect("no scope");
         scope.set_local(ident, register);
         register
     }
-    pub fn get_local(&self, ident: &str) -> Option<usize> {
+    pub fn get_local(&self, ident: &str) -> Option<Register> {
         self.scopes
             .iter()
             .rev()
@@ -162,10 +165,10 @@ impl CompilerFrame {
     }
 }
 impl Scope {
-    pub fn set_local(&mut self, ident: String, register: usize) -> Option<usize> {
+    pub fn set_local(&mut self, ident: String, register: Register) -> Option<Register> {
         self.locals.insert(ident, register)
     }
-    pub fn get_local(&self, ident: &str) -> Option<usize> {
+    pub fn get_local(&self, ident: &str) -> Option<Register> {
         self.locals.get(ident).cloned()
     }
 }
@@ -464,7 +467,7 @@ impl Compilable for Located<Statement> {
             }
             Statement::Call { path, args } => {
                 let path_location = path.compile(compiler)?;
-                let amount = args.len();
+                let amount = args.len() as u8;
                 let offset = compiler
                     .frame_mut()
                     .expect("no compiler frame on stack")
@@ -476,7 +479,7 @@ impl Compilable for Located<Statement> {
                             .expect("no compiler frame on stack")
                             .new_register()
                     })
-                    .collect::<Vec<usize>>();
+                    .collect::<Vec<Register>>();
                 for (i, arg) in args.into_iter().enumerate() {
                     let pos = arg.pos.clone();
                     let register = registers[i];
@@ -544,7 +547,7 @@ impl Compilable for Located<Statement> {
                         );
                     Source::Register(dst)
                 };
-                let amount = args.len() + 1;
+                let amount = args.len() as u8 + 1;
                 let offset = compiler
                     .frame_mut()
                     .expect("no compiler frame on stack")
@@ -570,7 +573,7 @@ impl Compilable for Located<Statement> {
                             .expect("no compiler frame on stack")
                             .new_register()
                     })
-                    .collect::<Vec<usize>>();
+                    .collect::<Vec<Register>>();
                 for (i, arg) in args.into_iter().enumerate() {
                     let pos = arg.pos.clone();
                     let register = registers[i];
@@ -1116,7 +1119,7 @@ impl Compilable for Located<Expression> {
             }
             Expression::Call { head, args } => {
                 let head = head.compile(compiler)?;
-                let amount = args.len();
+                let amount = args.len() as u8;
                 let offset = compiler
                     .frame_mut()
                     .expect("no compiler frame on stack")
@@ -1128,7 +1131,7 @@ impl Compilable for Located<Expression> {
                             .expect("no compiler frame on stack")
                             .new_register()
                     })
-                    .collect::<Vec<usize>>();
+                    .collect::<Vec<Register>>();
                 for (i, arg) in args.into_iter().enumerate() {
                     let pos = arg.pos.clone();
                     let register = registers[i];
@@ -1199,7 +1202,7 @@ impl Compilable for Located<Expression> {
                         );
                     Source::Register(dst)
                 };
-                let amount = args.len() + 1;
+                let amount = args.len() as u8 + 1;
                 let offset = compiler
                     .frame_mut()
                     .expect("no compiler frame on stack")
@@ -1225,7 +1228,7 @@ impl Compilable for Located<Expression> {
                             .expect("no compiler frame on stack")
                             .new_register()
                     })
-                    .collect::<Vec<usize>>();
+                    .collect::<Vec<Register>>();
                 for (i, arg) in args.into_iter().enumerate() {
                     let pos = arg.pos.clone();
                     let register = registers[i];
@@ -1295,7 +1298,7 @@ impl Compilable for Located<Atom> {
             )),
             Atom::Expression(expr) => expr.compile(compiler),
             Atom::Vector(exprs) => {
-                let amount = exprs.len();
+                let amount = exprs.len() as VectorSize;
                 let register = compiler
                     .frame_mut()
                     .expect("no compiler frame on stack")
@@ -1312,7 +1315,7 @@ impl Compilable for Located<Atom> {
                             .expect("no compiler frame on stack")
                             .new_register()
                     })
-                    .collect::<Vec<usize>>();
+                    .collect::<Vec<Register>>();
                 for (expr, register) in exprs.into_iter().zip(registers.into_iter()) {
                     let expr_pos = expr.pos.clone();
                     let src = expr.compile(compiler)?;
@@ -1338,7 +1341,7 @@ impl Compilable for Located<Atom> {
                 Ok(dst.into())
             }
             Atom::Object(entries) => {
-                let amount = entries.len();
+                let amount = entries.len() as ObjectSize;
                 let register = compiler
                     .frame_mut()
                     .expect("no compiler frame on stack")
@@ -1355,7 +1358,7 @@ impl Compilable for Located<Atom> {
                             .expect("no compiler frame on stack")
                             .new_register()
                     })
-                    .collect::<Vec<usize>>();
+                    .collect::<Vec<Register>>();
                 for (
                     (
                         Located {
@@ -1500,7 +1503,7 @@ impl Compilable for Located<Atom> {
                     .frame_mut()
                     .expect("no compiler frame on stack")
                     .new_closure(closure);
-                let register: usize = compiler
+                let register = compiler
                     .frame_mut()
                     .expect("no compiler frame on stack")
                     .new_register();

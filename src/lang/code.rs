@@ -1,31 +1,30 @@
 use std::{cell::RefCell, fmt::Display, rc::Rc};
-// use std::{
-//     cell::RefCell,
-//     rc::Rc
-// };
-
 use crate::luna_impl::position::Located;
-
 use super::{
     ast::{BinaryOperator, UnaryOperator},
     value::Value,
 };
+
+pub type Register = u16;
+pub type Address = u32;
+pub type VectorSize = u16;
+pub type ObjectSize = u16;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum ByteCode {
     #[default]
     None, // 0
 
     Jump { // 1
-        addr: usize,
+        addr: Address,
     },
     JumpIf { // 2 - 15 : u32 u32
         negative: bool,
         cond: Source,
-        addr: usize,
+        addr: Address,
     },
     JumpNull { // 16 - 22 : u32 u32
         cond: Source,
-        addr: usize,
+        addr: Address,
     },
     Next { // 23 - 43 : u32 u32
         dst: Location,
@@ -35,8 +34,8 @@ pub enum ByteCode {
     Call { // 44 - 71 : u32 u32 u32 u32
         dst: Option<Location>,
         func: Source,
-        offset: usize,
-        amount: usize,
+        offset: Register,
+        amount: u8,
     },
     Return { // 72 - 79 : u32
         src: Option<Source>,
@@ -59,17 +58,17 @@ pub enum ByteCode {
 
     Vector { // 591 - 593 : u32 u32 u32
         dst: Location,
-        start: usize,
-        amount: usize,
+        start: Register,
+        amount: VectorSize,
     },
     Object { // 594 - 596 : u32 u32 u32
         dst: Location,
-        start: usize,
-        amount: usize,
+        start: Register,
+        amount: ObjectSize,
     },
     Function { // 597 - 599 : u32 u32
         dst: Location,
-        addr: usize,
+        addr: Address,
     },
 
     Binary { // 600 - 746 : u8 u32 u32 u32
@@ -86,10 +85,10 @@ pub enum ByteCode {
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum Source {
-    Register(usize),
-    Upvalue(usize),
-    Global(usize),
-    Constant(usize),
+    Register(Register),
+    Upvalue(Address),
+    Global(Address),
+    Constant(Address),
     #[default]
     Null,
     Bool(bool),
@@ -97,9 +96,9 @@ pub enum Source {
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Location {
-    Register(usize),
-    Upvalue(usize),
-    Global(usize),
+    Register(Register),
+    Upvalue(Address),
+    Global(Address),
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BinaryOperation {
@@ -127,7 +126,7 @@ pub enum UnaryOperation {
 #[derive(Debug, Clone, Default)]
 pub struct Closure {
     pub code: Vec<Located<ByteCode>>,
-    pub registers: usize,
+    pub registers: Register,
     pub closures: Vec<Rc<RefCell<Self>>>,
     pub upvalues: Vec<Upvalue>,
     pub consts: Vec<Value>,
@@ -135,8 +134,8 @@ pub struct Closure {
 }
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Upvalue {
-    pub register: usize,
-    pub depth: usize,
+    pub register: Register,
+    pub depth: u8,
 }
 
 impl Display for Source {

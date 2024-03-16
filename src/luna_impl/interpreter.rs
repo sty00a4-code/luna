@@ -5,7 +5,7 @@ use super::{
     },
 };
 use crate::lang::{
-    code::{BinaryOperation, ByteCode, Location, Source, UnaryOperation},
+    code::{Address, BinaryOperation, ByteCode, Location, Register, Source, UnaryOperation},
     value::{Function, FunctionKind, Object, Value, META_CALL, META_GET, META_NEXT, META_SET},
 };
 use std::{cell::RefCell, collections::HashMap, error::Error, fmt::Display, rc::Rc};
@@ -20,7 +20,7 @@ pub struct Interpreter {
 pub struct CallFrame {
     pub function: Rc<Function>,
     pub stack: Vec<Rc<RefCell<Value>>>,
-    pub idx: usize,
+    pub idx: Address,
     pub dst: Option<Location>,
     pub globals: Rc<RefCell<HashMap<String, Rc<RefCell<Value>>>>>,
 }
@@ -81,7 +81,7 @@ impl Interpreter {
     pub fn call(&mut self, function: &Rc<Function>, args: Vec<Value>, dst: Option<Location>) {
         let mut stack = vec![];
         stack.extend(args.into_iter().map(|v| Rc::new(RefCell::new(v))));
-        stack.resize_with(function.closure.borrow().registers, || Rc::default());
+        stack.resize_with(function.closure.borrow().registers as usize, || Rc::default());
         self.call_frames.push(CallFrame {
             function: Rc::clone(function),
             stack,
@@ -148,7 +148,7 @@ impl Interpreter {
             .closure
             .borrow()
             .code
-            .get(idx)
+            .get(idx as usize)
             .cloned()
             .expect("idx out of range");
         self.call_frames.last_mut().expect("no call frame").idx += 1;
@@ -268,8 +268,8 @@ impl Interpreter {
                     .expect("no call frame")
                     .source(&func)
                     .expect("func not found");
-                let mut args = Vec::with_capacity(amount);
-                for register in offset..offset + amount {
+                let mut args = Vec::with_capacity(amount as usize);
+                for register in offset..offset + amount as Register {
                     args.push(
                         self.call_frames
                             .last_mut()
@@ -734,7 +734,7 @@ impl Interpreter {
                         .closure
                         .borrow()
                         .closures
-                        .get(addr)
+                        .get(addr as usize)
                         .expect("closure not found"),
                 );
                 let mut upvalues = Vec::with_capacity(closure.borrow().upvalues.len());
@@ -747,7 +747,7 @@ impl Interpreter {
                             .expect("register not found")
                     } else if let Some(value) = self
                         .call_frames
-                        .get(self.call_frames.len() - 1 - upvalue.depth)
+                        .get(self.call_frames.len() - 1 - upvalue.depth as usize)
                         .map(|frame| {
                             frame
                                 .register(upvalue.register)
@@ -1085,8 +1085,8 @@ impl CallFrame {
         self.function.closure.borrow().path.clone()
     }
     #[inline(always)]
-    pub fn register(&self, register: usize) -> Option<Rc<RefCell<Value>>> {
-        self.stack.get(register).cloned()
+    pub fn register(&self, register: Register) -> Option<Rc<RefCell<Value>>> {
+        self.stack.get(register as usize).cloned()
     }
     #[inline(always)]
     pub fn source(&self, source: &Source) -> Option<Value> {
@@ -1097,7 +1097,7 @@ impl CallFrame {
             Source::Upvalue(addr) => self
                 .function
                 .upvalues
-                .get(*addr)
+                .get(*addr as usize)
                 .map(|value| value.borrow().clone()),
             Source::Global(addr) => {
                 if let Value::String(ident) = self
@@ -1105,7 +1105,7 @@ impl CallFrame {
                     .closure
                     .borrow()
                     .consts
-                    .get(*addr)
+                    .get(*addr as usize)
                     .expect("constant not found")
                 {
                     Some(
@@ -1119,7 +1119,7 @@ impl CallFrame {
                     panic!("expected a string for the global")
                 }
             }
-            Source::Constant(addr) => self.function.closure.borrow().consts.get(*addr).cloned(),
+            Source::Constant(addr) => self.function.closure.borrow().consts.get(*addr as usize).cloned(),
             Source::Null => Some(Value::default()),
             Source::Bool(v) => Some(Value::Bool(*v)),
             Source::Char(v) => Some(Value::Char(*v)),
@@ -1129,14 +1129,14 @@ impl CallFrame {
     pub fn location(&mut self, location: &Location) -> Option<Rc<RefCell<Value>>> {
         match location {
             Location::Register(register) => self.register(*register),
-            Location::Upvalue(addr) => self.function.upvalues.get(*addr).map(Rc::clone),
+            Location::Upvalue(addr) => self.function.upvalues.get(*addr as usize).map(Rc::clone),
             Location::Global(addr) => {
                 if let Value::String(ident) = self
                     .function
                     .closure
                     .borrow()
                     .consts
-                    .get(*addr)
+                    .get(*addr as usize)
                     .expect("constant not found")
                 {
                     let mut globals = self.globals.borrow_mut();
