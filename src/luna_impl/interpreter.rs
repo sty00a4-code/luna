@@ -10,6 +10,8 @@ use crate::lang::{
 };
 use std::{cell::RefCell, collections::HashMap, error::Error, fmt::Display, rc::Rc};
 
+pub const CALL_STACK_CAP: usize = 0xff;
+
 #[derive(Debug, Clone)]
 pub struct Interpreter {
     pub call_frames: Vec<CallFrame>,
@@ -54,7 +56,7 @@ pub enum RunTimeError {
 impl Default for Interpreter {
     fn default() -> Self {
         Self {
-            call_frames: vec![],
+            call_frames: Vec::with_capacity(CALL_STACK_CAP),
             globals: Rc::new(RefCell::new(globals())),
             global_path: None,
         }
@@ -79,9 +81,13 @@ impl Interpreter {
             .clone()
     }
     pub fn call(&mut self, function: &Rc<Function>, args: Vec<Value>, dst: Option<Location>) {
-        let mut stack = vec![];
+        let mut stack = Vec::with_capacity(function.closure.borrow().registers as usize);
+        let args_len = args.len();
         stack.extend(args.into_iter().map(|v| Rc::new(RefCell::new(v))));
-        stack.resize_with(function.closure.borrow().registers as usize, || Rc::default());
+        stack.extend(
+            (args_len..function.closure.borrow().registers as usize)
+                .map(|_| Rc::new(RefCell::new(Value::default()))),
+        );
         self.call_frames.push(CallFrame {
             function: Rc::clone(function),
             stack,
@@ -1119,7 +1125,13 @@ impl CallFrame {
                     panic!("expected a string for the global")
                 }
             }
-            Source::Constant(addr) => self.function.closure.borrow().consts.get(*addr as usize).cloned(),
+            Source::Constant(addr) => self
+                .function
+                .closure
+                .borrow()
+                .consts
+                .get(*addr as usize)
+                .cloned(),
             Source::Null => Some(Value::default()),
             Source::Bool(v) => Some(Value::Bool(*v)),
             Source::Char(v) => Some(Value::Char(*v)),
