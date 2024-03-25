@@ -77,25 +77,31 @@ pub struct Function {
 pub type UserFunction = dyn Fn(&mut Interpreter, Vec<Value>) -> Result<Value, Box<dyn Error>>;
 
 impl Default for FunctionKind {
+    #[inline(always)]
     fn default() -> Self {
         Self::Function(Default::default())
     }
 }
 impl Object {
+    #[inline(always)]
     pub fn new(fields: HashMap<String, Value>) -> Self {
         Self { fields, meta: None }
     }
+    #[inline(always)]
     pub fn get(&self, k: &str) -> Option<Value> {
         self.fields.get(k).cloned()
     }
+    #[inline(always)]
     pub fn set(&mut self, k: String, v: Value) {
         self.fields.insert(k, v);
     }
+    #[inline(always)]
     pub fn get_meta(&self, k: &str) -> Option<Value> {
         self.meta.as_ref()?.borrow().get(k)
     }
 }
 impl Value {
+    #[inline(always)]
     pub fn typ(&self) -> &'static str {
         match self {
             Value::Null => "null",
@@ -110,6 +116,7 @@ impl Value {
             Value::Function(_) => "fn",
         }
     }
+    #[inline(always)]
     pub fn dynamic_typ(&self) -> String {
         match self {
             Value::Object(object) => {
@@ -123,6 +130,7 @@ impl Value {
             _ => self.typ().to_string(),
         }
     }
+    #[inline(always)]
     pub fn call_tostring(
         &self,
         interpreter: &mut Interpreter,
@@ -187,6 +195,7 @@ impl Display for Value {
     }
 }
 impl PartialEq for Value {
+    #[inline(always)]
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (Self::Null, Self::Null) => true,

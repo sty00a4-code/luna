@@ -10,7 +10,7 @@ use crate::lang::{
 };
 use std::{cell::RefCell, collections::HashMap, error::Error, fmt::Display, rc::Rc};
 
-pub const CALL_STACK_CAP: usize = 0xff;
+pub const CALL_STACK_CAP: usize = 0xffff;
 
 #[derive(Debug, Clone)]
 pub struct Interpreter {
@@ -80,6 +80,7 @@ impl Interpreter {
             .path
             .clone()
     }
+    #[inline(always)]
     pub fn call(&mut self, function: &Rc<Function>, args: Vec<Value>, dst: Option<Location>) {
         let mut stack = Vec::with_capacity(function.closure.borrow().registers as usize);
         let args_len = args.len();
@@ -96,6 +97,7 @@ impl Interpreter {
             globals: Rc::clone(&self.globals),
         });
     }
+    #[inline(always)]
     pub fn return_call(&mut self, src: Option<Source>) -> Option<Value> {
         let top_frame = self.call_frames.pop().expect("no frame on stack");
         if let Some(prev_frame) = self.call_frames.last_mut() {
@@ -112,6 +114,7 @@ impl Interpreter {
         }
         None
     }
+    #[inline(always)]
     pub fn call_kind(
         &mut self,
         kind: FunctionKind,
