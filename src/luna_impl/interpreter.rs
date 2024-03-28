@@ -1076,16 +1076,11 @@ impl Interpreter {
     pub fn run(&mut self) -> Result<Option<Value>, Located<RunTimeError>> {
         let level = self.call_frames.len();
         loop {
-            if let Some(value) = self.step()? {
-                if self.call_frames.len() < level || self.call_frames.is_empty() {
-                    return Ok(Some(value));
-                }
-            }
+            let value = self.step()?;
             if self.call_frames.len() < level || self.call_frames.is_empty() {
-                break;
+                return Ok(value);
             }
         }
-        Ok(None)
     }
 }
 impl CallFrame {
