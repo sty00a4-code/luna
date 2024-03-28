@@ -540,6 +540,33 @@ impl Expression {
                         pos,
                     );
                 }
+                Token::Dot => {
+                    parser.next().unwrap();
+                    let mut pos = head.pos.clone();
+                    let field = Path::ident(parser)?;
+                    pos.extend(&field.pos);
+                    head = Located::new(
+                        Self::Field {
+                            head: Box::new(head),
+                            field,
+                        },
+                        pos,
+                    );
+                }
+                Token::BracketLeft => {
+                    parser.next();
+                    let index = Expression::parse(parser)?;
+                    let end_pos = expect_token!(parser: BracketRight);
+                    let mut pos = head.pos.clone();
+                    pos.extend(&end_pos);
+                    head = Located::new(
+                        Self::Index {
+                            head: Box::new(head),
+                            index: Box::new(index),
+                        },
+                        pos,
+                    )
+                }
                 _ => break,
             }
         }

@@ -1,17 +1,17 @@
+use super::position::{Located, Position};
+use crate::lang::{
+    ast::*,
+    code::{
+        Address, ByteCode, Closure, Location, ObjectSize, Register, Source, Upvalue, VectorSize,
+    },
+    value::Value,
+};
 use std::{
     cell::RefCell,
     collections::{HashMap, HashSet},
     error::Error,
     rc::Rc,
 };
-
-use crate::lang::{
-    ast::*,
-    code::{Address, ByteCode, Closure, Location, ObjectSize, Register, Source, Upvalue, VectorSize},
-    value::Value,
-};
-
-use super::position::{Located, Position};
 
 #[derive(Debug, Default)]
 pub struct Compiler {
@@ -1261,6 +1261,58 @@ impl Compilable for Located<Expression> {
                             func,
                             offset,
                             amount,
+                        },
+                        pos,
+                    );
+                Ok(Source::Register(dst))
+            }
+            Expression::Field {
+                head,
+                field:
+                    Located {
+                        value: field,
+                        pos: _,
+                    },
+            } => {
+                let head = head.compile(compiler)?;
+                let field = Source::Constant(
+                    compiler
+                        .frame_mut()
+                        .expect("no compiler frame on stack")
+                        .new_const(Value::String(field)),
+                );
+                let dst = compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .new_register();
+                compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .write(
+                        ByteCode::Field {
+                            dst: Location::Register(dst),
+                            head: head.into(),
+                            field,
+                        },
+                        pos,
+                    );
+                Ok(Source::Register(dst))
+            }
+            Expression::Index { head, index } => {
+                let head = head.compile(compiler)?;
+                let field = index.compile(compiler)?;
+                let dst = compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .new_register();
+                compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .write(
+                        ByteCode::Field {
+                            dst: Location::Register(dst),
+                            head: head.into(),
+                            field,
                         },
                         pos,
                     );
