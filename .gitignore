@@ -1,3 +1,4 @@
 /target
 /test*
 /test_module*
+/.vscode

@@ -472,17 +472,9 @@ impl Compilable for Located<Statement> {
                     .frame_mut()
                     .expect("no compiler frame on stack")
                     .registers;
-                let registers = (0..amount)
-                    .map(|_| {
-                        compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .new_register()
-                    })
-                    .collect::<Vec<Register>>();
-                for (i, arg) in args.into_iter().enumerate() {
+                compiler.frame_mut().expect("no compiler frame on stack").registers += amount as Register;
+                for (register, arg) in (offset..offset + amount as Register).zip(args.into_iter()) {
                     let pos = arg.pos.clone();
-                    let register = registers[i];
                     let src = arg.compile(compiler)?;
                     compiler
                         .frame_mut()
@@ -566,17 +558,9 @@ impl Compilable for Located<Statement> {
                         },
                         head_pos,
                     );
-                let registers = (1..amount)
-                    .map(|_| {
-                        compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .new_register()
-                    })
-                    .collect::<Vec<Register>>();
-                for (i, arg) in args.into_iter().enumerate() {
+                compiler.frame_mut().expect("no compiler frame on stack").registers += amount as Register;
+                for (register, arg) in (offset..offset + amount as Register).zip(args.into_iter()) {
                     let pos = arg.pos.clone();
-                    let register = registers[i];
                     let src = arg.compile(compiler)?;
                     compiler
                         .frame_mut()
@@ -1124,17 +1108,9 @@ impl Compilable for Located<Expression> {
                     .frame_mut()
                     .expect("no compiler frame on stack")
                     .registers;
-                let registers = (0..amount)
-                    .map(|_| {
-                        compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .new_register()
-                    })
-                    .collect::<Vec<Register>>();
-                for (i, arg) in args.into_iter().enumerate() {
+                compiler.frame_mut().expect("no compiler frame on stack").registers += amount as Register;
+                for (register, arg) in (offset..offset + amount as Register).zip(args.into_iter()) {
                     let pos = arg.pos.clone();
-                    let register = registers[i];
                     let src = arg.compile(compiler)?;
                     compiler
                         .frame_mut()
@@ -1221,17 +1197,9 @@ impl Compilable for Located<Expression> {
                         },
                         head_pos,
                     );
-                let registers = (1..amount)
-                    .map(|_| {
-                        compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .new_register()
-                    })
-                    .collect::<Vec<Register>>();
-                for (i, arg) in args.into_iter().enumerate() {
+                compiler.frame_mut().expect("no compiler frame on stack").registers += amount as Register;
+                for (register, arg) in (offset..offset + amount as Register).zip(args.into_iter()) {
                     let pos = arg.pos.clone();
-                    let register = registers[i];
                     let src = arg.compile(compiler)?;
                     compiler
                         .frame_mut()
