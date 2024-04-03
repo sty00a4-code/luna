@@ -1259,7 +1259,7 @@ impl Compilable for Located<Expression> {
                     .write(
                         ByteCode::Field {
                             dst: Location::Register(dst),
-                            head: head.into(),
+                            head,
                             field,
                         },
                         pos,
@@ -1279,7 +1279,7 @@ impl Compilable for Located<Expression> {
                     .write(
                         ByteCode::Field {
                             dst: Location::Register(dst),
-                            head: head.into(),
+                            head,
                             field,
                         },
                         pos,
