@@ -82,11 +82,11 @@ impl Interpreter {
     }
     #[inline(always)]
     pub fn call(&mut self, function: &Rc<Function>, args: Vec<Value>, dst: Option<Location>) {
-        let mut stack = Vec::with_capacity(function.closure.borrow().registers as usize);
+        let mut stack = Vec::with_capacity(function.closure.borrow().registers as usize + 1);
         let args_len = args.len();
         stack.extend(args.into_iter().map(|v| Rc::new(RefCell::new(v))));
         stack.extend(
-            (args_len..function.closure.borrow().registers as usize)
+            (args_len..function.closure.borrow().registers as usize + 1)
                 .map(|_| Rc::new(RefCell::new(Value::default()))),
         );
         self.call_frames.push(CallFrame {

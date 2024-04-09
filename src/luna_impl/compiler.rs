@@ -130,6 +130,12 @@ impl CompilerFrame {
         }
         addr
     }
+    pub fn add_registers(&mut self, amount: Register) {
+        self.registers += amount;
+        if self.registers > self.closure.borrow().registers {
+            self.closure.borrow_mut().registers = self.registers;
+        }
+    }
     pub fn push_scope(&mut self) {
         let register_offset = self.registers;
         self.scopes.push(Scope {
@@ -472,7 +478,7 @@ impl Compilable for Located<Statement> {
                     .frame_mut()
                     .expect("no compiler frame on stack")
                     .registers;
-                compiler.frame_mut().expect("no compiler frame on stack").registers += amount as Register;
+                compiler.frame_mut().expect("no compiler frame on stack").add_registers(amount as Register);
                 for (register, arg) in (offset..offset + amount as Register).zip(args.into_iter()) {
                     let pos = arg.pos.clone();
                     let src = arg.compile(compiler)?;
@@ -559,7 +565,7 @@ impl Compilable for Located<Statement> {
                         head_pos,
                     );
                 compiler.frame_mut().expect("no compiler frame on stack").registers += amount as Register;
-                for (register, arg) in (offset..offset + amount as Register).zip(args.into_iter()) {
+                for (register, arg) in (offset + 1..offset + amount as Register).zip(args.into_iter()) {
                     let pos = arg.pos.clone();
                     let src = arg.compile(compiler)?;
                     compiler
@@ -1108,7 +1114,7 @@ impl Compilable for Located<Expression> {
                     .frame_mut()
                     .expect("no compiler frame on stack")
                     .registers;
-                compiler.frame_mut().expect("no compiler frame on stack").registers += amount as Register;
+                compiler.frame_mut().expect("no compiler frame on stack").add_registers(amount as Register);
                 for (register, arg) in (offset..offset + amount as Register).zip(args.into_iter()) {
                     let pos = arg.pos.clone();
                     let src = arg.compile(compiler)?;
@@ -1197,8 +1203,8 @@ impl Compilable for Located<Expression> {
                         },
                         head_pos,
                     );
-                compiler.frame_mut().expect("no compiler frame on stack").registers += amount as Register;
-                for (register, arg) in (offset..offset + amount as Register).zip(args.into_iter()) {
+                compiler.frame_mut().expect("no compiler frame on stack").add_registers(amount as Register);
+                for (register, arg) in (offset + 1..offset + amount as Register).zip(args.into_iter()) {
                     let pos = arg.pos.clone();
                     let src = arg.compile(compiler)?;
                     compiler
