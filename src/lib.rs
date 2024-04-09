@@ -247,3 +247,97 @@ macro_rules! option {
         }
     }};
 }
+#[macro_export]
+macro_rules! userobject {
+    (
+        $name:ident : $typ_name:literal ;
+        $self:ident
+        $(static ($fn_self:ident, $fn_args:ident) { $(
+            $fn_name:ident : $fn_literal_name:literal $fn_body:block
+        ) *})?
+        $(mut ($fn_mut_self:ident, $fn_mut_args:ident) { $(
+            $fn_mut_name:ident : $fn_mut_literal_name:literal $fn_mut_body:block
+        ) *})?
+    ) => {
+        impl UserObject for $name {
+            fn typ(&self) -> &'static str {
+                $typ_name
+            }
+            fn get(&$self, key: &str) -> Option<Value> {
+                match key {
+                    $(
+                        $(
+                            $fn_literal_name => Some(Value::Function(FunctionKind::UserFunction(Rc::new(
+                                Box::new(Self::$fn_name),
+                            )))),
+                        )*
+                    )?
+                    $(
+                        $(
+                            $fn_mut_literal_name => Some(Value::Function(FunctionKind::UserFunction(Rc::new(
+                                Box::new(Self::$fn_mut_name),
+                            )))),
+                        )*
+                    )?
+                    _ => None,
+                }
+            }
+            $(
+                #[allow(unused_variables)]
+                fn call(&$fn_self, key: &str, $fn_args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+                    match key {
+                        $(
+                            $fn_literal_name => $fn_body,
+                        )+
+                        _ => Err(Box::new(UserObjectError::CannotCallNull))
+                    }
+                }
+            )?
+            $(
+                #[allow(unused_variables)]
+                fn call_mut(&mut $fn_mut_self, key: &str, $fn_mut_args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+                    match key {
+                        $(
+                            $fn_mut_literal_name => $fn_mut_body,
+                        )+
+                        _ => Err(Box::new(UserObjectError::CannotCallNull))
+                    }
+                }
+            )?
+        }
+        impl $name {
+            $(
+                $(
+                    pub fn $fn_name(_: &mut Interpreter, mut $fn_args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+                        let Some(_self) = $fn_args.first().cloned() else {
+                            return Err(Box::new(UserObjectError::ExpectedSelf("null")));
+                        };
+                        $fn_args.remove(0);
+                        if let Value::UserObject(_self) = _self {
+                            let mut _self = _self.borrow_mut();
+                            _self.call($fn_literal_name, $fn_args)
+                        } else {
+                            Err(Box::new(UserObjectError::ExpectedSelf(_self.typ())))
+                        }
+                    }
+                ) *
+            )?
+            $(
+                $(
+                    pub fn $fn_mut_name(_: &mut Interpreter, mut $fn_mut_args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+                        let Some(_self) = $fn_mut_args.first().cloned() else {
+                            return Err(Box::new(UserObjectError::ExpectedSelf("null")));
+                        };
+                        $fn_mut_args.remove(0);
+                        if let Value::UserObject(_self) = _self {
+                            let mut _self = _self.borrow_mut();
+                            _self.call_mut($fn_mut_literal_name, $fn_mut_args)
+                        } else {
+                            Err(Box::new(UserObjectError::ExpectedSelf(_self.typ())))
+                        }
+                    }
+                ) *
+            )?
+        }
+    };
+}

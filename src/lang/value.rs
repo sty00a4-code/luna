@@ -64,6 +64,22 @@ pub enum UserObjectError {
     CannotCallNull,
     InvalidField(String),
 }
+impl Display for UserObjectError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::ExpectedSelf(got) => {
+                write!(f, "expected self for argument #1, got {got}")
+            }
+            Self::CannotCallNull => {
+                write!(f, "can not call null")
+            }
+            Self::InvalidField(field) => {
+                write!(f, "invalid field {field:?}")
+            }
+        }
+    }
+}
+impl Error for UserObjectError {}
 #[derive(Clone)]
 pub enum FunctionKind {
     Function(Rc<Function>),
@@ -253,6 +269,11 @@ impl From<u32> for Value {
         Self::Int(value as i64)
     }
 }
+impl From<usize> for Value {
+    fn from(value: usize) -> Self {
+        Self::Int(value as i64)
+    }
+}
 impl From<u64> for Value {
     fn from(value: u64) -> Self {
         Self::Int(value as i64)
@@ -275,6 +296,11 @@ impl From<i16> for Value {
 }
 impl From<i32> for Value {
     fn from(value: i32) -> Self {
+        Self::Int(value as i64)
+    }
+}
+impl From<isize> for Value {
+    fn from(value: isize) -> Self {
         Self::Int(value as i64)
     }
 }
