@@ -13,6 +13,10 @@ pub enum Statement {
         idents: Vec<Located<String>>,
         exprs: Vec<Located<Expression>>,
     },
+    LetBindingObject {
+        fields: Vec<Located<String>>,
+        expr: Located<Expression>,
+    },
     Assign {
         paths: Vec<Located<Path>>,
         exprs: Vec<Located<Expression>>,

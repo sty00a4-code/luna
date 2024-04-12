@@ -166,6 +166,17 @@ impl Statement {
         if_token!(parser: Fn _ => {
             return Self::parse_fn(parser, true);
         });
+        if_token!(parser: BraceLeft {
+            let mut fields = vec![];
+            until_match!(parser: BraceRight {
+                let field = Path::ident(parser)?;
+                fields.push(field);
+                skip_token!(parser: Comma);
+            });
+            expect_token!(parser: Equal);
+            let expr = Expression::parse(parser)?;
+            return Ok(Located::new(Self::LetBindingObject { fields, expr }, pos))
+        });
         let mut idents = vec![];
         let mut exprs = vec![];
         let ident = Path::ident(parser)?;

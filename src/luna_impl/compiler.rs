@@ -273,6 +273,26 @@ impl Compilable for Located<Statement> {
                 }
                 Ok(None)
             }
+            Statement::LetBindingObject { fields, expr } => {
+                let head = expr.compile(compiler)?;
+                for Located { value: ident, pos } in fields.into_iter() {
+                    let field = Source::Constant(compiler
+                        .frame_mut()
+                        .expect("no compiler frame on stack")
+                        .new_const(Value::String(ident.clone())));
+                    let dst = Location::Register(
+                        compiler
+                            .frame_mut()
+                            .expect("no compiler frame on stack")
+                            .new_local(ident),
+                    );
+                    compiler
+                        .frame_mut()
+                        .expect("no compiler frame on stack")
+                        .write(ByteCode::Field { dst, head, field }, pos);
+                }
+                Ok(None)
+            }
             Statement::Assign { paths, mut exprs } => {
                 for Located {
                     value: path,
