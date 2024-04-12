@@ -1,9 +1,9 @@
-use std::{cell::RefCell, fmt::Display, rc::Rc};
-use crate::luna_impl::position::Located;
 use super::{
     ast::{BinaryOperator, UnaryOperator},
     value::Value,
 };
+use crate::luna_impl::position::Located;
+use std::{cell::RefCell, fmt::Display, rc::Rc};
 
 pub type Register = u16;
 pub type Address = u32;
@@ -14,70 +14,84 @@ pub enum ByteCode {
     #[default]
     None, // 0
 
-    Jump { // 1
+    Jump {
+        // 1
         addr: Address,
     },
-    JumpIf { // 2 - 15 : u32 u32
+    JumpIf {
+        // 2 - 15 : u32 u32
         negative: bool,
         cond: Source,
         addr: Address,
     },
-    JumpNull { // 16 - 22 : u32 u32
+    JumpNull {
+        // 16 - 22 : u32 u32
         cond: Source,
         addr: Address,
     },
-    Next { // 23 - 43 : u32 u32
+    Next {
+        // 23 - 43 : u32 u32
         dst: Location,
         src: Source,
     },
 
-    Call { // 44 - 71 : u32 u32 u32 u32
+    Call {
+        // 44 - 71 : u32 u32 u32 u32
         dst: Option<Location>,
         func: Source,
         offset: Register,
         amount: u8,
     },
-    Return { // 72 - 79 : u32
+    Return {
+        // 72 - 79 : u32
         src: Option<Source>,
     },
 
-    Move { // 80 - 100 : u32 u32
+    Move {
+        // 80 - 100 : u32 u32
         dst: Location,
         src: Source,
     },
-    Field { // 101 - 247 : u32 u32 u32
+    Field {
+        // 101 - 247 : u32 u32 u32
         dst: Location,
         head: Source,
         field: Source,
     },
-    SetField { // 248 - 590 : u32 u32 u32
+    SetField {
+        // 248 - 590 : u32 u32 u32
         head: Source,
         field: Source,
         src: Source,
     },
 
-    Vector { // 591 - 593 : u32 u32 u32
+    Vector {
+        // 591 - 593 : u32 u32 u32
         dst: Location,
         start: Register,
         amount: VectorSize,
     },
-    Object { // 594 - 596 : u32 u32 u32
+    Object {
+        // 594 - 596 : u32 u32 u32
         dst: Location,
         start: Register,
         amount: ObjectSize,
     },
-    Function { // 597 - 599 : u32 u32
+    Function {
+        // 597 - 599 : u32 u32
         dst: Location,
         addr: Address,
     },
 
-    Binary { // 600 - 746 : u8 u32 u32 u32
+    Binary {
+        // 600 - 746 : u8 u32 u32 u32
         op: BinaryOperation,
         dst: Location,
         left: Source,
         right: Source,
     },
-    Unary { // 747 - 767 : u8 u32 u32
+    Unary {
+        // 747 - 767 : u8 u32 u32
         op: UnaryOperation,
         dst: Location,
         src: Source,
@@ -130,7 +144,7 @@ pub struct Closure {
     pub closures: Vec<Rc<RefCell<Self>>>,
     pub upvalues: Vec<Upvalue>,
     pub consts: Vec<Value>,
-    pub path: Option<String>
+    pub path: Option<String>,
 }
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Upvalue {

@@ -276,10 +276,12 @@ impl Compilable for Located<Statement> {
             Statement::LetBindingObject { fields, expr } => {
                 let head = expr.compile(compiler)?;
                 for Located { value: ident, pos } in fields.into_iter() {
-                    let field = Source::Constant(compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
-                        .new_const(Value::String(ident.clone())));
+                    let field = Source::Constant(
+                        compiler
+                            .frame_mut()
+                            .expect("no compiler frame on stack")
+                            .new_const(Value::String(ident.clone())),
+                    );
                     let dst = Location::Register(
                         compiler
                             .frame_mut()
@@ -296,10 +298,12 @@ impl Compilable for Located<Statement> {
             Statement::LetBindingVector { idents, expr } => {
                 let head = expr.compile(compiler)?;
                 for (idx, Located { value: ident, pos }) in idents.into_iter().enumerate() {
-                    let field = Source::Constant(compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
-                        .new_const(Value::Int(idx as isize as i64)));
+                    let field = Source::Constant(
+                        compiler
+                            .frame_mut()
+                            .expect("no compiler frame on stack")
+                            .new_const(Value::Int(idx as isize as i64)),
+                    );
                     let dst = Location::Register(
                         compiler
                             .frame_mut()
@@ -518,7 +522,10 @@ impl Compilable for Located<Statement> {
                     .frame_mut()
                     .expect("no compiler frame on stack")
                     .registers;
-                compiler.frame_mut().expect("no compiler frame on stack").add_registers(amount as Register);
+                compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .add_registers(amount as Register);
                 for (register, arg) in (offset..offset + amount as Register).zip(args.into_iter()) {
                     let pos = arg.pos.clone();
                     let src = arg.compile(compiler)?;
@@ -604,8 +611,13 @@ impl Compilable for Located<Statement> {
                         },
                         head_pos,
                     );
-                compiler.frame_mut().expect("no compiler frame on stack").registers += amount as Register;
-                for (register, arg) in (offset + 1..offset + amount as Register).zip(args.into_iter()) {
+                compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .registers += amount as Register;
+                for (register, arg) in
+                    (offset + 1..offset + amount as Register).zip(args.into_iter())
+                {
                     let pos = arg.pos.clone();
                     let src = arg.compile(compiler)?;
                     compiler
@@ -1154,7 +1166,10 @@ impl Compilable for Located<Expression> {
                     .frame_mut()
                     .expect("no compiler frame on stack")
                     .registers;
-                compiler.frame_mut().expect("no compiler frame on stack").add_registers(amount as Register);
+                compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .add_registers(amount as Register);
                 for (register, arg) in (offset..offset + amount as Register).zip(args.into_iter()) {
                     let pos = arg.pos.clone();
                     let src = arg.compile(compiler)?;
@@ -1243,8 +1258,13 @@ impl Compilable for Located<Expression> {
                         },
                         head_pos,
                     );
-                compiler.frame_mut().expect("no compiler frame on stack").add_registers(amount as Register);
-                for (register, arg) in (offset + 1..offset + amount as Register).zip(args.into_iter()) {
+                compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .add_registers(amount as Register);
+                for (register, arg) in
+                    (offset + 1..offset + amount as Register).zip(args.into_iter())
+                {
                     let pos = arg.pos.clone();
                     let src = arg.compile(compiler)?;
                     compiler
