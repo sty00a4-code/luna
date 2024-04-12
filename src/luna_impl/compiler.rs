@@ -293,6 +293,26 @@ impl Compilable for Located<Statement> {
                 }
                 Ok(None)
             }
+            Statement::LetBindingVector { idents, expr } => {
+                let head = expr.compile(compiler)?;
+                for (idx, Located { value: ident, pos }) in idents.into_iter().enumerate() {
+                    let field = Source::Constant(compiler
+                        .frame_mut()
+                        .expect("no compiler frame on stack")
+                        .new_const(Value::Int(idx as isize as i64)));
+                    let dst = Location::Register(
+                        compiler
+                            .frame_mut()
+                            .expect("no compiler frame on stack")
+                            .new_local(ident),
+                    );
+                    compiler
+                        .frame_mut()
+                        .expect("no compiler frame on stack")
+                        .write(ByteCode::Field { dst, head, field }, pos);
+                }
+                Ok(None)
+            }
             Statement::Assign { paths, mut exprs } => {
                 for Located {
                     value: path,

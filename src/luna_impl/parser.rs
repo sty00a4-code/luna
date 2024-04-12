@@ -177,6 +177,17 @@ impl Statement {
             let expr = Expression::parse(parser)?;
             return Ok(Located::new(Self::LetBindingObject { fields, expr }, pos))
         });
+        if_token!(parser: BracketLeft {
+            let mut idents = vec![];
+            until_match!(parser: BracketRight {
+                let field = Path::ident(parser)?;
+                idents.push(field);
+                skip_token!(parser: Comma);
+            });
+            expect_token!(parser: Equal);
+            let expr = Expression::parse(parser)?;
+            return Ok(Located::new(Self::LetBindingVector { idents, expr }, pos))
+        });
         let mut idents = vec![];
         let mut exprs = vec![];
         let ident = Path::ident(parser)?;
