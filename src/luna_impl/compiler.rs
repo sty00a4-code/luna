@@ -253,67 +253,83 @@ impl Compilable for Located<Statement> {
                 }
                 Ok(None)
             }
-            Statement::LetBinding { idents, mut exprs } => {
-                for Located { value: ident, pos } in idents.into_iter() {
-                    let dst = Location::Register(
-                        compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .new_local(ident),
-                    );
+            Statement::LetBinding { params, mut exprs } => {
+                for Located { value: param, pos } in params.into_iter() {
                     let src = if exprs.is_empty() {
                         Source::default()
                     } else {
                         exprs.remove(0).compile(compiler)?
                     };
-                    compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
-                        .write(ByteCode::Move { dst, src }, pos);
-                }
-                Ok(None)
-            }
-            Statement::LetBindingObject { fields, expr } => {
-                let head = expr.compile(compiler)?;
-                for Located { value: ident, pos } in fields.into_iter() {
-                    let field = Source::Constant(
-                        compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .new_const(Value::String(ident.clone())),
-                    );
-                    let dst = Location::Register(
-                        compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .new_local(ident),
-                    );
-                    compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
-                        .write(ByteCode::Field { dst, head, field }, pos);
-                }
-                Ok(None)
-            }
-            Statement::LetBindingVector { idents, expr } => {
-                let head = expr.compile(compiler)?;
-                for (idx, Located { value: ident, pos }) in idents.into_iter().enumerate() {
-                    let field = Source::Constant(
-                        compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .new_const(Value::Int(idx as isize as i64)),
-                    );
-                    let dst = Location::Register(
-                        compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .new_local(ident),
-                    );
-                    compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
-                        .write(ByteCode::Field { dst, head, field }, pos);
+                    match param {
+                        Parameter::Ident(ident) => {
+                            let dst = Location::Register(
+                                compiler
+                                    .frame_mut()
+                                    .expect("no compiler frame on stack")
+                                    .new_local(ident),
+                            );
+                            compiler
+                                .frame_mut()
+                                .expect("no compiler frame on stack")
+                                .write(ByteCode::Move { dst, src }, pos);
+                        }
+                        Parameter::Object(fields) => {
+                            for Located { value: ident, pos } in fields.into_iter() {
+                                let field = Source::Constant(
+                                    compiler
+                                        .frame_mut()
+                                        .expect("no compiler frame on stack")
+                                        .new_const(Value::String(ident.clone())),
+                                );
+                                let dst = Location::Register(
+                                    compiler
+                                        .frame_mut()
+                                        .expect("no compiler frame on stack")
+                                        .new_local(ident),
+                                );
+                                compiler
+                                    .frame_mut()
+                                    .expect("no compiler frame on stack")
+                                    .write(
+                                        ByteCode::Field {
+                                            dst,
+                                            head: src,
+                                            field,
+                                        },
+                                        pos,
+                                    );
+                            }
+                        }
+                        Parameter::Vector(idents) => {
+                            for (idx, Located { value: ident, pos }) in
+                                idents.into_iter().enumerate()
+                            {
+                                let field = Source::Constant(
+                                    compiler
+                                        .frame_mut()
+                                        .expect("no compiler frame on stack")
+                                        .new_const(Value::Int(idx as isize as i64)),
+                                );
+                                let dst = Location::Register(
+                                    compiler
+                                        .frame_mut()
+                                        .expect("no compiler frame on stack")
+                                        .new_local(ident),
+                                );
+                                compiler
+                                    .frame_mut()
+                                    .expect("no compiler frame on stack")
+                                    .write(
+                                        ByteCode::Field {
+                                            dst,
+                                            head: src,
+                                            field,
+                                        },
+                                        pos,
+                                    );
+                            }
+                        }
+                    }
                 }
                 Ok(None)
             }
@@ -672,10 +688,78 @@ impl Compilable for Located<Statement> {
                     pos: _,
                 } in params
                 {
-                    compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
-                        .new_local(param);
+                    match param {
+                        Parameter::Ident(ident) => {
+                            compiler
+                                .frame_mut()
+                                .expect("no compiler frame on stack")
+                                .new_local(ident);
+                        }
+                        Parameter::Object(fields) => {
+                            let head = Source::Register(compiler
+                                .frame_mut()
+                                .expect("no compiler frame on stack")
+                                .new_register());
+                            for Located { value: ident, pos } in fields.into_iter() {
+                                let field = Source::Constant(
+                                    compiler
+                                        .frame_mut()
+                                        .expect("no compiler frame on stack")
+                                        .new_const(Value::String(ident.clone())),
+                                );
+                                let dst = Location::Register(
+                                    compiler
+                                        .frame_mut()
+                                        .expect("no compiler frame on stack")
+                                        .new_local(ident),
+                                );
+                                compiler
+                                    .frame_mut()
+                                    .expect("no compiler frame on stack")
+                                    .write(
+                                        ByteCode::Field {
+                                            dst,
+                                            head,
+                                            field,
+                                        },
+                                        pos,
+                                    );
+                            }
+                        }
+                        Parameter::Vector(idents) => {
+                            let head = Source::Register(compiler
+                                .frame_mut()
+                                .expect("no compiler frame on stack")
+                                .new_register());
+                            for (idx, Located { value: ident, pos }) in
+                                idents.into_iter().enumerate()
+                            {
+                                let field = Source::Constant(
+                                    compiler
+                                        .frame_mut()
+                                        .expect("no compiler frame on stack")
+                                        .new_const(Value::Int(idx as isize as i64)),
+                                );
+                                let dst = Location::Register(
+                                    compiler
+                                        .frame_mut()
+                                        .expect("no compiler frame on stack")
+                                        .new_local(ident),
+                                );
+                                compiler
+                                    .frame_mut()
+                                    .expect("no compiler frame on stack")
+                                    .write(
+                                        ByteCode::Field {
+                                            dst,
+                                            head,
+                                            field,
+                                        },
+                                        pos,
+                                    );
+                            }
+                        }
+                    }
                 }
                 body.compile(compiler)?;
                 compiler
@@ -809,10 +893,78 @@ impl Compilable for Located<Statement> {
                     pos: _,
                 } in params
                 {
-                    compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
-                        .new_local(param);
+                    match param {
+                        Parameter::Ident(ident) => {
+                            compiler
+                                .frame_mut()
+                                .expect("no compiler frame on stack")
+                                .new_local(ident);
+                        }
+                        Parameter::Object(fields) => {
+                            let head = Source::Register(compiler
+                                .frame_mut()
+                                .expect("no compiler frame on stack")
+                                .new_register());
+                            for Located { value: ident, pos } in fields.into_iter() {
+                                let field = Source::Constant(
+                                    compiler
+                                        .frame_mut()
+                                        .expect("no compiler frame on stack")
+                                        .new_const(Value::String(ident.clone())),
+                                );
+                                let dst = Location::Register(
+                                    compiler
+                                        .frame_mut()
+                                        .expect("no compiler frame on stack")
+                                        .new_local(ident),
+                                );
+                                compiler
+                                    .frame_mut()
+                                    .expect("no compiler frame on stack")
+                                    .write(
+                                        ByteCode::Field {
+                                            dst,
+                                            head,
+                                            field,
+                                        },
+                                        pos,
+                                    );
+                            }
+                        }
+                        Parameter::Vector(idents) => {
+                            let head = Source::Register(compiler
+                                .frame_mut()
+                                .expect("no compiler frame on stack")
+                                .new_register());
+                            for (idx, Located { value: ident, pos }) in
+                                idents.into_iter().enumerate()
+                            {
+                                let field = Source::Constant(
+                                    compiler
+                                        .frame_mut()
+                                        .expect("no compiler frame on stack")
+                                        .new_const(Value::Int(idx as isize as i64)),
+                                );
+                                let dst = Location::Register(
+                                    compiler
+                                        .frame_mut()
+                                        .expect("no compiler frame on stack")
+                                        .new_local(ident),
+                                );
+                                compiler
+                                    .frame_mut()
+                                    .expect("no compiler frame on stack")
+                                    .write(
+                                        ByteCode::Field {
+                                            dst,
+                                            head,
+                                            field,
+                                        },
+                                        pos,
+                                    );
+                            }
+                        }
+                    }
                 }
                 body.compile(compiler)?;
                 compiler
@@ -1571,10 +1723,78 @@ impl Compilable for Located<Atom> {
                     pos: _,
                 } in params
                 {
-                    compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
-                        .new_local(param);
+                    match param {
+                        Parameter::Ident(ident) => {
+                            compiler
+                                .frame_mut()
+                                .expect("no compiler frame on stack")
+                                .new_local(ident);
+                        }
+                        Parameter::Object(fields) => {
+                            let head = Source::Register(compiler
+                                .frame_mut()
+                                .expect("no compiler frame on stack")
+                                .new_register());
+                            for Located { value: ident, pos } in fields.into_iter() {
+                                let field = Source::Constant(
+                                    compiler
+                                        .frame_mut()
+                                        .expect("no compiler frame on stack")
+                                        .new_const(Value::String(ident.clone())),
+                                );
+                                let dst = Location::Register(
+                                    compiler
+                                        .frame_mut()
+                                        .expect("no compiler frame on stack")
+                                        .new_local(ident),
+                                );
+                                compiler
+                                    .frame_mut()
+                                    .expect("no compiler frame on stack")
+                                    .write(
+                                        ByteCode::Field {
+                                            dst,
+                                            head,
+                                            field,
+                                        },
+                                        pos,
+                                    );
+                            }
+                        }
+                        Parameter::Vector(idents) => {
+                            let head = Source::Register(compiler
+                                .frame_mut()
+                                .expect("no compiler frame on stack")
+                                .new_register());
+                            for (idx, Located { value: ident, pos }) in
+                                idents.into_iter().enumerate()
+                            {
+                                let field = Source::Constant(
+                                    compiler
+                                        .frame_mut()
+                                        .expect("no compiler frame on stack")
+                                        .new_const(Value::Int(idx as isize as i64)),
+                                );
+                                let dst = Location::Register(
+                                    compiler
+                                        .frame_mut()
+                                        .expect("no compiler frame on stack")
+                                        .new_local(ident),
+                                );
+                                compiler
+                                    .frame_mut()
+                                    .expect("no compiler frame on stack")
+                                    .write(
+                                        ByteCode::Field {
+                                            dst,
+                                            head,
+                                            field,
+                                        },
+                                        pos,
+                                    );
+                            }
+                        }
+                    }
                 }
                 body.compile(compiler)?;
                 compiler

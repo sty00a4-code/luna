@@ -10,16 +10,8 @@ pub struct Block(pub Vec<Located<Statement>>);
 pub enum Statement {
     Block(Block),
     LetBinding {
-        idents: Vec<Located<String>>,
+        params: Vec<Located<Parameter>>,
         exprs: Vec<Located<Expression>>,
-    },
-    LetBindingObject {
-        fields: Vec<Located<String>>,
-        expr: Located<Expression>,
-    },
-    LetBindingVector {
-        idents: Vec<Located<String>>,
-        expr: Located<Expression>,
     },
     Assign {
         paths: Vec<Located<Path>>,
@@ -41,13 +33,13 @@ pub enum Statement {
     },
     Fn {
         path: Located<Path>,
-        params: Vec<Located<String>>,
+        params: Vec<Located<Parameter>>,
         var_args: Option<Located<String>>,
         body: Located<Block>,
     },
     LetFn {
         ident: Located<String>,
-        params: Vec<Located<String>>,
+        params: Vec<Located<Parameter>>,
         var_args: Option<Located<String>>,
         body: Located<Block>,
     },
@@ -150,7 +142,7 @@ pub enum Atom {
         else_case: Box<Located<Expression>>,
     },
     Fn {
-        params: Vec<Located<String>>,
+        params: Vec<Located<Parameter>>,
         var_args: Option<Located<String>>,
         body: Located<Block>,
     },
@@ -166,6 +158,12 @@ pub enum Path {
         head: Box<Located<Self>>,
         index: Box<Located<Expression>>,
     },
+}
+#[derive(Debug, Clone, PartialEq)]
+pub enum Parameter {
+    Ident(String),
+    Object(Vec<Located<String>>),
+    Vector(Vec<Located<String>>),
 }
 
 impl TryFrom<&Token> for AssignOperator {

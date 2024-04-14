@@ -166,37 +166,15 @@ impl Statement {
         if_token!(parser: Fn _ => {
             return Self::parse_fn(parser, true);
         });
-        if_token!(parser: BraceLeft {
-            let mut fields = vec![];
-            until_match!(parser: BraceRight {
-                let field = Path::ident(parser)?;
-                fields.push(field);
-                skip_token!(parser: Comma);
-            });
-            expect_token!(parser: Equal);
-            let expr = Expression::parse(parser)?;
-            return Ok(Located::new(Self::LetBindingObject { fields, expr }, pos))
-        });
-        if_token!(parser: BracketLeft {
-            let mut idents = vec![];
-            until_match!(parser: BracketRight {
-                let field = Path::ident(parser)?;
-                idents.push(field);
-                skip_token!(parser: Comma);
-            });
-            expect_token!(parser: Equal);
-            let expr = Expression::parse(parser)?;
-            return Ok(Located::new(Self::LetBindingVector { idents, expr }, pos))
-        });
-        let mut idents = vec![];
+        let mut params = vec![];
         let mut exprs = vec![];
-        let ident = Path::ident(parser)?;
+        let ident = Parameter::parse(parser)?;
         pos.extend(&ident.pos);
-        idents.push(ident);
+        params.push(ident);
         while_match!(parser: Comma {
             let ident = Path::ident(parser)?;
             pos.extend(&ident.pos);
-            idents.push(ident);
+            params.push(Parameter::parse(parser)?);
         });
         if_token!(parser: Equal {
             let expr = Expression::parse(parser)?;
@@ -208,7 +186,7 @@ impl Statement {
                 exprs.push(expr);
             });
         });
-        Ok(Located::new(Self::LetBinding { idents, exprs }, pos))
+        Ok(Located::new(Self::LetBinding { params, exprs }, pos))
     }
     pub fn parse_fn(
         parser: &mut Parser,
@@ -220,7 +198,7 @@ impl Statement {
         let var_args = None;
         expect_token!(parser: ParanLeft);
         until_match!(parser: ParanRight {
-            params.push(Path::ident(parser)?);
+            params.push(Parameter::parse(parser)?);
             skip_token!(parser: Comma);
         });
         let body = Block::parse(parser)?;
@@ -723,7 +701,7 @@ impl Parsable for Atom {
                 let var_args = None;
                 expect_token!(parser: ParanLeft);
                 until_match!(parser: ParanRight {
-                    params.push(Path::ident(parser)?);
+                    params.push(Parameter::parse(parser)?);
                     skip_token!(parser: Comma);
                 });
                 let body = Block::parse(parser)?;
@@ -738,6 +716,44 @@ impl Parsable for Atom {
                 ))
             }
             token => Err(Located::new(ParseError::UnexpectedToken(token), pos)),
+        }
+    }
+}
+impl Parsable for Parameter {
+    fn parse(parser: &mut Parser) -> Result<Located<Self>, Located<ParseError>> {
+        if let Some(Located {
+            value: Token::Ident(_),
+            pos: _,
+        }) = parser.peek()
+        {
+            return Ok(Path::ident(parser)?.map(Self::Ident));
+        }
+        let Located {
+            value: token,
+            mut pos,
+        } = expect!(parser);
+        match token {
+            Token::BraceLeft => {
+                let mut fields = vec![];
+                let end_pos = until_match!(parser: BraceRight {
+                    let field = Path::ident(parser)?;
+                    fields.push(field);
+                    skip_token!(parser: Comma);
+                });
+                pos.extend(&end_pos);
+                Ok(Located::new(Self::Object(fields), pos))
+            }
+            Token::BracketLeft => {
+                let mut fields = vec![];
+                let end_pos = until_match!(parser: BracketRight {
+                    let field = Path::ident(parser)?;
+                    fields.push(field);
+                    skip_token!(parser: Comma);
+                });
+                pos.extend(&end_pos);
+                Ok(Located::new(Self::Vector(fields), pos))
+            }
+            token => Err(Located::new(ParseError::UnexpectedToken(token), pos))
         }
     }
 }
