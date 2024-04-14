@@ -3,8 +3,6 @@ pub mod luna_impl;
 #[cfg(test)]
 pub mod tests;
 
-use std::{cell::RefCell, env, error::Error, fmt::Display, rc::Rc};
-
 use lang::{
     ast::Chunk,
     code::Closure,
@@ -18,6 +16,7 @@ use luna_impl::{
     parser::Parsable,
     position::{Located, PathLocated},
 };
+use std::{cell::RefCell, env, error::Error, fmt::Display, rc::Rc};
 
 pub fn lex_str(text: &str) -> Result<Vec<Located<Token>>, Located<Box<dyn Error>>> {
     Lexer::from(text)
