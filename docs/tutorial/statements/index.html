@@ -181,6 +181,36 @@
           <a class="toctree-l5" href="#let-function-definition">Let-Function Definition</a>
         </li>
     
+      
+        <li class="toctree-l4">
+          <a class="toctree-l5" href="#if-branch">If-Branch</a>
+        </li>
+    
+      
+        <li class="toctree-l4">
+          <a class="toctree-l5" href="#while-loop">While-Loop</a>
+        </li>
+    
+      
+        <li class="toctree-l4">
+          <a class="toctree-l5" href="#for-loop">For-Loop</a>
+        </li>
+    
+      
+        <li class="toctree-l4">
+          <a class="toctree-l5" href="#return">Return</a>
+        </li>
+    
+      
+        <li class="toctree-l4">
+          <a class="toctree-l5" href="#break">Break</a>
+        </li>
+    
+      
+        <li class="toctree-l4">
+          <a class="toctree-l5" href="#continue">Continue</a>
+        </li>
+    
     </ul>
   </li>
 
@@ -388,14 +418,14 @@
                 <h1 id="statements">Statements</h1>
 <p>A Luna program is basically a list of statements, called a <strong>Chunk</strong>.</p>
 <h2 id="chunk">Chunk</h2>
-<p>A list of statements</p>
+<p>A list of statements with no seperator</p>
 <h2 id="block">Block</h2>
 <p>Just a list of statements like a <a href="#chunk">Chunk</a>, but it requires <code>{</code> at the start and <code>}</code> at the end.</p>
 <h2 id="statement">Statement</h2>
 <p>A statement has a lot of variants, like let-bindings, function definitions, etc. But it also can as well just be a <a href="#block">Block</a></p>
 <h3 id="let-binding">Let Binding</h3>
 <p>This is what you define local variables with. The assignees can be simple identifiers or object/vector destructurings.</p>
-<p>Examples: <code>let a = 1</code></p>
+<p>Examples: <code>let a = 1</code>, <code>let { name, age } = person</code>, <code>let [first, second, third] = numbers</code></p>
 <h3 id="assign">Assign</h3>
 <p>This is how you assign new values to existing variables. The assignees can be simple identifiers or a field/index into an object/vector</p>
 <p>Examples: <code>a = 2</code></p>
@@ -441,6 +471,24 @@
 <h3 id="let-function-definition">Let-Function Definition</h3>
 <p>This is used to <strong>locally</strong> define functions with parameters in the current scope.</p>
 <p>Examples: <code>let fn add(a, b) { return a + b }</code></p>
+<h3 id="if-branch">If-Branch</h3>
+<p>Classical if-branch like any other. Has an optional else-case which can either be a block or another if-branch.</p>
+<p>Examples: <code>if cond { print("yay") } else { print("nay") }</code>, <code>if cond { print("yay") } else if cond2 { print("semi-yay") }</code></p>
+<h3 id="while-loop">While-Loop</h3>
+<p>Classical while-loop like any other. body has to be a block</p>
+<p>Examples: <code>while a &lt; 10 { a += 1 }</code></p>
+<h3 id="for-loop">For-Loop</h3>
+<p>Python-like for-loop that requires an iterable to be right of the <code>in</code> keyword. Only one variable can be given for each iteration. An iterable can either be an user-object with a <code>next</code> method, an object with the meta variable <code>__next</code> which is a function, or just a function. </p>
+<p>Examples: <code>for n in [1, 2, 3]:iter() { print(n) }</code>, <code>for key in keys(map) { print(key, map[key]) }</code></p>
+<h3 id="return">Return</h3>
+<p>This is used to return a value to the caller and end execution of the current function. </p>
+<p>Examples: <code>return a + b</code>, <code>return null</code></p>
+<h3 id="break">Break</h3>
+<p>This is used to break out of any loop.</p>
+<p>Examples: <code>while true { if a &gt;= 10 { break } }</code></p>
+<h3 id="continue">Continue</h3>
+<p>This is used to continue to the next iteration of the loop.</p>
+<p>Examples: <code>for n in numbers:iter() { if n == 5 { continue } print(n) }</code></p>
               
             </div>
           </div>
