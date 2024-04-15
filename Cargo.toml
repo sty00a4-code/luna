@@ -1,5 +1,5 @@
 [package]
-name = "luna"
+name = "luna-lib"
 version = "1.1.0"
 edition = "2021"
 description = "a light weight interpreted programming language"
@@ -20,9 +20,6 @@ lto = true
 chrono = "0.4.34"
 rand = "0.8.5"
 
-[lib]
-name = "luna_lib"
-path = "src/lib.rs"
 [[bin]]
 name = "luna"
 path = "src/main.rs"
