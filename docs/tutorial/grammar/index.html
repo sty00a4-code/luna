@@ -107,6 +107,36 @@
       </a>
     </li>
     
+      
+
+
+
+  <li class="toctree-l2 current">
+    <ul class="subnav-l2 current">
+    
+      
+        <li class="toctree-l3">
+          <a class="toctree-l4" href="#atomic-tokens">Atomic Tokens</a>
+        </li>
+    
+      
+        <li class="toctree-l3">
+          <a class="toctree-l4" href="#keywords">Keywords</a>
+        </li>
+    
+      
+        <li class="toctree-l3">
+          <a class="toctree-l4" href="#symbols">Symbols</a>
+        </li>
+    
+      
+        <li class="toctree-l3">
+          <a class="toctree-l4" href="#syntax-sugar">Syntax Sugar</a>
+        </li>
+    
+    </ul>
+  </li>
+
 
   
         
@@ -310,7 +340,260 @@
           <div role="main">
             <div class="section">
               
-                
+                <h1 id="grammar">Grammar</h1>
+<p>The grammar of Luna is very closue to modern languages like JavaScript and Rust</p>
+<h2 id="atomic-tokens">Atomic Tokens</h2>
+<p>The following is a list of atomic tokens and what their regex is:</p>
+<table>
+<thead>
+<tr>
+<th>name</th>
+<th>regex</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>null</td>
+<td><code>/null/</code></td>
+</tr>
+<tr>
+<td>ident</td>
+<td><code>/[a-zA-Z_]([a-zA-Z_0-9]*)/</code></td>
+</tr>
+<tr>
+<td>int</td>
+<td><code>/[0-9]+/</code></td>
+</tr>
+<tr>
+<td>float</td>
+<td><code>/[0-9]+\./</code>, <code>/[0-9]+\.[0-9]+/</code></td>
+</tr>
+<tr>
+<td>bool</td>
+<td><code>/true/</code>, <code>/false/</code></td>
+</tr>
+<tr>
+<td>char</td>
+<td><code>/'\.'/</code></td>
+</tr>
+<tr>
+<td>string</td>
+<td><code>/"[^"]*"/</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="keywords">Keywords</h2>
+<p>The following is a list of reserved keywords:</p>
+<table>
+<thead>
+<tr>
+<th>keyword</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>let</code></td>
+<td>local variable definitions</td>
+</tr>
+<tr>
+<td><code>fn</code></td>
+<td>function definitions</td>
+</tr>
+<tr>
+<td><code>if</code></td>
+<td>conditional branches</td>
+</tr>
+<tr>
+<td><code>else</code></td>
+<td>else conditional branches of if statements</td>
+</tr>
+<tr>
+<td><code>while</code></td>
+<td>while loops</td>
+</tr>
+<tr>
+<td><code>for</code></td>
+<td>for loops</td>
+</tr>
+<tr>
+<td><code>in</code></td>
+<td>iterate over somethin in a for loop statement</td>
+</tr>
+<tr>
+<td><code>return</code></td>
+<td>return from a call</td>
+</tr>
+<tr>
+<td><code>break</code></td>
+<td>break out of a loop</td>
+</tr>
+<tr>
+<td><code>continue</code></td>
+<td>skip to next iteration of a loop</td>
+</tr>
+<tr>
+<td><code>null</code></td>
+<td>represents the null value</td>
+</tr>
+<tr>
+<td><code>true</code></td>
+<td>represents the boolean value <code>true</code></td>
+</tr>
+<tr>
+<td><code>false</code></td>
+<td>represents the boolean value <code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="symbols">Symbols</h2>
+<p>The following is a list of reserved keywords:</p>
+<table>
+<thead>
+<tr>
+<th>symbol</th>
+<th>name</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>=</code></td>
+<td>equal</td>
+</tr>
+<tr>
+<td><code>,</code></td>
+<td>comma</td>
+</tr>
+<tr>
+<td><code>.</code></td>
+<td>dot</td>
+</tr>
+<tr>
+<td><code>:</code></td>
+<td>colon</td>
+</tr>
+<tr>
+<td><code>!</code></td>
+<td>exclamation</td>
+</tr>
+<tr>
+<td><code>(</code></td>
+<td>paran left</td>
+</tr>
+<tr>
+<td><code>)</code></td>
+<td>paran right</td>
+</tr>
+<tr>
+<td><code>[</code></td>
+<td>bracket left</td>
+</tr>
+<tr>
+<td><code>]</code></td>
+<td>bracket right</td>
+</tr>
+<tr>
+<td><code>{</code></td>
+<td>brace left</td>
+</tr>
+<tr>
+<td><code>}</code></td>
+<td>brace right</td>
+</tr>
+<tr>
+<td><code>+</code></td>
+<td>plus</td>
+</tr>
+<tr>
+<td><code>-</code></td>
+<td>minus</td>
+</tr>
+<tr>
+<td><code>*</code></td>
+<td>star</td>
+</tr>
+<tr>
+<td><code>/</code></td>
+<td>slash</td>
+</tr>
+<tr>
+<td><code>%</code></td>
+<td>percent</td>
+</tr>
+<tr>
+<td><code>^</code></td>
+<td>exponent</td>
+</tr>
+<tr>
+<td><code>+=</code></td>
+<td>plus equal</td>
+</tr>
+<tr>
+<td><code>-=</code></td>
+<td>minus equal</td>
+</tr>
+<tr>
+<td><code>*=</code></td>
+<td>star equal</td>
+</tr>
+<tr>
+<td><code>/=</code></td>
+<td>slash equal</td>
+</tr>
+<tr>
+<td><code>%=</code></td>
+<td>percent equal</td>
+</tr>
+<tr>
+<td><code>^=</code></td>
+<td>exponent equal</td>
+</tr>
+<tr>
+<td><code>==</code></td>
+<td>equal equal</td>
+</tr>
+<tr>
+<td><code>!=</code></td>
+<td>exclamation equal</td>
+</tr>
+<tr>
+<td><code>&lt;</code></td>
+<td>less</td>
+</tr>
+<tr>
+<td><code>&gt;</code></td>
+<td>greater</td>
+</tr>
+<tr>
+<td><code>&lt;=</code></td>
+<td>less equal</td>
+</tr>
+<tr>
+<td><code>&gt;=</code></td>
+<td>greater equal</td>
+</tr>
+<tr>
+<td><code>&amp;</code></td>
+<td>ampersand</td>
+</tr>
+<tr>
+<td><code>|</code></td>
+<td>pipe</td>
+</tr>
+</tbody>
+</table>
+<h2 id="syntax-sugar">Syntax Sugar</h2>
+<p>Luna has the same design philosophy as Lua.
+What that means is that certain syntax is only another way to write the same thing:</p>
+<pre><code class="language-luna">fn add(a, b) {
+    return a + b
+}
+</code></pre>
+<p>translates to</p>
+<pre><code class="language-luna">add = fn(a, b) {
+    return a + b
+}
+</code></pre>
               
             </div>
           </div>

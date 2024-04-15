@@ -114,6 +114,81 @@
       </a>
     </li>
     
+      
+
+
+
+  <li class="toctree-l2 current">
+    <ul class="subnav-l2 current">
+    
+      
+        <li class="toctree-l3">
+          <a class="toctree-l4" href="#chunk">Chunk</a>
+        </li>
+    
+      
+        <li class="toctree-l3">
+          <a class="toctree-l4" href="#block">Block</a>
+        </li>
+    
+      
+          
+
+  <li class="toctree-l3">
+    <a href="#statement">
+      Statement
+      <span class="toctree-expand"></span>
+    </a>
+  </li>
+
+
+
+  <li class="toctree-l3">
+    <ul class="subnav-l3 toc-hidden">
+    
+      
+        <li class="toctree-l4">
+          <a class="toctree-l5" href="#let-binding">Let Binding</a>
+        </li>
+    
+      
+        <li class="toctree-l4">
+          <a class="toctree-l5" href="#assign">Assign</a>
+        </li>
+    
+      
+        <li class="toctree-l4">
+          <a class="toctree-l5" href="#assign-operation">Assign Operation</a>
+        </li>
+    
+      
+        <li class="toctree-l4">
+          <a class="toctree-l5" href="#call">Call</a>
+        </li>
+    
+      
+        <li class="toctree-l4">
+          <a class="toctree-l5" href="#self-call">Self Call</a>
+        </li>
+    
+      
+        <li class="toctree-l4">
+          <a class="toctree-l5" href="#function-definition">Function Definition</a>
+        </li>
+    
+      
+        <li class="toctree-l4">
+          <a class="toctree-l5" href="#let-function-definition">Let-Function Definition</a>
+        </li>
+    
+    </ul>
+  </li>
+
+      
+    
+    </ul>
+  </li>
+
 
   
         
@@ -310,7 +385,62 @@
           <div role="main">
             <div class="section">
               
-                
+                <h1 id="statements">Statements</h1>
+<p>A Luna program is basically a list of statements, called a <strong>Chunk</strong>.</p>
+<h2 id="chunk">Chunk</h2>
+<p>A list of statements</p>
+<h2 id="block">Block</h2>
+<p>Just a list of statements like a <a href="#chunk">Chunk</a>, but it requires <code>{</code> at the start and <code>}</code> at the end.</p>
+<h2 id="statement">Statement</h2>
+<p>A statement has a lot of variants, like let-bindings, function definitions, etc. But it also can as well just be a <a href="#block">Block</a></p>
+<h3 id="let-binding">Let Binding</h3>
+<p>This is what you define local variables with. The assignees can be simple identifiers or object/vector destructurings.</p>
+<p>Examples: <code>let a = 1</code></p>
+<h3 id="assign">Assign</h3>
+<p>This is how you assign new values to existing variables. The assignees can be simple identifiers or a field/index into an object/vector</p>
+<p>Examples: <code>a = 2</code></p>
+<h3 id="assign-operation">Assign Operation</h3>
+<p>Written the same way as <a href="#assign">Assign</a> expect with any of the following assign operators, only one assignee and only one expression:</p>
+<table>
+<thead>
+<tr>
+<th>assign operators</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>+=</code></td>
+</tr>
+<tr>
+<td><code>-=</code></td>
+</tr>
+<tr>
+<td><code>*=</code></td>
+</tr>
+<tr>
+<td><code>/=</code></td>
+</tr>
+<tr>
+<td><code>^=</code></td>
+</tr>
+<tr>
+<td><code>%=</code></td>
+</tr>
+</tbody>
+</table>
+<p>Examples: <code>a += 1</code>, <code>b *= 2</code></p>
+<h3 id="call">Call</h3>
+<p>This is to call functions with arguments. The callee can either be a simple identifier or a field/index of an object/vector.</p>
+<p>Examples: <code>print("Hello, World!")</code>, <code>self.add(1)</code></p>
+<h3 id="self-call">Self Call</h3>
+<p>Just like a <a href="#call">Call</a> only written with a <code>:</code> followed by an identifier. This calls the function with the first argument being the value before the <code>:</code>. This is used to call objects with themselfs for object-oriented design patterns.</p>
+<p>Examples: <code>vector:push(1)</code>, <code>person:greet()</code></p>
+<h3 id="function-definition">Function Definition</h3>
+<p>This is used to <strong>globally</strong> define functions with parameters.</p>
+<p>Examples: <code>fn add(a, b) { return a + b }</code></p>
+<h3 id="let-function-definition">Let-Function Definition</h3>
+<p>This is used to <strong>locally</strong> define functions with parameters in the current scope.</p>
+<p>Examples: <code>let fn add(a, b) { return a + b }</code></p>
               
             </div>
           </div>
