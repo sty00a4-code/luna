@@ -121,6 +121,71 @@
       </a>
     </li>
     
+      
+
+
+
+  <li class="toctree-l2 current">
+    <ul class="subnav-l2 current">
+    
+      
+          
+
+  <li class="toctree-l3 current with-children">
+    <a href="#atom">
+      Atom
+      <span class="toctree-expand"></span>
+    </a>
+  </li>
+
+
+
+  <li class="toctree-l3 current">
+    <ul class="subnav-l3 current">
+    
+      
+        <li class="toctree-l4">
+          <a class="toctree-l5" href="#values">Values</a>
+        </li>
+    
+      
+        <li class="toctree-l4">
+          <a class="toctree-l5" href="#sub-expression">Sub-Expression</a>
+        </li>
+    
+      
+        <li class="toctree-l4">
+          <a class="toctree-l5" href="#vector">Vector</a>
+        </li>
+    
+      
+        <li class="toctree-l4">
+          <a class="toctree-l5" href="#object">Object</a>
+        </li>
+    
+      
+        <li class="toctree-l4">
+          <a class="toctree-l5" href="#if-expression">If-Expression</a>
+        </li>
+    
+      
+        <li class="toctree-l4">
+          <a class="toctree-l5" href="#function-definition">Function Definition</a>
+        </li>
+    
+    </ul>
+  </li>
+
+      
+    
+      
+        <li class="toctree-l3">
+          <a class="toctree-l4" href="#path">Path</a>
+        </li>
+    
+    </ul>
+  </li>
+
 
   
         
@@ -310,7 +375,31 @@
           <div role="main">
             <div class="section">
               
-                
+                <h1 id="expressions">Expressions</h1>
+<p>An expression has a lot of variants like binary or unary expressions, calls or just be an <a href="#atom">Atom</a></p>
+<h2 id="atom">Atom</h2>
+<p>An Atom is the smallest possible expression, just being one value or a <a href="#path">Path</a>.</p>
+<h3 id="values">Values</h3>
+<p>All of the tokens that are atomic like <code>null</code>, <code>int</code>, <code>float</code>, etc. are valid Atoms.</p>
+<p>Examples: <code>1</code>, <code>null</code>, <code>true</code>, <code>"hello there"</code></p>
+<h3 id="sub-expression">Sub-Expression</h3>
+<p>Of course an Atom can also be another <a href="#expression">Expression</a></p>
+<p>Examples: <code>(a + b)</code>, <code>((a + b) * c)</code>, <code>(1)</code></p>
+<h3 id="vector">Vector</h3>
+<p>A list of <a href="#expression">Expressions</a></p>
+<p>Examples: <code>[1, 2, 3]</code>, <code>[a + b, "joe", false]</code></p>
+<h3 id="object">Object</h3>
+<p>A list of identifier and <a href="#expression">Expression</a> pairs</p>
+<p>Examples: <code>{ name = "joe", age = 25 }</code></p>
+<h3 id="if-expression">If-Expression</h3>
+<p>A conditional expression branch with required if and else-cases.</p>
+<p>Examples: <code>if age &gt; 18 "of age" else "under age"</code></p>
+<h3 id="function-definition">Function Definition</h3>
+<p>This is used to define functions with parameters as an expression.</p>
+<p>Examples: <code>fn (a, b) { return a + b }</code></p>
+<h2 id="path">Path</h2>
+<p>A path is either an identifier or a field/index into another path</p>
+<p>Examples: <code>a</code>, <code>a.b</code>, <code>a.b.c</code>, <code>a[1]</code></p>
               
             </div>
           </div>
