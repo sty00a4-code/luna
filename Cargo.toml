@@ -21,7 +21,7 @@ chrono = "0.4.34"
 rand = "0.8.5"
 
 [lib]
-name = "luna_rs"
+name = "luna_lib"
 path = "src/lib.rs"
 [[bin]]
 name = "luna"

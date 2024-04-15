@@ -1,13 +1,13 @@
-pub extern crate luna_rs;
+pub extern crate luna_lib;
 
-use luna_rs::luna_impl::{
+use luna_lib::luna_impl::{
     compiler::{Compilable, Compiler},
     interpreter::Interpreter,
     lexer::Lexer,
     parser::Parsable,
     position::Located,
 };
-use luna_rs::{
+use luna_lib::{
     lang::{
         ast::Chunk,
         code::Closure,
