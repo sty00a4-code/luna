@@ -166,6 +166,10 @@ impl Display for ExpectedTypes {
 impl Error for ExpectedTypes {}
 #[macro_export]
 macro_rules! typed {
+    ($args:ident) => {{
+        let (_, arg) = $args.next().unwrap_or(($args.len(), Value::default()));
+        arg
+    }};
     ($args:ident : $type:ident) => {{
         let (idx, arg) = $args.next().unwrap_or(($args.len(), Value::default()));
         if let Value::$type(value) = arg {

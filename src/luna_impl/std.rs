@@ -29,6 +29,7 @@ pub const CHAR_MODULE: &str = "char";
 pub const STRING_MODULE: &str = "string";
 pub const VECTOR_MODULE: &str = "vector";
 pub const OBJECT_MODULE: &str = "object";
+pub const TYPED_MODULE: &str = "typed";
 
 pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
     let mut globals = HashMap::new();
@@ -187,6 +188,25 @@ pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
         "exec" = function!(_os_exec),
         "time" = function!(_os_time),
         "sleep" = function!(_os_sleep)
+    });
+    set_field!(globals."options" = function!(_typed_options));
+    set_field!(globals."some" = function!(_typed_some));
+    set_field!(globals."typed" = object! {
+        "type" = globals["type"].borrow().clone(),
+        "check" =  function!(_typed_check),
+        "check_raw" =  function!(_typed_check_raw),
+        "int" = function!(_typed_int),
+        "float" = function!(_typed_float),
+        "bool" = function!(_typed_bool),
+        "char" = function!(_typed_char),
+        "string" = function!(_typed_string),
+        "vector" = function!(_typed_vector),
+        "object" = function!(_typed_object),
+        "object_raw" = function!(_typed_object_raw),
+        "function" = function!(_typed_function),
+        "numeric" = function!(_typed_numeric),
+        "options" = globals["options"].borrow().clone(),
+        "some" = globals["some"].borrow().clone()
     });
     globals
 }
@@ -891,6 +911,100 @@ pub fn _range(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Er
             .into_iter(),
         )),
     )))))
+}
+
+pub fn _typed_check(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let value = typed!(args);
+    for (_, arg) in args {
+        if let Value::String(typ) = arg {
+            if value.dynamic_typ() == typ {
+                return Ok(true.into())
+            }
+        }
+    }
+    Ok(false.into())
+}
+pub fn _typed_check_raw(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let value = typed!(args);
+    for (_, arg) in args {
+        if let Value::String(typ) = arg {
+            if value.typ() == typ {
+                return Ok(true.into())
+            }
+        }
+    }
+    Ok(false.into())
+}
+pub fn _typed_int(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let value: Value = typed!(args);
+    Ok((value.typ() == "int").into())
+}
+pub fn _typed_float(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let value = typed!(args);
+    Ok((value.typ() == "float").into())
+}
+pub fn _typed_bool(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let value = typed!(args);
+    Ok((value.typ() == "bool").into())
+}
+pub fn _typed_char(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let value = typed!(args);
+    Ok((value.typ() == "char").into())
+}
+pub fn _typed_string(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let value = typed!(args);
+    Ok((value.typ() == "string").into())
+}
+pub fn _typed_vector(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let value = typed!(args);
+    Ok((value.typ() == "vector").into())
+}
+pub fn _typed_object(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let value = typed!(args);
+    Ok((value.dynamic_typ() == "object").into())
+}
+pub fn _typed_object_raw(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let value = typed!(args);
+    Ok((value.typ() == "object").into())
+}
+pub fn _typed_function(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let value = typed!(args);
+    Ok((value.typ() == "fn").into())
+}
+pub fn _typed_numeric(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let value = typed!(args);
+    Ok((value.typ() == "int" || value.typ() == "float").into())
+}
+pub fn _typed_iterable(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let value = typed!(args);
+    Ok((value.typ() == "string" || value.typ() == "vector" || value.typ() == "object").into())
+}
+pub fn _typed_options(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let value = typed!(args);
+    for (_, arg) in args {
+        if value == arg {
+            return Ok(true.into())
+        }
+    }
+    Ok(false.into())
+}
+pub fn _typed_some(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    Ok((typed!(args) != Value::default()).into())
 }
 
 pub fn _math_abs(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
