@@ -44,36 +44,44 @@
     <li class="toctree-l2"><a class="nav-item" href="../../getting_started/installation/">Installation</a></li>
     <li class="toctree-l2"><a class="nav-item" href="../../getting_started/environment/">Environment</a></li>
 </ul></li>
-                    <li class="toctree-l1"><button class="section nav-item">Tutorial</button>
+                    <li class="toctree-l1"><button class="section nav-item">Guide</button>
 <ul class="subnav">
-    <li class="toctree-l2"><a class="nav-item" href="../../tutorial/grammar/">Grammar</a></li>
-    <li class="toctree-l2"><a class="nav-item" href="../../tutorial/statements/">Statements</a></li>
-    <li class="toctree-l2"><a class="nav-item" href="../../tutorial/expressions/">Expressions</a></li>
-    <li class="toctree-l2"><a class="nav-item" href="../../tutorial/variables/">Variables</a></li>
-    <li class="toctree-l2"><a class="nav-item" href="../../tutorial/functions/">Functions</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../../guide/grammar/">Grammar</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../../guide/statements/">Statements</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../../guide/expressions/">Expressions</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../../guide/variables/">Variables</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../../guide/objects/">Objects</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../../guide/functions/">Functions</a></li>
 </ul></li>
                     <li class="toctree-l1"><button class="section nav-item">Standard Modules</button>
 <ul class="subnav">
-    <li class="toctree-l2 current">
-<a class="nav-item current" href="./">Globals</a>
+    <li class="toctree-l2 current"><a class="nav-item current" href="./">Globals</a>
 <ul class="subnav">
+<li class="toctree-l3"><a class="nav-item toc" href="#print">print(...)</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#inputprefix-string-string">input(prefix: string): string</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#assertcond">assert(cond)</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#errormsg">error(msg)</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#exitcode-int">exit(code: int?)</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#safe_callf-fn-ok-err-string">safe_call(f: fn, ...): { ok?, err: string? }</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#rangestart-int-end-int-iteratorint">range(start: int, end: int?): iterator&lt;int&gt;</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#typevalue-string">type(value): string</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#optionsvalue-bool">options(value, ...): bool</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#somevalue-bool">some(value): bool</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#str-string">str(...): string</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#keyso-object-iteratorstring">keys(o: object): iterator&lt;string&gt;</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#valueso-objectv-iteratorv">values(o: object&lt;V&gt;): iterator&lt;V&gt;</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#setmetao-objectv-meta-object-objectv">setmeta(o: object&lt;V&gt;, meta: object?): object&lt;V&gt;</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#getmetao-object-object">getmeta(o: object): object?</a></li>
 </ul></li>
     <li class="toctree-l2"><button class="section nav-item hide">Type Modules</button>
 <ul class="subnav hide">
-    <li class="toctree-l3">
-<a class="nav-item" href="../type_modules/int_module/">Int Module</a></li>
-    <li class="toctree-l3">
-<a class="nav-item" href="../type_modules/float_module/">Float Module</a></li>
-    <li class="toctree-l3">
-<a class="nav-item" href="../type_modules/bool_module/">Bool Module</a></li>
-    <li class="toctree-l3">
-<a class="nav-item" href="../type_modules/char_module/">Char Module</a></li>
-    <li class="toctree-l3">
-<a class="nav-item" href="../type_modules/string_module/">String Module</a></li>
-    <li class="toctree-l3">
-<a class="nav-item" href="../type_modules/vector_module/">Vector Module</a></li>
-    <li class="toctree-l3">
-<a class="nav-item" href="../type_modules/object_module/">Object Module</a></li>
+    <li class="toctree-l3"><a class="nav-item" href="../type_modules/int_module/">Int Module</a></li>
+    <li class="toctree-l3"><a class="nav-item" href="../type_modules/float_module/">Float Module</a></li>
+    <li class="toctree-l3"><a class="nav-item" href="../type_modules/bool_module/">Bool Module</a></li>
+    <li class="toctree-l3"><a class="nav-item" href="../type_modules/char_module/">Char Module</a></li>
+    <li class="toctree-l3"><a class="nav-item" href="../type_modules/string_module/">String Module</a></li>
+    <li class="toctree-l3"><a class="nav-item" href="../type_modules/vector_module/">Vector Module</a></li>
+    <li class="toctree-l3"><a class="nav-item" href="../type_modules/object_module/">Object Module</a></li>
 </ul></li>
     <li class="toctree-l2">
 <a class="nav-item" href="../math/">Math</a></li>
@@ -93,7 +101,7 @@
                 </ul>
             </nav>
             <div class="repo">
-    <div class="previous"><a href="../../tutorial/functions/">&laquo; Previous</a></div>
+    <div class="previous"><a href="../../guide/functions/">&laquo; Previous</a></div>
     <div class="next"><a href="../type_modules/int_module/">Next &raquo;</a></div>
 </div>
         </aside>
@@ -109,10 +117,40 @@
     <li>Standard Modules</li>
 </ul>
 </nav>
-                <div id="content"></div>
+                <div id="content"><h1 id="globals">Globals</h1>
+<h4 id="print"><code>print(...)</code></h4>
+<p>Prints all the arguments to <em>stdout</em> transforming them into strings. </p>
+<h4 id="inputprefix-string-string"><code>input(prefix: string): string</code></h4>
+<p>Reads the input from <em>stdin</em> until enter has been pressed and returns it as a string. <em>(the string contents are being trimmed)</em></p>
+<h4 id="assertcond"><code>assert(cond)</code></h4>
+<p>If <code>cond</code> is a false value, an error will be thrown.</p>
+<h4 id="errormsg"><code>error(msg)</code></h4>
+<p>Throws an error with the message <code>msg</code> which is stringified first.</p>
+<h4 id="exitcode-int"><code>exit(code: int?)</code></h4>
+<p>Exits the program with the exit code <code>code</code>. <em>(default is <code>0</code>)</em></p>
+<h4 id="safe_callf-fn-ok-err-string"><code>safe_call(f: fn, ...): { ok?, err: string? }</code></h4>
+<p>Run's the function in safe manner. Errors will not cause the program to crash, but the error will be returned in form of an object as the field <code>err</code>. If it runs successfully the field <code>ok</code> holds the return value.</p>
+<h4 id="rangestart-int-end-int-iteratorint"><code>range(start: int, end: int?): iterator&lt;int&gt;</code></h4>
+<p>Creates an iterator over the given range defined by <code>start</code> and <code>end</code>. If <code>end</code> is null, <code>start</code> will be <code>0</code> and <code>end</code> will be the <code>start</code></p>
+<h4 id="typevalue-string"><code>type(value): string</code></h4>
+<p><em>definition: <a href="../typed/#typed.type"><code>typed.type</code></a></em></p>
+<h4 id="optionsvalue-bool"><code>options(value, ...): bool</code></h4>
+<p><em>definition: <a href="../typed/#typed.options"><code>typed.options</code></a></em></p>
+<h4 id="somevalue-bool"><code>some(value): bool</code></h4>
+<p><em>definition: <a href="../typed/#typed.some"><code>typed.some</code></a></em></p>
+<h4 id="str-string"><code>str(...): string</code></h4>
+<p><em>definition: <a href="../type_modules/string_module/#string.from"><code>string.from</code></a></em></p>
+<h4 id="keyso-object-iteratorstring"><code>keys(o: object): iterator&lt;string&gt;</code></h4>
+<p><em>definition: <a href="../type_modules/object_module/#object.keys"><code>object.keys</code></a></em></p>
+<h4 id="valueso-objectv-iteratorv"><code>values(o: object&lt;V&gt;): iterator&lt;V&gt;</code></h4>
+<p><em>definition: <a href="../type_modules/object_module/#object.values"><code>object.values</code></a></em></p>
+<h4 id="setmetao-objectv-meta-object-objectv"><code>setmeta(o: object&lt;V&gt;, meta: object?): object&lt;V&gt;</code></h4>
+<p><em>definition: <a href="../type_modules/object_module/#object.setmeta"><code>object.setmeta</code></a></em></p>
+<h4 id="getmetao-object-object"><code>getmeta(o: object): object?</code></h4>
+<p><em>definition: <a href="../type_modules/object_module/#object.getmeta"><code>object.getmeta</code></a></em></p></div>
                 <footer>
     <div class="footer-buttons">
-        <div class="previous"><a href="../../tutorial/functions/" title="Functions"><span>Previous</span></a></div>
+        <div class="previous"><a href="../../guide/functions/" title="Functions"><span>Previous</span></a></div>
         <div class="next"><a href="../type_modules/int_module/" title="Int Module"><span>Next</span></a></div>
     </div>
     <div class="footer-note">

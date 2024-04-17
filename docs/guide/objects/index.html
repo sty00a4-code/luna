@@ -6,7 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="shortcut icon" href="../../img/favicon.ico">
-    <title>Functions &mdash; Luna Docs</title>
+    <title>Objects &mdash; Luna Docs</title>
     <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:400,700">
     <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/tonsky/FiraCode@1.206/distr/fira_code.css">
     <link rel="stylesheet" href="//use.fontawesome.com/releases/v5.8.1/css/all.css">
@@ -44,37 +44,31 @@
     <li class="toctree-l2"><a class="nav-item" href="../../getting_started/installation/">Installation</a></li>
     <li class="toctree-l2"><a class="nav-item" href="../../getting_started/environment/">Environment</a></li>
 </ul></li>
-                    <li class="toctree-l1"><button class="section nav-item">Tutorial</button>
+                    <li class="toctree-l1"><button class="section nav-item">Guide</button>
 <ul class="subnav">
     <li class="toctree-l2"><a class="nav-item" href="../grammar/">Grammar</a></li>
     <li class="toctree-l2"><a class="nav-item" href="../statements/">Statements</a></li>
     <li class="toctree-l2"><a class="nav-item" href="../expressions/">Expressions</a></li>
     <li class="toctree-l2"><a class="nav-item" href="../variables/">Variables</a></li>
-    <li class="toctree-l2 current"><a class="nav-item current" href="./">Functions</a>
+    <li class="toctree-l2 current"><a class="nav-item current" href="./">Objects</a>
 <ul class="subnav">
-<li class="toctree-l3"><a class="nav-item toc" href="#upvalues">UpValues</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#meta-objects">Meta Objects</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#meta-fields">Meta Fields</a></li>
 </ul></li>
+    <li class="toctree-l2"><a class="nav-item" href="../functions/">Functions</a></li>
 </ul></li>
                     <li class="toctree-l1"><button class="section nav-item">Standard Modules</button>
 <ul class="subnav">
-    <li class="toctree-l2">
-<a class="nav-item" href="../../standard_modules/globals/">Globals</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../../standard_modules/globals/">Globals</a></li>
     <li class="toctree-l2"><button class="section nav-item hide">Type Modules</button>
 <ul class="subnav hide">
-    <li class="toctree-l3">
-<a class="nav-item" href="../../standard_modules/type_modules/int_module/">Int Module</a></li>
-    <li class="toctree-l3">
-<a class="nav-item" href="../../standard_modules/type_modules/float_module/">Float Module</a></li>
-    <li class="toctree-l3">
-<a class="nav-item" href="../../standard_modules/type_modules/bool_module/">Bool Module</a></li>
-    <li class="toctree-l3">
-<a class="nav-item" href="../../standard_modules/type_modules/char_module/">Char Module</a></li>
-    <li class="toctree-l3">
-<a class="nav-item" href="../../standard_modules/type_modules/string_module/">String Module</a></li>
-    <li class="toctree-l3">
-<a class="nav-item" href="../../standard_modules/type_modules/vector_module/">Vector Module</a></li>
-    <li class="toctree-l3">
-<a class="nav-item" href="../../standard_modules/type_modules/object_module/">Object Module</a></li>
+    <li class="toctree-l3"><a class="nav-item" href="../../standard_modules/type_modules/int_module/">Int Module</a></li>
+    <li class="toctree-l3"><a class="nav-item" href="../../standard_modules/type_modules/float_module/">Float Module</a></li>
+    <li class="toctree-l3"><a class="nav-item" href="../../standard_modules/type_modules/bool_module/">Bool Module</a></li>
+    <li class="toctree-l3"><a class="nav-item" href="../../standard_modules/type_modules/char_module/">Char Module</a></li>
+    <li class="toctree-l3"><a class="nav-item" href="../../standard_modules/type_modules/string_module/">String Module</a></li>
+    <li class="toctree-l3"><a class="nav-item" href="../../standard_modules/type_modules/vector_module/">Vector Module</a></li>
+    <li class="toctree-l3"><a class="nav-item" href="../../standard_modules/type_modules/object_module/">Object Module</a></li>
 </ul></li>
     <li class="toctree-l2">
 <a class="nav-item" href="../../standard_modules/math/">Math</a></li>
@@ -95,7 +89,7 @@
             </nav>
             <div class="repo">
     <div class="previous"><a href="../variables/">&laquo; Previous</a></div>
-    <div class="next"><a href="../../standard_modules/globals/">Next &raquo;</a></div>
+    <div class="next"><a href="../functions/">Next &raquo;</a></div>
 </div>
         </aside>
         <div id="spacer"><button class="arrow"></button></div>
@@ -107,43 +101,61 @@
             <div id="main">
                 <nav class="breadcrumbs">
 <ul>
-    <li>Tutorial</li>
+    <li>Guide</li>
 </ul>
 </nav>
-                <div id="content"><h1 id="functions">Functions</h1>
-<p>Functions in Luna are first-class values, which means they can be passed around like any other native value type. A function consists of a closure reference and an <a href="#upvalues">UpValue</a> list. A normal code Chunk is also just a function, that gets executed immediatly after compilation.</p>
-<pre><code>let fn add(a, b) {
-    return a + b
-}
-print(add(1, 2))
+                <div id="content"><h1 id="objects">Objects</h1>
+<p>Objects are an important part of Luna. They are a map of string-value pairs, that can be read and assigned freely. An object value is only a reference to the actual object, which means passing it around means passing around the reference. Any function that has a reference to an object can modify it's contents.</p>
+<h2 id="meta-objects">Meta Objects</h2>
+<p>Every object can have an optional reference to another object, being it's meta object. Those objects are just like normal objects, except they can define custom behaviour for the object that references it as an meta object.</p>
+<pre><code>let person = { name = &quot;joe&quot;, age = 25 }
+setmeta(person, {})
 </code></pre>
-<p>This code generates two closures (code instance that can reference other closures), one is the <em>main</em> closure, and the other is the <code>add</code> function. The <em>main</em> closure has a reference to the <code>add</code> closure, because it needs to assign it to the local <code>add</code> variable as a function referencing that closure (note that this function has no upvalues).</p>
-<h2 id="upvalues">UpValues</h2>
-<p>UpValues are an important concept in Luna, as they let functions keep references to values even though their scope is not active anymore. The best example is a counter function.</p>
-<pre><code>let fn counter() {
-    count = 1
-    return fn () {
-        count += 1
-        return count
-    }
-}
-</code></pre>
-<p>This function called <code>counter</code> returns a function that references a closure, but also has to keep a reference to the value saved in <code>count</code>, because it uses it to increment it's counting value. The compiler automatically infers that the <code>count</code> variable from the outer scope is being referenced here, so it saves a copy to it's reference. Because Luna has a reference-counting garbage collector, the reference will not be invalid after the <code>counter</code> function is done executing. If it weren't referenced, the <code>count</code> variable would be dropped from memory. As long as the function still exists, this value reference exists too. The reference is also never the same for each call to <code>counter</code>.</p>
-<pre><code>let c1 = counter() # function with a unique reference to `count`
-let c2 = counter() # another function with a unique reference to another `count`
-</code></pre>
-<p>Here we have to different functions being assigned to <code>c1</code> and <code>c2</code>. Both functions reference the same closure, but not the same <code>count</code> value. This allows multiple counters to exist in this program making the following code work like you would expect:</p>
-<pre><code>print(c1()) # 1
-print(c1()) # 2
-print(c1()) # 3
-print(c2()) # 1
-print(c2()) # 2
-print(c2()) # 3
-</code></pre></div>
+<p>Now the object referenced by <code>person</code> got an empty meta object. This meta object does not have any fields that could influence the <code>person</code> object.</p>
+<h2 id="meta-fields">Meta Fields</h2>
+<p>There are a few meta fields predefined in Luna.</p>
+<table>
+<thead>
+<tr>
+<th>field</th>
+<th>effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>__name: string</code></td>
+<td>when the object is casted to a string, this string will be displayed instead of the default <code>object</code></td>
+</tr>
+<tr>
+<td><code>__type: string</code></td>
+<td>when the object's type is trying to be determined, this string will be returned</td>
+</tr>
+<tr>
+<td><code>__str: fn(self: object): string</code></td>
+<td>when the object is trying to be casted to a string, this function will be called with the object as the first argument</td>
+</tr>
+<tr>
+<td><code>__call: fn(self: object, ...)</code></td>
+<td>when the object is trying to be called, this function will be called</td>
+</tr>
+<tr>
+<td><code>__get: fn(self: object, key: string)</code></td>
+<td>when trying to get a field of the object, this function will be called</td>
+</tr>
+<tr>
+<td><code>__set: fn(self: object, key: string, value)</code></td>
+<td>when trying to set a field of the object, this function will be called</td>
+</tr>
+<tr>
+<td><code>__next: fn(self: object)</code></td>
+<td>when trying get the next iteration in a for-loop, this function will be called and it's return value will be assign to the for-loop's variable</td>
+</tr>
+</tbody>
+</table></div>
                 <footer>
     <div class="footer-buttons">
         <div class="previous"><a href="../variables/" title="Variables"><span>Previous</span></a></div>
-        <div class="next"><a href="../../standard_modules/globals/" title="Globals"><span>Next</span></a></div>
+        <div class="next"><a href="../functions/" title="Functions"><span>Next</span></a></div>
     </div>
     <div class="footer-note">
         <p>

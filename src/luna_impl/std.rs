@@ -86,7 +86,7 @@ pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
             "lowercase" = ('a'..='z').collect::<Vec<char>>(),
             "uppercase" = ('A'..='Z').collect::<Vec<char>>(),
             "letters" = ('a'..='z').chain('A'..='Z').collect::<Vec<char>>(),
-            "from" = function!(_string_from),
+            "from" = globals["str"].borrow().clone(),
             "len" = function!(_string_len),
             "iter" = function!(_string_iter),
             "get" = function!(_string_get),
@@ -579,7 +579,7 @@ pub fn _string_len(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<d
     Ok(Value::Int(string.len() as i64))
 }
 pub fn _string_get(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
-    let mut args = args.into_iter().enumerate();
+    let mut args: std::iter::Enumerate<std::vec::IntoIter<Value>> = args.into_iter().enumerate();
     let string = typed!(args: String);
     let index = typed!(args: Int);
     let default = typed!(args: Char?);
@@ -807,8 +807,9 @@ pub fn _vector_swap(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<
     let mut vector = vector.borrow_mut();
     let index1 = typed!(args: Int int => int.unsigned_abs() as usize);
     let index2 = typed!(args: Int int => int.unsigned_abs() as usize);
-
-    vector.swap(index1, index2);
+    if vector.get(index1).is_some() && vector.get(index2).is_some() {
+        vector.swap(index1, index2);
+    }
     Ok(Value::default())
 }
 pub fn _vector_copy(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {

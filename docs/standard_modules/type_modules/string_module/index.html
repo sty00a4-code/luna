@@ -44,36 +44,42 @@
     <li class="toctree-l2"><a class="nav-item" href="../../../getting_started/installation/">Installation</a></li>
     <li class="toctree-l2"><a class="nav-item" href="../../../getting_started/environment/">Environment</a></li>
 </ul></li>
-                    <li class="toctree-l1"><button class="section nav-item">Tutorial</button>
+                    <li class="toctree-l1"><button class="section nav-item">Guide</button>
 <ul class="subnav">
-    <li class="toctree-l2"><a class="nav-item" href="../../../tutorial/grammar/">Grammar</a></li>
-    <li class="toctree-l2"><a class="nav-item" href="../../../tutorial/statements/">Statements</a></li>
-    <li class="toctree-l2"><a class="nav-item" href="../../../tutorial/expressions/">Expressions</a></li>
-    <li class="toctree-l2"><a class="nav-item" href="../../../tutorial/variables/">Variables</a></li>
-    <li class="toctree-l2"><a class="nav-item" href="../../../tutorial/functions/">Functions</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../../../guide/grammar/">Grammar</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../../../guide/statements/">Statements</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../../../guide/expressions/">Expressions</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../../../guide/variables/">Variables</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../../../guide/objects/">Objects</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../../../guide/functions/">Functions</a></li>
 </ul></li>
                     <li class="toctree-l1"><button class="section nav-item">Standard Modules</button>
 <ul class="subnav">
-    <li class="toctree-l2">
-<a class="nav-item" href="../../globals/">Globals</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../../globals/">Globals</a></li>
     <li class="toctree-l2 current"><button class="section nav-item">Type Modules</button>
 <ul class="subnav">
-    <li class="toctree-l3">
-<a class="nav-item" href="../int_module/">Int Module</a></li>
-    <li class="toctree-l3">
-<a class="nav-item" href="../float_module/">Float Module</a></li>
-    <li class="toctree-l3">
-<a class="nav-item" href="../bool_module/">Bool Module</a></li>
-    <li class="toctree-l3">
-<a class="nav-item" href="../char_module/">Char Module</a></li>
-    <li class="toctree-l3 current">
-<a class="nav-item current" href="./">String Module</a>
+    <li class="toctree-l3"><a class="nav-item" href="../int_module/">Int Module</a></li>
+    <li class="toctree-l3"><a class="nav-item" href="../float_module/">Float Module</a></li>
+    <li class="toctree-l3"><a class="nav-item" href="../bool_module/">Bool Module</a></li>
+    <li class="toctree-l3"><a class="nav-item" href="../char_module/">Char Module</a></li>
+    <li class="toctree-l3 current"><a class="nav-item current" href="./">String Module</a>
 <ul class="subnav">
+<li class="toctree-l4"><a class="nav-item toc" href="#stringlowercase-vectorchar">string.lowercase: vector&lt;char&gt;</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#stringuppercase-vectorchar">string.uppercase: vector&lt;char&gt;</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#stringletters-vectorchar">string.letters: vector&lt;char&gt;</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#stringfrom-string">string.from(...): string</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#stringlens-string-int">string.len(s: string): int</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#stringiters-string-iteratorchar">string.iter(s: string): iterator&lt;char&gt;</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#stringgets-string-index-int-default-char-char">string.get(s: string, index: int, default: char?): char?</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#stringsubs-string-i-int-j-int-default-string-string">string.sub(s: string, i: int, j: int?, default: string?): string?</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#stringseps-string-sep-string-vectorstring">string.sep(s: string, sep: string): vector&lt;string&gt;</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#stringreps-string-n-int-string">string.rep(s: string, n: int): string</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#stringrevs-string-string">string.rev(s: string): string</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#stringfinds-string-patt-string-string">string.find(s: string, patt: string): string</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#stringformats-string-string">string.format(s: string, ...): string</a></li>
 </ul></li>
-    <li class="toctree-l3">
-<a class="nav-item" href="../vector_module/">Vector Module</a></li>
-    <li class="toctree-l3">
-<a class="nav-item" href="../object_module/">Object Module</a></li>
+    <li class="toctree-l3"><a class="nav-item" href="../vector_module/">Vector Module</a></li>
+    <li class="toctree-l3"><a class="nav-item" href="../object_module/">Object Module</a></li>
 </ul></li>
     <li class="toctree-l2">
 <a class="nav-item" href="../../math/">Math</a></li>
@@ -109,7 +115,40 @@
     <li>Standard Modules &raquo; </li><li>Type Modules</li>
 </ul>
 </nav>
-                <div id="content"></div>
+                <div id="content"><h1 id="string-module">String Module</h1>
+<p>All the functions in this module can be self-called on any string value, if that function expects a string as the first argument.</p>
+<h4 id="stringlowercase-vectorchar"><code>string.lowercase: vector&lt;char&gt;</code></h4>
+<p>An array of all lowercase letters.</p>
+<h4 id="stringuppercase-vectorchar"><code>string.uppercase: vector&lt;char&gt;</code></h4>
+<p>An array of all uppercase letters.</p>
+<h4 id="stringletters-vectorchar"><code>string.letters: vector&lt;char&gt;</code></h4>
+<p>An array of all alphabetic letters.</p>
+<h4 id="stringfrom-string"><code>string.from(...): string</code></h4>
+<p>Joins all the arguments together into a string.</p>
+<h4 id="stringlens-string-int"><code>string.len(s: string): int</code></h4>
+<p>Returns the length of the <code>s</code> string.</p>
+<h4 id="stringiters-string-iteratorchar"><code>string.iter(s: string): iterator&lt;char&gt;</code></h4>
+<p>Returns an iterator over the chars in the <code>s</code> string.</p>
+<h4 id="stringgets-string-index-int-default-char-char"><code>string.get(s: string, index: int, default: char?): char?</code></h4>
+<p>Returns the char at the <code>index</code> of the <code>s</code> string. Defaults to the <code>default</code> char if given.</p>
+<h4 id="stringsubs-string-i-int-j-int-default-string-string"><code>string.sub(s: string, i: int, j: int?, default: string?): string?</code></h4>
+<p>Returns the sub-string of <code>s</code> from index <code>i</code> to <code>j</code>. If <code>j</code> is not given, it is the length of the string. If the indexes are out of range, <code>default</code> will be returned.</p>
+<h4 id="stringseps-string-sep-string-vectorstring"><code>string.sep(s: string, sep: string): vector&lt;string&gt;</code></h4>
+<p>Returns a vector of the parts of the <code>s</code> string, seperated by <code>sep</code>.</p>
+<h4 id="stringreps-string-n-int-string"><code>string.rep(s: string, n: int): string</code></h4>
+<p>Returns a repetition of the <code>s</code> string by <code>n</code>.</p>
+<h4 id="stringrevs-string-string"><code>string.rev(s: string): string</code></h4>
+<p>Returns the reverse of <code>s</code>.</p>
+<h4 id="stringfinds-string-patt-string-string"><code>string.find(s: string, patt: string): string</code></h4>
+<p>Returns the starting position of the <code>patt</code> sub-string in <code>s</code>.</p>
+<h4 id="stringformats-string-string"><code>string.format(s: string, ...): string</code></h4>
+<p>Returns the formatted version of <code>s</code> with the rest of the arguments.</p>
+<ul>
+<li><code>%s</code>: next argument as a string</li>
+<li><code>%q</code>: next argument quoted if it is a string</li>
+<li><code>%x</code>: next argument as a hexadecimal integer if it is a integer</li>
+<li><code>%%</code>: just <code>%</code></li>
+</ul></div>
                 <footer>
     <div class="footer-buttons">
         <div class="previous"><a href="../char_module/" title="Char Module"><span>Previous</span></a></div>

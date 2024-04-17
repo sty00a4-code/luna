@@ -44,35 +44,34 @@
     <li class="toctree-l2"><a class="nav-item" href="../../../getting_started/installation/">Installation</a></li>
     <li class="toctree-l2"><a class="nav-item" href="../../../getting_started/environment/">Environment</a></li>
 </ul></li>
-                    <li class="toctree-l1"><button class="section nav-item">Tutorial</button>
+                    <li class="toctree-l1"><button class="section nav-item">Guide</button>
 <ul class="subnav">
-    <li class="toctree-l2"><a class="nav-item" href="../../../tutorial/grammar/">Grammar</a></li>
-    <li class="toctree-l2"><a class="nav-item" href="../../../tutorial/statements/">Statements</a></li>
-    <li class="toctree-l2"><a class="nav-item" href="../../../tutorial/expressions/">Expressions</a></li>
-    <li class="toctree-l2"><a class="nav-item" href="../../../tutorial/variables/">Variables</a></li>
-    <li class="toctree-l2"><a class="nav-item" href="../../../tutorial/functions/">Functions</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../../../guide/grammar/">Grammar</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../../../guide/statements/">Statements</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../../../guide/expressions/">Expressions</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../../../guide/variables/">Variables</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../../../guide/objects/">Objects</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../../../guide/functions/">Functions</a></li>
 </ul></li>
                     <li class="toctree-l1"><button class="section nav-item">Standard Modules</button>
 <ul class="subnav">
-    <li class="toctree-l2">
-<a class="nav-item" href="../../globals/">Globals</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../../globals/">Globals</a></li>
     <li class="toctree-l2 current"><button class="section nav-item">Type Modules</button>
 <ul class="subnav">
-    <li class="toctree-l3">
-<a class="nav-item" href="../int_module/">Int Module</a></li>
-    <li class="toctree-l3">
-<a class="nav-item" href="../float_module/">Float Module</a></li>
-    <li class="toctree-l3">
-<a class="nav-item" href="../bool_module/">Bool Module</a></li>
-    <li class="toctree-l3">
-<a class="nav-item" href="../char_module/">Char Module</a></li>
-    <li class="toctree-l3">
-<a class="nav-item" href="../string_module/">String Module</a></li>
-    <li class="toctree-l3">
-<a class="nav-item" href="../vector_module/">Vector Module</a></li>
-    <li class="toctree-l3 current">
-<a class="nav-item current" href="./">Object Module</a>
+    <li class="toctree-l3"><a class="nav-item" href="../int_module/">Int Module</a></li>
+    <li class="toctree-l3"><a class="nav-item" href="../float_module/">Float Module</a></li>
+    <li class="toctree-l3"><a class="nav-item" href="../bool_module/">Bool Module</a></li>
+    <li class="toctree-l3"><a class="nav-item" href="../char_module/">Char Module</a></li>
+    <li class="toctree-l3"><a class="nav-item" href="../string_module/">String Module</a></li>
+    <li class="toctree-l3"><a class="nav-item" href="../vector_module/">Vector Module</a></li>
+    <li class="toctree-l3 current"><a class="nav-item current" href="./">Object Module</a>
 <ul class="subnav">
+<li class="toctree-l4"><a class="nav-item toc" href="#objectleno-object-int">object.len(o: object): int</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#objectkeyso-object-iteratorstring">object.keys(o: object): iterator&lt;string&gt;</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#objectvalueso-objectv-iteratorv">object.values(o: object&lt;V&gt;): iterator&lt;V&gt;</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#objectsetmetao-objectv-meta-object-objectv">object.setmeta(o: object&lt;V&gt;, meta: object?): object&lt;V&gt;</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#objectgetmetao-object-object">object.getmeta(o: object): object?</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#objectclearo-object">object.clear(o: object)</a></li>
 </ul></li>
 </ul></li>
     <li class="toctree-l2">
@@ -109,7 +108,19 @@
     <li>Standard Modules &raquo; </li><li>Type Modules</li>
 </ul>
 </nav>
-                <div id="content"></div>
+                <div id="content"><h1 id="object-module">Object Module</h1>
+<h4 id="objectleno-object-int"><code>object.len(o: object): int</code></h4>
+<p>Returns the amount of the objects fields.</p>
+<h4 id="objectkeyso-object-iteratorstring"><code>object.keys(o: object): iterator&lt;string&gt;</code></h4>
+<p>Returns an iterator over all the fields of <code>o</code>.</p>
+<h4 id="objectvalueso-objectv-iteratorv"><code>object.values(o: object&lt;V&gt;): iterator&lt;V&gt;</code></h4>
+<p>Returns an iterator over all the values of <code>o</code>.</p>
+<h4 id="objectsetmetao-objectv-meta-object-objectv"><code>object.setmeta(o: object&lt;V&gt;, meta: object?): object&lt;V&gt;</code></h4>
+<p>Sets the meta-object of <code>o</code> to <code>meta</code></p>
+<h4 id="objectgetmetao-object-object"><code>object.getmeta(o: object): object?</code></h4>
+<p>Returns the meta-object of <code>o</code> if it has any.</p>
+<h4 id="objectclearo-object"><code>object.clear(o: object)</code></h4>
+<p>Clears <code>o</code> of it's values.</p></div>
                 <footer>
     <div class="footer-buttons">
         <div class="previous"><a href="../vector_module/" title="Vector Module"><span>Previous</span></a></div>

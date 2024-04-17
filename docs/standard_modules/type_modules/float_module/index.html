@@ -44,36 +44,33 @@
     <li class="toctree-l2"><a class="nav-item" href="../../../getting_started/installation/">Installation</a></li>
     <li class="toctree-l2"><a class="nav-item" href="../../../getting_started/environment/">Environment</a></li>
 </ul></li>
-                    <li class="toctree-l1"><button class="section nav-item">Tutorial</button>
+                    <li class="toctree-l1"><button class="section nav-item">Guide</button>
 <ul class="subnav">
-    <li class="toctree-l2"><a class="nav-item" href="../../../tutorial/grammar/">Grammar</a></li>
-    <li class="toctree-l2"><a class="nav-item" href="../../../tutorial/statements/">Statements</a></li>
-    <li class="toctree-l2"><a class="nav-item" href="../../../tutorial/expressions/">Expressions</a></li>
-    <li class="toctree-l2"><a class="nav-item" href="../../../tutorial/variables/">Variables</a></li>
-    <li class="toctree-l2"><a class="nav-item" href="../../../tutorial/functions/">Functions</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../../../guide/grammar/">Grammar</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../../../guide/statements/">Statements</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../../../guide/expressions/">Expressions</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../../../guide/variables/">Variables</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../../../guide/objects/">Objects</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../../../guide/functions/">Functions</a></li>
 </ul></li>
                     <li class="toctree-l1"><button class="section nav-item">Standard Modules</button>
 <ul class="subnav">
-    <li class="toctree-l2">
-<a class="nav-item" href="../../globals/">Globals</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../../globals/">Globals</a></li>
     <li class="toctree-l2 current"><button class="section nav-item">Type Modules</button>
 <ul class="subnav">
-    <li class="toctree-l3">
-<a class="nav-item" href="../int_module/">Int Module</a></li>
-    <li class="toctree-l3 current">
-<a class="nav-item current" href="./">Float Module</a>
+    <li class="toctree-l3"><a class="nav-item" href="../int_module/">Int Module</a></li>
+    <li class="toctree-l3 current"><a class="nav-item current" href="./">Float Module</a>
 <ul class="subnav">
+<li class="toctree-l4"><a class="nav-item toc" href="#floatfromvalue-float">float.from(value): float?</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#floatfloorvalue-float-float">float.floor(value: float): float</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#floatceilvalue-float-float">float.ceil(value: float): float</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#floatroundvalue-float-float">float.round(value: float): float</a></li>
 </ul></li>
-    <li class="toctree-l3">
-<a class="nav-item" href="../bool_module/">Bool Module</a></li>
-    <li class="toctree-l3">
-<a class="nav-item" href="../char_module/">Char Module</a></li>
-    <li class="toctree-l3">
-<a class="nav-item" href="../string_module/">String Module</a></li>
-    <li class="toctree-l3">
-<a class="nav-item" href="../vector_module/">Vector Module</a></li>
-    <li class="toctree-l3">
-<a class="nav-item" href="../object_module/">Object Module</a></li>
+    <li class="toctree-l3"><a class="nav-item" href="../bool_module/">Bool Module</a></li>
+    <li class="toctree-l3"><a class="nav-item" href="../char_module/">Char Module</a></li>
+    <li class="toctree-l3"><a class="nav-item" href="../string_module/">String Module</a></li>
+    <li class="toctree-l3"><a class="nav-item" href="../vector_module/">Vector Module</a></li>
+    <li class="toctree-l3"><a class="nav-item" href="../object_module/">Object Module</a></li>
 </ul></li>
     <li class="toctree-l2">
 <a class="nav-item" href="../../math/">Math</a></li>
@@ -109,7 +106,16 @@
     <li>Standard Modules &raquo; </li><li>Type Modules</li>
 </ul>
 </nav>
-                <div id="content"></div>
+                <div id="content"><h1 id="float-module">Float Module</h1>
+<p>All the functions in this module can be self-called on any float value, if that function expects a float as the first argument.</p>
+<h4 id="floatfromvalue-float"><code>float.from(value): float?</code></h4>
+<p>Casts the <code>value</code> into a float if it is possible.</p>
+<h4 id="floatfloorvalue-float-float"><code>float.floor(value: float): float</code></h4>
+<p>Returns the floored float of <code>value</code>.</p>
+<h4 id="floatceilvalue-float-float"><code>float.ceil(value: float): float</code></h4>
+<p>Returns the ceiled float of <code>value</code>.</p>
+<h4 id="floatroundvalue-float-float"><code>float.round(value: float): float</code></h4>
+<p>Returns the rounded float of <code>value</code>.</p></div>
                 <footer>
     <div class="footer-buttons">
         <div class="previous"><a href="../int_module/" title="Int Module"><span>Previous</span></a></div>

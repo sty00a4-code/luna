@@ -44,36 +44,39 @@
     <li class="toctree-l2"><a class="nav-item" href="../../../getting_started/installation/">Installation</a></li>
     <li class="toctree-l2"><a class="nav-item" href="../../../getting_started/environment/">Environment</a></li>
 </ul></li>
-                    <li class="toctree-l1"><button class="section nav-item">Tutorial</button>
+                    <li class="toctree-l1"><button class="section nav-item">Guide</button>
 <ul class="subnav">
-    <li class="toctree-l2"><a class="nav-item" href="../../../tutorial/grammar/">Grammar</a></li>
-    <li class="toctree-l2"><a class="nav-item" href="../../../tutorial/statements/">Statements</a></li>
-    <li class="toctree-l2"><a class="nav-item" href="../../../tutorial/expressions/">Expressions</a></li>
-    <li class="toctree-l2"><a class="nav-item" href="../../../tutorial/variables/">Variables</a></li>
-    <li class="toctree-l2"><a class="nav-item" href="../../../tutorial/functions/">Functions</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../../../guide/grammar/">Grammar</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../../../guide/statements/">Statements</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../../../guide/expressions/">Expressions</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../../../guide/variables/">Variables</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../../../guide/objects/">Objects</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../../../guide/functions/">Functions</a></li>
 </ul></li>
                     <li class="toctree-l1"><button class="section nav-item">Standard Modules</button>
 <ul class="subnav">
-    <li class="toctree-l2">
-<a class="nav-item" href="../../globals/">Globals</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../../globals/">Globals</a></li>
     <li class="toctree-l2 current"><button class="section nav-item">Type Modules</button>
 <ul class="subnav">
-    <li class="toctree-l3">
-<a class="nav-item" href="../int_module/">Int Module</a></li>
-    <li class="toctree-l3">
-<a class="nav-item" href="../float_module/">Float Module</a></li>
-    <li class="toctree-l3">
-<a class="nav-item" href="../bool_module/">Bool Module</a></li>
-    <li class="toctree-l3">
-<a class="nav-item" href="../char_module/">Char Module</a></li>
-    <li class="toctree-l3">
-<a class="nav-item" href="../string_module/">String Module</a></li>
-    <li class="toctree-l3 current">
-<a class="nav-item current" href="./">Vector Module</a>
+    <li class="toctree-l3"><a class="nav-item" href="../int_module/">Int Module</a></li>
+    <li class="toctree-l3"><a class="nav-item" href="../float_module/">Float Module</a></li>
+    <li class="toctree-l3"><a class="nav-item" href="../bool_module/">Bool Module</a></li>
+    <li class="toctree-l3"><a class="nav-item" href="../char_module/">Char Module</a></li>
+    <li class="toctree-l3"><a class="nav-item" href="../string_module/">String Module</a></li>
+    <li class="toctree-l3 current"><a class="nav-item current" href="./">Vector Module</a>
 <ul class="subnav">
+<li class="toctree-l4"><a class="nav-item toc" href="#vectoriterv-vectort-iteratort">vector.iter(v: vector&lt;T&gt;): iterator&lt;T&gt;</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#vectorlenv-vector-int">vector.len(v: vector): int</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#vectorgetv-vector-index-int-default">vector.get(v: vector, index: int, default?)</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#vectorcontainsv-vector-value-bool">vector.contains(v: vector, value): bool</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#vectorpushv-vector-value">vector.push(v: vector, value)</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#vectorpopv-vectort-index-int-t">vector.pop(v: vector&lt;T&gt;, index: int?): T?</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#vectorjoinv-vector-sep-string-string">vector.join(v: vector, sep: string): string</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#vectorswapv-vector-i1-int-i1-int">vector.swap(v: vector, i1: int, i1: int)</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#vectorcopyv-vectort-vectort">vector.copy(v: vector&lt;T&gt;): vector&lt;T&gt;</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#vectorclearv-vector">vector.clear(v: vector)</a></li>
 </ul></li>
-    <li class="toctree-l3">
-<a class="nav-item" href="../object_module/">Object Module</a></li>
+    <li class="toctree-l3"><a class="nav-item" href="../object_module/">Object Module</a></li>
 </ul></li>
     <li class="toctree-l2">
 <a class="nav-item" href="../../math/">Math</a></li>
@@ -109,7 +112,28 @@
     <li>Standard Modules &raquo; </li><li>Type Modules</li>
 </ul>
 </nav>
-                <div id="content"></div>
+                <div id="content"><h1 id="vector-module">Vector Module</h1>
+<p>All the functions in this module can be self-called on any vector value, if that function expects a vector as the first argument.</p>
+<h4 id="vectoriterv-vectort-iteratort"><code>vector.iter(v: vector&lt;T&gt;): iterator&lt;T&gt;</code></h4>
+<p>Returns an iterator over the elements of <code>v</code>.</p>
+<h4 id="vectorlenv-vector-int"><code>vector.len(v: vector): int</code></h4>
+<p>Returns the length of <code>v</code>.</p>
+<h4 id="vectorgetv-vector-index-int-default"><code>vector.get(v: vector, index: int, default?)</code></h4>
+<p>Returns the value of <code>v</code> at index <code>index</code>. If the index is out of range, <code>default</code> is returned</p>
+<h4 id="vectorcontainsv-vector-value-bool"><code>vector.contains(v: vector, value): bool</code></h4>
+<p>Checks if the <code>value</code> is contained in <code>v</code>.</p>
+<h4 id="vectorpushv-vector-value"><code>vector.push(v: vector, value)</code></h4>
+<p>Pushes the <code>value</code> onto <code>v</code>.</p>
+<h4 id="vectorpopv-vectort-index-int-t"><code>vector.pop(v: vector&lt;T&gt;, index: int?): T?</code></h4>
+<p>Pops value at <code>index</code> off of <code>v</code> and returns it. If <code>index</code> is not given, the last value in <code>v</code> will be popped.</p>
+<h4 id="vectorjoinv-vector-sep-string-string"><code>vector.join(v: vector, sep: string): string</code></h4>
+<p>Returns a string of all the values in <code>v</code> as strings seperated by <code>sep</code>.</p>
+<h4 id="vectorswapv-vector-i1-int-i1-int"><code>vector.swap(v: vector, i1: int, i1: int)</code></h4>
+<p>Swaps the index <code>i1</code> with index <code>i2</code> of <code>v</code> if they are in bounds.</p>
+<h4 id="vectorcopyv-vectort-vectort"><code>vector.copy(v: vector&lt;T&gt;): vector&lt;T&gt;</code></h4>
+<p>Returns a shallow copy of <code>v</code>.</p>
+<h4 id="vectorclearv-vector"><code>vector.clear(v: vector)</code></h4>
+<p>Clears <code>v</code> of it's values.</p></div>
                 <footer>
     <div class="footer-buttons">
         <div class="previous"><a href="../string_module/" title="String Module"><span>Previous</span></a></div>

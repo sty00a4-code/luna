@@ -44,36 +44,40 @@
     <li class="toctree-l2"><a class="nav-item" href="../../../getting_started/installation/">Installation</a></li>
     <li class="toctree-l2"><a class="nav-item" href="../../../getting_started/environment/">Environment</a></li>
 </ul></li>
-                    <li class="toctree-l1"><button class="section nav-item">Tutorial</button>
+                    <li class="toctree-l1"><button class="section nav-item">Guide</button>
 <ul class="subnav">
-    <li class="toctree-l2"><a class="nav-item" href="../../../tutorial/grammar/">Grammar</a></li>
-    <li class="toctree-l2"><a class="nav-item" href="../../../tutorial/statements/">Statements</a></li>
-    <li class="toctree-l2"><a class="nav-item" href="../../../tutorial/expressions/">Expressions</a></li>
-    <li class="toctree-l2"><a class="nav-item" href="../../../tutorial/variables/">Variables</a></li>
-    <li class="toctree-l2"><a class="nav-item" href="../../../tutorial/functions/">Functions</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../../../guide/grammar/">Grammar</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../../../guide/statements/">Statements</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../../../guide/expressions/">Expressions</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../../../guide/variables/">Variables</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../../../guide/objects/">Objects</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../../../guide/functions/">Functions</a></li>
 </ul></li>
                     <li class="toctree-l1"><button class="section nav-item">Standard Modules</button>
 <ul class="subnav">
-    <li class="toctree-l2">
-<a class="nav-item" href="../../globals/">Globals</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../../globals/">Globals</a></li>
     <li class="toctree-l2 current"><button class="section nav-item">Type Modules</button>
 <ul class="subnav">
-    <li class="toctree-l3">
-<a class="nav-item" href="../int_module/">Int Module</a></li>
-    <li class="toctree-l3">
-<a class="nav-item" href="../float_module/">Float Module</a></li>
-    <li class="toctree-l3">
-<a class="nav-item" href="../bool_module/">Bool Module</a></li>
-    <li class="toctree-l3 current">
-<a class="nav-item current" href="./">Char Module</a>
+    <li class="toctree-l3"><a class="nav-item" href="../int_module/">Int Module</a></li>
+    <li class="toctree-l3"><a class="nav-item" href="../float_module/">Float Module</a></li>
+    <li class="toctree-l3"><a class="nav-item" href="../bool_module/">Bool Module</a></li>
+    <li class="toctree-l3 current"><a class="nav-item current" href="./">Char Module</a>
 <ul class="subnav">
+<li class="toctree-l4"><a class="nav-item toc" href="#charfromvalue-char">char.from(value): char?</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#charbytevalue-char-int">char.byte(value: char): int</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#charis_whitespacevalue-char-bool">char.is_whitespace(value: char): bool</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#charis_alphabeticvalue-char-bool">char.is_alphabetic(value: char): bool</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#charis_alphanumericvalue-char-bool">char.is_alphanumeric(value: char): bool</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#charis_controlvalue-char-bool">char.is_control(value: char): bool</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#charis_digitvalue-char-bool">char.is_digit(value: char): bool</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#charis_graphicvalue-char-bool">char.is_graphic(value: char): bool</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#charis_hexvalue-char-bool">char.is_hex(value: char): bool</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#charis_lowervalue-char-bool">char.is_lower(value: char): bool</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#charis_uppervalue-char-bool">char.is_upper(value: char): bool</a></li>
 </ul></li>
-    <li class="toctree-l3">
-<a class="nav-item" href="../string_module/">String Module</a></li>
-    <li class="toctree-l3">
-<a class="nav-item" href="../vector_module/">Vector Module</a></li>
-    <li class="toctree-l3">
-<a class="nav-item" href="../object_module/">Object Module</a></li>
+    <li class="toctree-l3"><a class="nav-item" href="../string_module/">String Module</a></li>
+    <li class="toctree-l3"><a class="nav-item" href="../vector_module/">Vector Module</a></li>
+    <li class="toctree-l3"><a class="nav-item" href="../object_module/">Object Module</a></li>
 </ul></li>
     <li class="toctree-l2">
 <a class="nav-item" href="../../math/">Math</a></li>
@@ -109,7 +113,30 @@
     <li>Standard Modules &raquo; </li><li>Type Modules</li>
 </ul>
 </nav>
-                <div id="content"></div>
+                <div id="content"><h1 id="char-module">Char Module</h1>
+<p>All the functions in this module can be self-called on any char value, if that function expects a char as the first argument.</p>
+<h4 id="charfromvalue-char"><code>char.from(value): char?</code></h4>
+<p>Casts the <code>value</code> into a char if it is possible.</p>
+<h4 id="charbytevalue-char-int"><code>char.byte(value: char): int</code></h4>
+<p>Casts the <code>value</code> char into it's byte version.</p>
+<h4 id="charis_whitespacevalue-char-bool"><code>char.is_whitespace(value: char): bool</code></h4>
+<p>Checks if <code>value</code> char is a whitespace character.</p>
+<h4 id="charis_alphabeticvalue-char-bool"><code>char.is_alphabetic(value: char): bool</code></h4>
+<p>Checks if <code>value</code> char is a alphabetic character.</p>
+<h4 id="charis_alphanumericvalue-char-bool"><code>char.is_alphanumeric(value: char): bool</code></h4>
+<p>Checks if <code>value</code> char is a alphanumeric character.</p>
+<h4 id="charis_controlvalue-char-bool"><code>char.is_control(value: char): bool</code></h4>
+<p>Checks if <code>value</code> char is a control character.</p>
+<h4 id="charis_digitvalue-char-bool"><code>char.is_digit(value: char): bool</code></h4>
+<p>Checks if <code>value</code> char is a digit character.</p>
+<h4 id="charis_graphicvalue-char-bool"><code>char.is_graphic(value: char): bool</code></h4>
+<p>Checks if <code>value</code> char is a graphic character.</p>
+<h4 id="charis_hexvalue-char-bool"><code>char.is_hex(value: char): bool</code></h4>
+<p>Checks if <code>value</code> char is a hexadecimal character.</p>
+<h4 id="charis_lowervalue-char-bool"><code>char.is_lower(value: char): bool</code></h4>
+<p>Checks if <code>value</code> char is a lowercase character.</p>
+<h4 id="charis_uppervalue-char-bool"><code>char.is_upper(value: char): bool</code></h4>
+<p>Checks if <code>value</code> char is an uppercase character.</p></div>
                 <footer>
     <div class="footer-buttons">
         <div class="previous"><a href="../bool_module/" title="Bool Module"><span>Previous</span></a></div>
