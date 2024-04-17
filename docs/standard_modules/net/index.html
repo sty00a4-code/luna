@@ -66,22 +66,17 @@
     <li class="toctree-l3"><a class="nav-item" href="../type_modules/vector_module/">Vector Module</a></li>
     <li class="toctree-l3"><a class="nav-item" href="../type_modules/object_module/">Object Module</a></li>
 </ul></li>
-    <li class="toctree-l2">
-<a class="nav-item" href="../math/">Math</a></li>
-    <li class="toctree-l2">
-<a class="nav-item" href="../io/">IO</a></li>
-    <li class="toctree-l2">
-<a class="nav-item" href="../fs/">FS</a></li>
-    <li class="toctree-l2">
-<a class="nav-item" href="../env/">Env</a></li>
-    <li class="toctree-l2 current">
-<a class="nav-item current" href="./">Net</a>
+    <li class="toctree-l2"><a class="nav-item" href="../math/">Math</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../io/">IO</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../fs/">FS</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../env/">Env</a></li>
+    <li class="toctree-l2 current"><a class="nav-item current" href="./">Net</a>
 <ul class="subnav">
+<li class="toctree-l3"><a class="nav-item toc" href="#netbindaddr-string-port-int-tcp-listener">net.bind(addr: string, port: int): tcp-listener?</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#netconnectaddr-string-port-int-tcp-stream">net.connect(addr: string, port: int): tcp-stream?</a></li>
 </ul></li>
-    <li class="toctree-l2">
-<a class="nav-item" href="../os/">OS</a></li>
-    <li class="toctree-l2">
-<a class="nav-item" href="../typed/">Typed</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../os/">OS</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../typed/">Typed</a></li>
 </ul></li>
                 </ul>
             </nav>
@@ -102,7 +97,11 @@
     <li>Standard Modules</li>
 </ul>
 </nav>
-                <div id="content"></div>
+                <div id="content"><h1 id="net-module">Net Module</h1>
+<h4 id="netbindaddr-string-port-int-tcp-listener"><code>net.bind(addr: string, port: int): tcp-listener?</code></h4>
+<p>Creates a new TCP-listener if it can which will be bound to the specified <code>addr</code> and <code>port</code>. If the port is invalid, it will throw an error</p>
+<h4 id="netconnectaddr-string-port-int-tcp-stream"><code>net.connect(addr: string, port: int): tcp-stream?</code></h4>
+<p>Opens a TCP connection to a remote host as a TCP-stream with the address <code>addr</code> and port <code>port</code> if it can.</p></div>
                 <footer>
     <div class="footer-buttons">
         <div class="previous"><a href="../env/" title="Env"><span>Previous</span></a></div>

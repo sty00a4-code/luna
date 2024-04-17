@@ -66,22 +66,20 @@
     <li class="toctree-l3"><a class="nav-item" href="../type_modules/vector_module/">Vector Module</a></li>
     <li class="toctree-l3"><a class="nav-item" href="../type_modules/object_module/">Object Module</a></li>
 </ul></li>
-    <li class="toctree-l2">
-<a class="nav-item" href="../math/">Math</a></li>
-    <li class="toctree-l2 current">
-<a class="nav-item current" href="./">IO</a>
+    <li class="toctree-l2"><a class="nav-item" href="../math/">Math</a></li>
+    <li class="toctree-l2 current"><a class="nav-item current" href="./">IO</a>
 <ul class="subnav">
+<li class="toctree-l3"><a class="nav-item toc" href="#iowrites-string">io.write(s: string)</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#ioflush">io.flush()</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#iostdin-stdin">io.stdin(): stdin</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#iostdout-stdout">io.stdout(): stdout</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#iostderr-stderr">io.stderr(): stderr</a></li>
 </ul></li>
-    <li class="toctree-l2">
-<a class="nav-item" href="../fs/">FS</a></li>
-    <li class="toctree-l2">
-<a class="nav-item" href="../env/">Env</a></li>
-    <li class="toctree-l2">
-<a class="nav-item" href="../net/">Net</a></li>
-    <li class="toctree-l2">
-<a class="nav-item" href="../os/">OS</a></li>
-    <li class="toctree-l2">
-<a class="nav-item" href="../typed/">Typed</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../fs/">FS</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../env/">Env</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../net/">Net</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../os/">OS</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../typed/">Typed</a></li>
 </ul></li>
                 </ul>
             </nav>
@@ -102,7 +100,17 @@
     <li>Standard Modules</li>
 </ul>
 </nav>
-                <div id="content"></div>
+                <div id="content"><h1 id="io-module">IO Module</h1>
+<h4 id="iowrites-string"><code>io.write(s: string)</code></h4>
+<p>Writes <code>s</code> to <em>stdout</em>.</p>
+<h4 id="ioflush"><code>io.flush()</code></h4>
+<p>Flushes <em>stdout</em>.</p>
+<h4 id="iostdin-stdin"><code>io.stdin(): stdin</code></h4>
+<p>Returns the <em>stdin</em> user-object.</p>
+<h4 id="iostdout-stdout"><code>io.stdout(): stdout</code></h4>
+<p>Returns the <em>stdout</em> user-object.</p>
+<h4 id="iostderr-stderr"><code>io.stderr(): stderr</code></h4>
+<p>Returns the <em>stderr</em> user-object.</p></div>
                 <footer>
     <div class="footer-buttons">
         <div class="previous"><a href="../math/" title="Math"><span>Previous</span></a></div>

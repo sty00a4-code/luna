@@ -66,22 +66,22 @@
     <li class="toctree-l3"><a class="nav-item" href="../type_modules/vector_module/">Vector Module</a></li>
     <li class="toctree-l3"><a class="nav-item" href="../type_modules/object_module/">Object Module</a></li>
 </ul></li>
-    <li class="toctree-l2">
-<a class="nav-item" href="../math/">Math</a></li>
-    <li class="toctree-l2">
-<a class="nav-item" href="../io/">IO</a></li>
-    <li class="toctree-l2">
-<a class="nav-item" href="../fs/">FS</a></li>
-    <li class="toctree-l2 current">
-<a class="nav-item current" href="./">Env</a>
+    <li class="toctree-l2"><a class="nav-item" href="../math/">Math</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../io/">IO</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../fs/">FS</a></li>
+    <li class="toctree-l2 current"><a class="nav-item current" href="./">Env</a>
 <ul class="subnav">
+<li class="toctree-l3"><a class="nav-item toc" href="#envset_varkey-string-value">env.set_var(key: string, value)</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#envvarkey-string-string">env.var(key: string): string?</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#envremove_varkey-string">env.remove_var(key: string)</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#envvars-objectstring">env.vars(): object&lt;string&gt;</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#envcurrent_dir-string">env.current_dir(): string?</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#envcurrent_exe-string">env.current_exe(): string?</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#envargs-string">env.args(): string?</a></li>
 </ul></li>
-    <li class="toctree-l2">
-<a class="nav-item" href="../net/">Net</a></li>
-    <li class="toctree-l2">
-<a class="nav-item" href="../os/">OS</a></li>
-    <li class="toctree-l2">
-<a class="nav-item" href="../typed/">Typed</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../net/">Net</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../os/">OS</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../typed/">Typed</a></li>
 </ul></li>
                 </ul>
             </nav>
@@ -102,7 +102,21 @@
     <li>Standard Modules</li>
 </ul>
 </nav>
-                <div id="content"></div>
+                <div id="content"><h1 id="env-module">ENV Module</h1>
+<h4 id="envset_varkey-string-value"><code>env.set_var(key: string, value)</code></h4>
+<p>Sets the environment variable <code>key</code> to the <code>value</code> as a string for the currently running process.</p>
+<h4 id="envvarkey-string-string"><code>env.var(key: string): string?</code></h4>
+<p>Fetches the environment variable <code>key</code> from the current process.</p>
+<h4 id="envremove_varkey-string"><code>env.remove_var(key: string)</code></h4>
+<p>Removes an environment variable <code>key</code> from the environment of the currently running process.</p>
+<h4 id="envvars-objectstring"><code>env.vars(): object&lt;string&gt;</code></h4>
+<p>Returns an object of strings, for all the environment variables of the current process.</p>
+<h4 id="envcurrent_dir-string"><code>env.current_dir(): string?</code></h4>
+<p>Returns the current working directory.</p>
+<h4 id="envcurrent_exe-string"><code>env.current_exe(): string?</code></h4>
+<p>Returns the full filesystem path of the current running executable.</p>
+<h4 id="envargs-string"><code>env.args(): string?</code></h4>
+<p>Returns the arguments that this program was started with (normally passed via the command line).</p></div>
                 <footer>
     <div class="footer-buttons">
         <div class="previous"><a href="../fs/" title="FS"><span>Previous</span></a></div>

@@ -66,22 +66,41 @@
     <li class="toctree-l3"><a class="nav-item" href="../type_modules/vector_module/">Vector Module</a></li>
     <li class="toctree-l3"><a class="nav-item" href="../type_modules/object_module/">Object Module</a></li>
 </ul></li>
-    <li class="toctree-l2 current">
-<a class="nav-item current" href="./">Math</a>
+    <li class="toctree-l2 current"><a class="nav-item current" href="./">Math</a>
 <ul class="subnav">
+<li class="toctree-l3"><a class="nav-item toc" href="#mathpi-float">math.pi: float</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#mathnan-float">math.nan: float</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#mathinf-float">math.inf: float</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#mathe-float">math.e: float</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#mathabsn-number-number">math.abs(n: number): number</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#mathsqrtn-number-number">math.sqrt(n: number): number</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#mathexpn-number-number">math.exp(n: number): number</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#mathexp2n-number-number">math.exp2(n: number): number</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#mathexp_m1n-number-number">math.exp_m1(n: number): number</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#mathsignumn-number-number">math.signum(n: number): number</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#mathfractn-number-number">math.fract(n: number): number</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#mathsinn-number-number">math.sin(n: number): number</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#mathcosn-number-number">math.cos(n: number): number</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#mathtann-number-number">math.tan(n: number): number</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#mathsinhn-number-number">math.sinh(n: number): number</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#mathcoshn-number-number">math.cosh(n: number): number</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#mathtanhn-number-number">math.tanh(n: number): number</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#mathasinn-number-number">math.asin(n: number): number</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#mathacosn-number-number">math.acos(n: number): number</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#mathatann-number-number">math.atan(n: number): number</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#mathasinhn-number-number">math.asinh(n: number): number</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#mathacoshn-number-number">math.acosh(n: number): number</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#mathatanhn-number-number">math.atanh(n: number): number</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#mathdegn-number-number">math.deg(n: number): number</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#mathradn-number-number">math.rad(n: number): number</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#mathrandom-float">math.random(): float</a></li>
 </ul></li>
-    <li class="toctree-l2">
-<a class="nav-item" href="../io/">IO</a></li>
-    <li class="toctree-l2">
-<a class="nav-item" href="../fs/">FS</a></li>
-    <li class="toctree-l2">
-<a class="nav-item" href="../env/">Env</a></li>
-    <li class="toctree-l2">
-<a class="nav-item" href="../net/">Net</a></li>
-    <li class="toctree-l2">
-<a class="nav-item" href="../os/">OS</a></li>
-    <li class="toctree-l2">
-<a class="nav-item" href="../typed/">Typed</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../io/">IO</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../fs/">FS</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../env/">Env</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../net/">Net</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../os/">OS</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../typed/">Typed</a></li>
 </ul></li>
                 </ul>
             </nav>
@@ -102,7 +121,64 @@
     <li>Standard Modules</li>
 </ul>
 </nav>
-                <div id="content"></div>
+                <div id="content"><h1 id="math-modules">Math Modules</h1>
+<h4 id="mathpi-float"><code>math.pi: float</code></h4>
+<p>PI as a float; <code>3.141592653589793</code>.</p>
+<h4 id="mathnan-float"><code>math.nan: float</code></h4>
+<p>NaN as a float value.</p>
+<h4 id="mathinf-float"><code>math.inf: float</code></h4>
+<p>Infinity as a float value.</p>
+<h4 id="mathe-float"><code>math.e: float</code></h4>
+<p>Epsilon as a float value.</p>
+<h4 id="mathabsn-number-number"><code>math.abs(n: number): number</code></h4>
+<p>Returns the absolute value of <code>n</code>.</p>
+<h4 id="mathsqrtn-number-number"><code>math.sqrt(n: number): number</code></h4>
+<p>Returns the square root of <code>n</code>.</p>
+<h4 id="mathexpn-number-number"><code>math.exp(n: number): number</code></h4>
+<p>Returns <code>math.e^n</code>, (the exponential function).</p>
+<h4 id="mathexp2n-number-number"><code>math.exp2(n: number): number</code></h4>
+<p>Returns <code>2^n</code></p>
+<h4 id="mathexp_m1n-number-number"><code>math.exp_m1(n: number): number</code></h4>
+<p>Returns <code>e^n - 1</code> in a way that is accurate even if the number is close to zero.</p>
+<h4 id="mathsignumn-number-number"><code>math.signum(n: number): number</code></h4>
+<p>Returns a number that represents the sign of <code>n</code>.</p>
+<ul>
+<li><code>1.0</code> if the number is positive, <code>+0.0</code> or <code>inf</code></li>
+<li><code>-1.0</code> if the number is negative, <code>-0.0</code> or <code>-inf</code></li>
+<li><code>NaN</code> if the number is <code>NaN</code></li>
+</ul>
+<h4 id="mathfractn-number-number"><code>math.fract(n: number): number</code></h4>
+<p>Returns the fractional part of <code>n</code>.</p>
+<h4 id="mathsinn-number-number"><code>math.sin(n: number): number</code></h4>
+<p>Returns the sine of <code>n</code> (in radians).</p>
+<h4 id="mathcosn-number-number"><code>math.cos(n: number): number</code></h4>
+<p>Returns the cosine of <code>n</code> (in radians).</p>
+<h4 id="mathtann-number-number"><code>math.tan(n: number): number</code></h4>
+<p>Returns the tangent of <code>n</code> (in radians).</p>
+<h4 id="mathsinhn-number-number"><code>math.sinh(n: number): number</code></h4>
+<p>Returns the hyperbolic sine of <code>n</code> (in radians).</p>
+<h4 id="mathcoshn-number-number"><code>math.cosh(n: number): number</code></h4>
+<p>Returns the hyperbolic cosine of <code>n</code> (in radians).</p>
+<h4 id="mathtanhn-number-number"><code>math.tanh(n: number): number</code></h4>
+<p>Returns the hyperbolic tangent of <code>n</code> (in radians).</p>
+<h4 id="mathasinn-number-number"><code>math.asin(n: number): number</code></h4>
+<p>Returns the arcsine of <code>n</code> (in radians).</p>
+<h4 id="mathacosn-number-number"><code>math.acos(n: number): number</code></h4>
+<p>Returns the arccosine of <code>n</code> (in radians).</p>
+<h4 id="mathatann-number-number"><code>math.atan(n: number): number</code></h4>
+<p>Returns the arctangent of <code>n</code> (in radians).</p>
+<h4 id="mathasinhn-number-number"><code>math.asinh(n: number): number</code></h4>
+<p>Returns the hyperbolic arcsine of <code>n</code> (in radians).</p>
+<h4 id="mathacoshn-number-number"><code>math.acosh(n: number): number</code></h4>
+<p>Returns the hyperbolic arccosine of <code>n</code> (in radians).</p>
+<h4 id="mathatanhn-number-number"><code>math.atanh(n: number): number</code></h4>
+<p>Returns the hyperbolic arctangent of <code>n</code> (in radians).</p>
+<h4 id="mathdegn-number-number"><code>math.deg(n: number): number</code></h4>
+<p>Converts <code>n</code> radians to degrees.</p>
+<h4 id="mathradn-number-number"><code>math.rad(n: number): number</code></h4>
+<p>Converts <code>n</code> degrees to radians.</p>
+<h4 id="mathrandom-float"><code>math.random(): float</code></h4>
+<p>Returns a thread local random float from <code>0</code> to <code>1</code>.</p></div>
                 <footer>
     <div class="footer-buttons">
         <div class="previous"><a href="../type_modules/object_module/" title="Object Module"><span>Previous</span></a></div>

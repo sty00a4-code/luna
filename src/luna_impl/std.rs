@@ -920,7 +920,7 @@ pub fn _typed_check(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<
     for (_, arg) in args {
         if let Value::String(typ) = arg {
             if value.dynamic_typ() == typ {
-                return Ok(true.into())
+                return Ok(true.into());
             }
         }
     }
@@ -932,7 +932,7 @@ pub fn _typed_check_raw(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, 
     for (_, arg) in args {
         if let Value::String(typ) = arg {
             if value.typ() == typ {
-                return Ok(true.into())
+                return Ok(true.into());
             }
         }
     }
@@ -998,7 +998,7 @@ pub fn _typed_options(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Bo
     let value = typed!(args);
     for (_, arg) in args {
         if value == arg {
-            return Ok(true.into())
+            return Ok(true.into());
         }
     }
     Ok(false.into())
@@ -1388,7 +1388,18 @@ pub fn _os_exec(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn 
     let command = typed!(args: String);
     let args = args.map(|(_, v)| v.to_string()).collect::<Vec<String>>();
     let output = Command::new(command).args(args).output()?;
-    Ok(Value::Bool(output.status.success()))
+    Ok(object!(
+        "ok" = output
+            .stdout
+            .into_iter()
+            .map(|b| b as char)
+            .collect::<String>(),
+        "err" = output
+            .stderr
+            .into_iter()
+            .map(|b| b as char)
+            .collect::<String>()
+    ))
 }
 pub fn _os_time(_: &mut Interpreter, _: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     Ok(Value::Float(

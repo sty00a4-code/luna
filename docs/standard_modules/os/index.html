@@ -66,22 +66,18 @@
     <li class="toctree-l3"><a class="nav-item" href="../type_modules/vector_module/">Vector Module</a></li>
     <li class="toctree-l3"><a class="nav-item" href="../type_modules/object_module/">Object Module</a></li>
 </ul></li>
-    <li class="toctree-l2">
-<a class="nav-item" href="../math/">Math</a></li>
-    <li class="toctree-l2">
-<a class="nav-item" href="../io/">IO</a></li>
-    <li class="toctree-l2">
-<a class="nav-item" href="../fs/">FS</a></li>
-    <li class="toctree-l2">
-<a class="nav-item" href="../env/">Env</a></li>
-    <li class="toctree-l2">
-<a class="nav-item" href="../net/">Net</a></li>
-    <li class="toctree-l2 current">
-<a class="nav-item current" href="./">OS</a>
+    <li class="toctree-l2"><a class="nav-item" href="../math/">Math</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../io/">IO</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../fs/">FS</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../env/">Env</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../net/">Net</a></li>
+    <li class="toctree-l2 current"><a class="nav-item current" href="./">OS</a>
 <ul class="subnav">
+<li class="toctree-l3"><a class="nav-item toc" href="#osexeccommand-string-ok-string-err-string">os.exec(command: string, ...): { ok: string?, err: string? }</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#ostime-float">os.time(): float</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#ossleepsecs-number">os.sleep(secs: number)</a></li>
 </ul></li>
-    <li class="toctree-l2">
-<a class="nav-item" href="../typed/">Typed</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../typed/">Typed</a></li>
 </ul></li>
                 </ul>
             </nav>
@@ -102,7 +98,13 @@
     <li>Standard Modules</li>
 </ul>
 </nav>
-                <div id="content"></div>
+                <div id="content"><h1 id="os-module">OS Module</h1>
+<h4 id="osexeccommand-string-ok-string-err-string"><code>os.exec(command: string, ...): { ok: string?, err: string? }</code></h4>
+<p>Executes the command as a child process, waiting for it to finish and collecting all of its output.</p>
+<h4 id="ostime-float"><code>os.time(): float</code></h4>
+<p>Returns the number of non-leap-microseconds since January 1, 1970 UTC.</p>
+<h4 id="ossleepsecs-number"><code>os.sleep(secs: number)</code></h4>
+<p>Puts the current thread to sleep for at least the specified amount of time.</p></div>
                 <footer>
     <div class="footer-buttons">
         <div class="previous"><a href="../net/" title="Net"><span>Previous</span></a></div>

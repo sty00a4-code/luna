@@ -66,22 +66,18 @@
     <li class="toctree-l3"><a class="nav-item" href="../type_modules/vector_module/">Vector Module</a></li>
     <li class="toctree-l3"><a class="nav-item" href="../type_modules/object_module/">Object Module</a></li>
 </ul></li>
-    <li class="toctree-l2">
-<a class="nav-item" href="../math/">Math</a></li>
-    <li class="toctree-l2">
-<a class="nav-item" href="../io/">IO</a></li>
-    <li class="toctree-l2 current">
-<a class="nav-item current" href="./">FS</a>
+    <li class="toctree-l2"><a class="nav-item" href="../math/">Math</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../io/">IO</a></li>
+    <li class="toctree-l2 current"><a class="nav-item current" href="./">FS</a>
 <ul class="subnav">
+<li class="toctree-l3"><a class="nav-item toc" href="#fsopenpath-string-mode-wra-file">fs.open(path: string, mode: "w"|"r"|"a"): file?</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#fslistpath-string-vectorstring">fs.list(path: string): vector&lt;string&gt;</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#fstypepath-string-dirfilenull">fs.type(path: string): "dir"|"file"|null</a></li>
 </ul></li>
-    <li class="toctree-l2">
-<a class="nav-item" href="../env/">Env</a></li>
-    <li class="toctree-l2">
-<a class="nav-item" href="../net/">Net</a></li>
-    <li class="toctree-l2">
-<a class="nav-item" href="../os/">OS</a></li>
-    <li class="toctree-l2">
-<a class="nav-item" href="../typed/">Typed</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../env/">Env</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../net/">Net</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../os/">OS</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../typed/">Typed</a></li>
 </ul></li>
                 </ul>
             </nav>
@@ -102,7 +98,13 @@
     <li>Standard Modules</li>
 </ul>
 </nav>
-                <div id="content"></div>
+                <div id="content"><h1 id="fs-module">FS Module</h1>
+<h4 id="fsopenpath-string-mode-wra-file"><code>fs.open(path: string, mode: "w"|"r"|"a"): file?</code></h4>
+<p>Opens a file at <code>path</code> with the options specified <code>mode</code>, if it exists.</p>
+<h4 id="fslistpath-string-vectorstring"><code>fs.list(path: string): vector&lt;string&gt;</code></h4>
+<p>Returns a vector over the entries within a directory.</p>
+<h4 id="fstypepath-string-dirfilenull"><code>fs.type(path: string): "dir"|"file"|null</code></h4>
+<p>Returns the type of the <code>path</code>.</p></div>
                 <footer>
     <div class="footer-buttons">
         <div class="previous"><a href="../io/" title="IO"><span>Previous</span></a></div>
