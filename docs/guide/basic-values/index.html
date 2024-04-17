@@ -6,7 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="shortcut icon" href="../../img/favicon.ico">
-    <title>Variables &mdash; Luna Docs</title>
+    <title>Basic Values &mdash; Luna Docs</title>
     <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:400,700">
     <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/tonsky/FiraCode@1.206/distr/fira_code.css">
     <link rel="stylesheet" href="//use.fontawesome.com/releases/v5.8.1/css/all.css">
@@ -49,12 +49,10 @@
     <li class="toctree-l2"><a class="nav-item" href="../grammar/">Grammar</a></li>
     <li class="toctree-l2"><a class="nav-item" href="../statements/">Statements</a></li>
     <li class="toctree-l2"><a class="nav-item" href="../expressions/">Expressions</a></li>
-    <li class="toctree-l2"><a class="nav-item" href="../basic-values/">Basic Values</a></li>
-    <li class="toctree-l2 current"><a class="nav-item current" href="./">Variables</a>
+    <li class="toctree-l2 current"><a class="nav-item current" href="./">Basic Values</a>
 <ul class="subnav">
-<li class="toctree-l3"><a class="nav-item toc" href="#parameters">Parameters</a></li>
-<li class="toctree-l3"><a class="nav-item toc" href="#globals">Globals</a></li>
 </ul></li>
+    <li class="toctree-l2"><a class="nav-item" href="../variables/">Variables</a></li>
     <li class="toctree-l2"><a class="nav-item" href="../objects/">Objects</a></li>
     <li class="toctree-l2"><a class="nav-item" href="../functions/">Functions</a></li>
 </ul></li>
@@ -82,8 +80,8 @@
                 </ul>
             </nav>
             <div class="repo">
-    <div class="previous"><a href="../basic-values/">&laquo; Previous</a></div>
-    <div class="next"><a href="../objects/">Next &raquo;</a></div>
+    <div class="previous"><a href="../expressions/">&laquo; Previous</a></div>
+    <div class="next"><a href="../variables/">Next &raquo;</a></div>
 </div>
         </aside>
         <div id="spacer"><button class="arrow"></button></div>
@@ -98,36 +96,12 @@
     <li>Guide</li>
 </ul>
 </nav>
-                <div id="content"><h1 id="variables">Variables</h1>
-<p>Variables in Luna are scoped.</p>
-<pre><code>let a = 1
-{
-    let b = 2
-    print(a)
-    print(b)
-}
-print(a)
-</code></pre>
-<p>Here we created two variables <code>a</code> and <code>b</code>. <code>a</code> is scoped to the entire chunk of code, but <code>b</code> on the other hand is only scoped to the two curly braces. This is because we are defining a block with <code>{</code> and <code>}</code> which has it's own scope that ends at the <code>}</code>.</p>
-<h2 id="parameters">Parameters</h2>
-<p>Function parameters are just like local variables, just that they are bound differently.</p>
-<pre><code>fn add(a, b) {
-    let result = a + b
-    return result
-}
-</code></pre>
-<p>When calling this function with arguments as follows, <code>1</code> and <code>2</code> will be assigned to <code>a</code> and <code>b</code> for that call:</p>
-<pre><code>add(1, 2)
-</code></pre>
-<h2 id="globals">Globals</h2>
-<p>Variables don't have to be assigned locally to a scope though. The other way to create variables is globally by just using an assignment statement with no <code>let</code> in front of it.</p>
-<pre><code>VAR = &quot;this is a global variables&quot;
-</code></pre>
-<p>No matter where, after this statement has been executed, does the interpreter not have access to that value through that name.</p></div>
+                <div id="content"><h1 id="basic-values">Basic Values</h1>
+<p><em>...</em></p></div>
                 <footer>
     <div class="footer-buttons">
-        <div class="previous"><a href="../basic-values/" title="Basic Values"><span>Previous</span></a></div>
-        <div class="next"><a href="../objects/" title="Objects"><span>Next</span></a></div>
+        <div class="previous"><a href="../expressions/" title="Expressions"><span>Previous</span></a></div>
+        <div class="next"><a href="../variables/" title="Variables"><span>Next</span></a></div>
     </div>
     <div class="footer-note">
         <p>

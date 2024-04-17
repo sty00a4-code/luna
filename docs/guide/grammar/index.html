@@ -55,6 +55,7 @@
 </ul></li>
     <li class="toctree-l2"><a class="nav-item" href="../statements/">Statements</a></li>
     <li class="toctree-l2"><a class="nav-item" href="../expressions/">Expressions</a></li>
+    <li class="toctree-l2"><a class="nav-item" href="../basic-values/">Basic Values</a></li>
     <li class="toctree-l2"><a class="nav-item" href="../variables/">Variables</a></li>
     <li class="toctree-l2"><a class="nav-item" href="../objects/">Objects</a></li>
     <li class="toctree-l2"><a class="nav-item" href="../functions/">Functions</a></li>
@@ -177,7 +178,7 @@
 </tr>
 <tr>
 <td><code>in</code></td>
-<td>iterate over somethin in a for loop statement</td>
+<td>iterate over something in a for loop statement</td>
 </tr>
 <tr>
 <td><code>return</code></td>
@@ -344,12 +345,12 @@
 <h2 id="syntax-sugar">Syntax Sugar</h2>
 <p>Luna has the same design philosophy as Lua.
 What that means is that certain syntax is only another way to write the same thing:</p>
-<pre><code class="language-luna">fn add(a, b) {
+<pre><code>fn add(a, b) {
     return a + b
 }
 </code></pre>
 <p>translates to</p>
-<pre><code class="language-luna">add = fn(a, b) {
+<pre><code>add = fn(a, b) {
     return a + b
 }
 </code></pre></div>
