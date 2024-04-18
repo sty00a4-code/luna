@@ -1286,16 +1286,14 @@ pub fn _fs_open(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn 
         "a" => (true, false, true),
         _ => return Err(InvalidOptionError(options).into())
     });
-    Ok(Value::UserObject(Rc::new(RefCell::new(Box::new(
-        FileObject(
-            File::options()
-                .read(read)
-                .write(write)
-                .create(write)
-                .append(append)
-                .open(path)?,
-        ),
-    )))))
+    Ok(File::options()
+        .read(read)
+        .write(write)
+        .create(write)
+        .append(append)
+        .open(path)
+        .map(|file| Value::UserObject(Rc::new(RefCell::new(Box::new(FileObject(file))))))
+        .unwrap_or_default())
 }
 pub fn _fs_list(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let mut args = args.into_iter().enumerate();
