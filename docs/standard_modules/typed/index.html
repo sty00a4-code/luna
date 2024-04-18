@@ -75,6 +75,21 @@
     <li class="toctree-l2"><a class="nav-item" href="../os/">OS</a></li>
     <li class="toctree-l2 current"><a class="nav-item current" href="./">Typed</a>
 <ul class="subnav">
+<li class="toctree-l3"><a class="nav-item toc" href="#typedcheckvalue-string-bool">typed.check(value, ...: string): bool</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#typedcheck_rawvalue-string-bool">typed.check_raw(value, ...: string): bool</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#typedintvalue-bool">typed.int(value): bool</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#typedfloatvalue-bool">typed.float(value): bool</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#typedboolvalue-bool">typed.bool(value): bool</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#typedcharvalue-bool">typed.char(value): bool</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#typedstringvalue-bool">typed.string(value): bool</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#typedvectorvalue-bool">typed.vector(value): bool</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#typedobjectvalue-bool">typed.object(value): bool</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#typedobject_rawvalue-bool">typed.object_raw(value): bool</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#typedfunctionvalue-bool">typed.function(value): bool</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#typednumericvalue-bool">typed.numeric(value): bool</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#typediterablevalue-bool">typed.iterable(value): bool</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#typedoptionsvalue-bool">typed.options(value, ...): bool</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#typedsomevalue-bool">typed.some(value): bool</a></li>
 </ul></li>
 </ul></li>
                 </ul>
@@ -96,7 +111,36 @@
 </ul>
 </nav>
                 <div id="content"><h1 id="typed-module">Typed Module</h1>
-<p><em>to-do...</em></p></div>
+<h4 id="typedcheckvalue-string-bool"><code>typed.check(value, ...: string): bool</code></h4>
+<p>Checks if the <code>value</code> is of any of the types in the rest of the arguments</p>
+<h4 id="typedcheck_rawvalue-string-bool"><code>typed.check_raw(value, ...: string): bool</code></h4>
+<p>Checks if the <code>value</code> is of any of the types in the rest of the arguments. The meta-field <code>__type</code> will not have an effect.</p>
+<h4 id="typedintvalue-bool"><code>typed.int(value): bool</code></h4>
+<p>Checks if the <code>value</code> is of type int.</p>
+<h4 id="typedfloatvalue-bool"><code>typed.float(value): bool</code></h4>
+<p>Checks if the <code>value</code> is of type float.</p>
+<h4 id="typedboolvalue-bool"><code>typed.bool(value): bool</code></h4>
+<p>Checks if the <code>value</code> is of type bool.</p>
+<h4 id="typedcharvalue-bool"><code>typed.char(value): bool</code></h4>
+<p>Checks if the <code>value</code> is of type char.</p>
+<h4 id="typedstringvalue-bool"><code>typed.string(value): bool</code></h4>
+<p>Checks if the <code>value</code> is of type string.</p>
+<h4 id="typedvectorvalue-bool"><code>typed.vector(value): bool</code></h4>
+<p>Checks if the <code>value</code> is of type vector.</p>
+<h4 id="typedobjectvalue-bool"><code>typed.object(value): bool</code></h4>
+<p>Checks if the <code>value</code> is of type object.</p>
+<h4 id="typedobject_rawvalue-bool"><code>typed.object_raw(value): bool</code></h4>
+<p>Checks if the <code>value</code> is of type object. The meta-field <code>__type</code> will not have an effect.</p>
+<h4 id="typedfunctionvalue-bool"><code>typed.function(value): bool</code></h4>
+<p>Checks if the <code>value</code> is of type fn.</p>
+<h4 id="typednumericvalue-bool"><code>typed.numeric(value): bool</code></h4>
+<p>Checks if the <code>value</code> is of type int or float.</p>
+<h4 id="typediterablevalue-bool"><code>typed.iterable(value): bool</code></h4>
+<p>Checks if the <code>value</code> is of type string, vector or object.</p>
+<h4 id="typedoptionsvalue-bool"><code>typed.options(value, ...): bool</code></h4>
+<p>Checks if the <code>value</code> is equal to any of the values in the rest of the arguments.</p>
+<h4 id="typedsomevalue-bool"><code>typed.some(value): bool</code></h4>
+<p>Checks if the <code>value</code> is not null. Any usual falsy value except null of course return <code>true</code></p></div>
                 <footer>
     <div class="footer-buttons">
         <div class="previous"><a href="../os/" title="OS"><span>Previous</span></a></div>
