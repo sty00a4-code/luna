@@ -151,28 +151,88 @@
 <p>Examples: <code>vector:push(1)</code>, <code>person:greet()</code></p>
 <h3 id="function-definition">Function Definition</h3>
 <p>This is used to <strong>globally</strong> define functions with parameters.</p>
-<p>Examples: <code>fn add(a, b) { return a + b }</code></p>
+<p>Examples:</p>
+<pre><code>fn add(a, b) {
+    return a + b
+}
+</code></pre>
 <h3 id="let-function-definition">Let-Function Definition</h3>
 <p>This is used to <strong>locally</strong> define functions with parameters in the current scope.</p>
-<p>Examples: <code>let fn add(a, b) { return a + b }</code></p>
+<p>Examples:</p>
+<pre><code>let fn add(a, b) {
+    return a + b
+}
+</code></pre>
 <h3 id="if-branch">If-Branch</h3>
 <p>Classical if-branch like any other. Has an optional else-case which can either be a block or another if-branch.</p>
-<p>Examples: <code>if cond { print("yay") } else { print("nay") }</code>, <code>if cond { print("yay") } else if cond2 { print("semi-yay") }</code></p>
+<p>Examples:</p>
+<pre><code>if cond {
+    print(&quot;yay&quot;)
+}
+</code></pre>
+<pre><code>if cond {
+    print(&quot;yay&quot;)
+} else {
+    print(&quot;nay&quot;)
+}
+</code></pre>
+<pre><code>if cond {
+    print(&quot;yay&quot;)
+} else if cond2 {
+    print(&quot;semi-yay&quot;)
+}
+</code></pre>
+<h3 id="match">Match</h3>
+<p>Classical match-case statement to check over multiple variants of one value.</p>
+<p>Examples:</p>
+<pre><code>match cmd {
+    &quot;exit&quot; = { os.exit() }
+    else = {
+        print(&quot;invalid command: %s&quot;:format(cmd))
+    }
+}
+</code></pre>
 <h3 id="while-loop">While-Loop</h3>
 <p>Classical while-loop like any other. body has to be a block</p>
-<p>Examples: <code>while a &lt; 10 { a += 1 }</code></p>
+<p>Examples:</p>
+<pre><code>while a &lt; 10 {
+    a += 1
+}
+</code></pre>
 <h3 id="for-loop">For-Loop</h3>
 <p>Python-like for-loop that requires an iterable to be right of the <code>in</code> keyword. Only one variable can be given for each iteration. An iterable can either be an user-object with a <code>next</code> method, an object with the meta variable <code>__next</code> which is a function, or just a function. </p>
-<p>Examples: <code>for n in [1, 2, 3]:iter() { print(n) }</code>, <code>for key in keys(map) { print(key, map[key]) }</code></p>
+<p>Examples:</p>
+<pre><code>for n in [1, 2, 3]:iter() {
+    print(n)
+}
+</code></pre>
+<pre><code>for key in keys(map) {
+    print(key, map[key])
+}
+</code></pre>
 <h3 id="return">Return</h3>
 <p>This is used to return a value to the caller and end execution of the current function. </p>
 <p>Examples: <code>return a + b</code>, <code>return null</code></p>
 <h3 id="break">Break</h3>
 <p>This is used to break out of any loop.</p>
-<p>Examples: <code>while true { if a &gt;= 10 { break } }</code></p>
+<p>Examples:</p>
+<pre><code>while true {
+    if a &gt;= 10 {
+        break
+    }
+    a += 1
+}
+</code></pre>
 <h3 id="continue">Continue</h3>
 <p>This is used to continue to the next iteration of the loop.</p>
-<p>Examples: <code>for n in numbers:iter() { if n == 5 { continue } print(n) }</code></p></div>
+<p>Examples:</p>
+<pre><code>for n in numbers:iter() {
+    if n == 5 {
+        continue
+    }
+    print(n)
+}
+</code></pre></div>
                 <footer>
     <div class="footer-buttons">
         <div class="previous"><a href="../grammar/" title="Grammar"><span>Previous</span></a></div>
