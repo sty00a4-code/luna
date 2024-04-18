@@ -48,6 +48,11 @@ pub enum Statement {
         case: Located<Block>,
         else_case: Option<Located<Block>>,
     },
+    Match {
+        expr: Located<Expression>,
+        cases: Vec<(Located<Expression>, Located<Block>)>,
+        default: Option<Located<Block>>
+    },
     While {
         cond: Located<Expression>,
         body: Located<Block>,

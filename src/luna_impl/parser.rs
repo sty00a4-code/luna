@@ -61,6 +61,18 @@ macro_rules! expect_token {
     }};
 }
 macro_rules! if_token {
+    ($parser:ident : $token:ident : _ => $body:block) => {{
+        if matches!(
+            $parser.peek(),
+            Some(Located {
+                value: Token::$token(_),
+                pos: _
+            })
+        ) {
+            $parser.next();
+            $body
+        }
+    }};
     ($parser:ident : $token:ident $pos:pat => $body:block) => {{
         if matches!(
             $parser.peek(),
@@ -70,7 +82,7 @@ macro_rules! if_token {
             })
         ) $body
     }};
-    ($parser:ident : $token:ident $body:block) => {{
+    ($parser:ident : $token:ident => $body:block) => {{
         if matches!(
             $parser.peek(),
             Some(Located {
@@ -176,7 +188,7 @@ impl Statement {
             pos.extend(&ident.pos);
             params.push(Parameter::parse(parser)?);
         });
-        if_token!(parser: Equal {
+        if_token!(parser: Equal => {
             let expr = Expression::parse(parser)?;
             pos.extend(&expr.pos);
             exprs.push(expr);
@@ -239,7 +251,7 @@ impl Statement {
         let case = Block::parse(parser)?;
         pos.extend(&case.pos);
         let mut else_case = None;
-        if_token!(parser: Else {
+        if_token!(parser: Else => {
             else_case = Some(
                 if let Some(Located {
                     value: Token::If,
@@ -262,6 +274,34 @@ impl Statement {
                 cond,
                 case,
                 else_case,
+            },
+            pos,
+        ))
+    }
+    pub fn parse_match(parser: &mut Parser) -> Result<Located<Self>, Located<ParseError>> {
+        let Located { value: _, mut pos } = parser.next().unwrap();
+        let expr = Expression::parse(parser)?;
+        let mut cases = vec![];
+        let mut default = None;
+        expect_token!(parser: BraceLeft);
+        let end_pos = until_match!(parser: BraceRight {
+            if_token!(parser: Else => {
+                expect_token!(parser: Equal);
+                default = Some(Block::parse(parser)?);
+                break
+            });
+            let variant = Expression::parse(parser)?;
+            expect_token!(parser: Equal);
+            let body = Block::parse(parser)?;
+            skip_token!(parser: Comma);
+            cases.push((variant, body));
+        });
+        pos.extend(&end_pos);
+        Ok(Located::new(
+            Self::Match {
+                expr,
+                cases,
+                default
             },
             pos,
         ))
@@ -293,6 +333,7 @@ impl Parsable for Statement {
             Token::Let => Self::parse_let(parser),
             Token::Fn => Self::parse_fn(parser, false),
             Token::If => Self::parse_if(parser),
+            Token::Match => Self::parse_match(parser),
             Token::While => Self::parse_while(parser),
             Token::For => Self::parse_for(parser),
             Token::Break => {

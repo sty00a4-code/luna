@@ -2,7 +2,8 @@ use super::position::{Located, Position};
 use crate::lang::{
     ast::*,
     code::{
-        Address, ByteCode, Closure, Location, ObjectSize, Register, Source, Upvalue, VectorSize,
+        Address, BinaryOperation, ByteCode, Closure, Location, ObjectSize, Register, Source,
+        Upvalue, VectorSize,
     },
     value::Value,
 };
@@ -696,10 +697,12 @@ impl Compilable for Located<Statement> {
                                 .new_local(ident);
                         }
                         Parameter::Object(fields) => {
-                            let head = Source::Register(compiler
-                                .frame_mut()
-                                .expect("no compiler frame on stack")
-                                .new_register());
+                            let head = Source::Register(
+                                compiler
+                                    .frame_mut()
+                                    .expect("no compiler frame on stack")
+                                    .new_register(),
+                            );
                             for Located { value: ident, pos } in fields.into_iter() {
                                 let field = Source::Constant(
                                     compiler
@@ -716,21 +719,16 @@ impl Compilable for Located<Statement> {
                                 compiler
                                     .frame_mut()
                                     .expect("no compiler frame on stack")
-                                    .write(
-                                        ByteCode::Field {
-                                            dst,
-                                            head,
-                                            field,
-                                        },
-                                        pos,
-                                    );
+                                    .write(ByteCode::Field { dst, head, field }, pos);
                             }
                         }
                         Parameter::Vector(idents) => {
-                            let head = Source::Register(compiler
-                                .frame_mut()
-                                .expect("no compiler frame on stack")
-                                .new_register());
+                            let head = Source::Register(
+                                compiler
+                                    .frame_mut()
+                                    .expect("no compiler frame on stack")
+                                    .new_register(),
+                            );
                             for (idx, Located { value: ident, pos }) in
                                 idents.into_iter().enumerate()
                             {
@@ -749,14 +747,7 @@ impl Compilable for Located<Statement> {
                                 compiler
                                     .frame_mut()
                                     .expect("no compiler frame on stack")
-                                    .write(
-                                        ByteCode::Field {
-                                            dst,
-                                            head,
-                                            field,
-                                        },
-                                        pos,
-                                    );
+                                    .write(ByteCode::Field { dst, head, field }, pos);
                             }
                         }
                     }
@@ -901,10 +892,12 @@ impl Compilable for Located<Statement> {
                                 .new_local(ident);
                         }
                         Parameter::Object(fields) => {
-                            let head = Source::Register(compiler
-                                .frame_mut()
-                                .expect("no compiler frame on stack")
-                                .new_register());
+                            let head = Source::Register(
+                                compiler
+                                    .frame_mut()
+                                    .expect("no compiler frame on stack")
+                                    .new_register(),
+                            );
                             for Located { value: ident, pos } in fields.into_iter() {
                                 let field = Source::Constant(
                                     compiler
@@ -921,21 +914,16 @@ impl Compilable for Located<Statement> {
                                 compiler
                                     .frame_mut()
                                     .expect("no compiler frame on stack")
-                                    .write(
-                                        ByteCode::Field {
-                                            dst,
-                                            head,
-                                            field,
-                                        },
-                                        pos,
-                                    );
+                                    .write(ByteCode::Field { dst, head, field }, pos);
                             }
                         }
                         Parameter::Vector(idents) => {
-                            let head = Source::Register(compiler
-                                .frame_mut()
-                                .expect("no compiler frame on stack")
-                                .new_register());
+                            let head = Source::Register(
+                                compiler
+                                    .frame_mut()
+                                    .expect("no compiler frame on stack")
+                                    .new_register(),
+                            );
                             for (idx, Located { value: ident, pos }) in
                                 idents.into_iter().enumerate()
                             {
@@ -954,14 +942,7 @@ impl Compilable for Located<Statement> {
                                 compiler
                                     .frame_mut()
                                     .expect("no compiler frame on stack")
-                                    .write(
-                                        ByteCode::Field {
-                                            dst,
-                                            head,
-                                            field,
-                                        },
-                                        pos,
-                                    );
+                                    .write(ByteCode::Field { dst, head, field }, pos);
                             }
                         }
                     }
@@ -1078,6 +1059,124 @@ impl Compilable for Located<Statement> {
                     .frame_mut()
                     .expect("no compiler frame on stack")
                     .overwrite(else_addr, ByteCode::Jump { addr: exit_addr }, Some(pos));
+                Ok(None)
+            }
+            Statement::Match {
+                expr,
+                cases,
+                default,
+            } => {
+                let expr = expr.compile(compiler)?;
+                let dst = Location::Register(
+                    compiler
+                        .frame_mut()
+                        .expect("no compiler frame on stack")
+                        .new_register(),
+                );
+                let mut exits = vec![];
+                for (variant, body) in cases {
+                    let variant_pos = variant.pos.clone();
+                    let variant = variant.compile(compiler)?;
+                    compiler
+                        .frame_mut()
+                        .expect("no compiler frame on stack")
+                        .write(
+                            ByteCode::Binary {
+                                op: BinaryOperation::EQ,
+                                dst,
+                                left: expr,
+                                right: variant,
+                            },
+                            variant_pos,
+                        );
+                    let check_addr = compiler
+                        .frame_mut()
+                        .expect("no compiler frame on stack")
+                        .write(ByteCode::default(), Position::default());
+
+                    compiler
+                        .frame_mut()
+                        .expect("no compiler frame on stack")
+                        .push_scope();
+                    body.compile(compiler)?;
+                    let scope = compiler
+                        .frame_mut()
+                        .expect("no compiler frame on stack")
+                        .pop_scope()
+                        .expect("no compiler frame on stack");
+                    if !scope.breaks.is_empty() {
+                        if let Some(prev_scope) = compiler
+                            .frame_mut()
+                            .expect("no compiler frame on stack")
+                            .scope_mut()
+                        {
+                            prev_scope.breaks.extend(scope.breaks);
+                        }
+                    }
+                    if !scope.continues.is_empty() {
+                        if let Some(prev_scope) = compiler
+                            .frame_mut()
+                            .expect("no compiler frame on stack")
+                            .scope_mut()
+                        {
+                            prev_scope.continues.extend(scope.continues);
+                        }
+                    }
+                    let exit_addr = compiler
+                        .frame_mut()
+                        .expect("no compiler frame on stack")
+                        .write(ByteCode::default(), Position::default());
+                    compiler
+                        .frame_mut()
+                        .expect("no compiler frame on stack")
+                        .overwrite(
+                            check_addr,
+                            ByteCode::JumpIf {
+                                negative: true,
+                                cond: dst.into(),
+                                addr: exit_addr + 1,
+                            },
+                            Some(pos.clone()),
+                        );
+                    exits.push(exit_addr);
+                }
+                if let Some(default) = default {
+                    compiler
+                        .frame_mut()
+                        .expect("no compiler frame on stack")
+                        .push_scope();
+                    default.compile(compiler)?;
+                    let scope = compiler
+                        .frame_mut()
+                        .expect("no compiler frame on stack")
+                        .pop_scope()
+                        .expect("no compiler frame on stack");
+                    if !scope.breaks.is_empty() {
+                        if let Some(prev_scope) = compiler
+                            .frame_mut()
+                            .expect("no compiler frame on stack")
+                            .scope_mut()
+                        {
+                            prev_scope.breaks.extend(scope.breaks);
+                        }
+                    }
+                    if !scope.continues.is_empty() {
+                        if let Some(prev_scope) = compiler
+                            .frame_mut()
+                            .expect("no compiler frame on stack")
+                            .scope_mut()
+                        {
+                            prev_scope.continues.extend(scope.continues);
+                        }
+                    }
+                }
+                let exit_addr = compiler.frame_mut().expect("no compiler frame on stack").addr();
+                for addr in exits {
+                    compiler
+                        .frame_mut()
+                        .expect("no compiler frame on stack")
+                        .overwrite(addr, ByteCode::Jump { addr: exit_addr }, Some(pos.clone()));
+                }
                 Ok(None)
             }
             Statement::While { cond, body } => {
@@ -1731,10 +1830,12 @@ impl Compilable for Located<Atom> {
                                 .new_local(ident);
                         }
                         Parameter::Object(fields) => {
-                            let head = Source::Register(compiler
-                                .frame_mut()
-                                .expect("no compiler frame on stack")
-                                .new_register());
+                            let head = Source::Register(
+                                compiler
+                                    .frame_mut()
+                                    .expect("no compiler frame on stack")
+                                    .new_register(),
+                            );
                             for Located { value: ident, pos } in fields.into_iter() {
                                 let field = Source::Constant(
                                     compiler
@@ -1751,21 +1852,16 @@ impl Compilable for Located<Atom> {
                                 compiler
                                     .frame_mut()
                                     .expect("no compiler frame on stack")
-                                    .write(
-                                        ByteCode::Field {
-                                            dst,
-                                            head,
-                                            field,
-                                        },
-                                        pos,
-                                    );
+                                    .write(ByteCode::Field { dst, head, field }, pos);
                             }
                         }
                         Parameter::Vector(idents) => {
-                            let head = Source::Register(compiler
-                                .frame_mut()
-                                .expect("no compiler frame on stack")
-                                .new_register());
+                            let head = Source::Register(
+                                compiler
+                                    .frame_mut()
+                                    .expect("no compiler frame on stack")
+                                    .new_register(),
+                            );
                             for (idx, Located { value: ident, pos }) in
                                 idents.into_iter().enumerate()
                             {
@@ -1784,14 +1880,7 @@ impl Compilable for Located<Atom> {
                                 compiler
                                     .frame_mut()
                                     .expect("no compiler frame on stack")
-                                    .write(
-                                        ByteCode::Field {
-                                            dst,
-                                            head,
-                                            field,
-                                        },
-                                        pos,
-                                    );
+                                    .write(ByteCode::Field { dst, head, field }, pos);
                             }
                         }
                     }
