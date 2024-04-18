@@ -148,7 +148,18 @@ setmeta(person, {})
 </tbody>
 </table>
 <h2 id="user-objects">User-Objects</h2>
-<p><em>...</em></p></div>
+<p>User-objects are externally defined structures in Luna's mother language, Rust. They allow for interoperational functionality between Luna and Rust. This is usefull for file handling for example.</p>
+<pre><code>let file = fs.open(&quot;test.txt&quot;, &quot;r&quot;)
+if some(file) {
+    print(file)
+    print(file:read())
+}
+</code></pre>
+<p>output:</p>
+<pre><code>file:0x631349d52af8 
+test test!
+</code></pre>
+<p>This code opens a file with the name <code>file.txt</code> in <strong>r</strong>ead mode and saves the <code>file</code> user-object in the local <code>file</code>. if the file was found, then the program first prints the file object and then the content of it with the <code>read</code> function.</p></div>
                 <footer>
     <div class="footer-buttons">
         <div class="previous"><a href="../variables/" title="Variables"><span>Previous</span></a></div>
