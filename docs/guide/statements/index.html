@@ -187,9 +187,10 @@
 <p>Examples:</p>
 <pre><code>match cmd {
     &quot;exit&quot; =&gt; { os.exit() }
-    cmd =&gt; {
+    cmd if cmd:len() &gt; 0 =&gt; {
         print(&quot;invalid command: %s&quot;:format(cmd))
     }
+    cmd =&gt; {}
 }
 </code></pre>
 <h3 id="while-loop">While-Loop</h3>
