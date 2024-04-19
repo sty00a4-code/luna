@@ -61,7 +61,7 @@ macro_rules! expect_token {
     }};
 }
 macro_rules! if_token {
-    ($parser:ident : $token:ident : _ => $body:block) => {{
+    ($parser:ident : $token:ident : _ => $body:block $(else $else:block)?) => {{
         if matches!(
             $parser.peek(),
             Some(Located {
@@ -71,18 +71,35 @@ macro_rules! if_token {
         ) {
             $parser.next();
             $body
-        }
+        } $(else $else)?
     }};
-    ($parser:ident : $token:ident $pos:pat => $body:block) => {{
+    ($parser:ident : $token:ident : $ident:ident $pos:ident => $body:block $(else $else:block)?) => {{
+        if matches!(
+            $parser.peek(),
+            Some(Located {
+                value: Token::$token(_),
+                pos: _
+            })
+        ) {
+            let Located {
+                value: Token::$token($ident),
+                pos: $pos,
+            } = $parser.next().unwrap() else {
+                panic!();
+            };
+            $body
+        } $(else $else)?
+    }};
+    ($parser:ident : $token:ident $pos:pat => $body:block $(else $else:block)?) => {{
         if matches!(
             $parser.peek(),
             Some(Located {
                 value: Token::$token,
                 pos: $pos
             })
-        ) $body
+        ) $body $(else $else)?
     }};
-    ($parser:ident : $token:ident => $body:block) => {{
+    ($parser:ident : $token:ident => $body:block $(else $else:block)?) => {{
         if matches!(
             $parser.peek(),
             Some(Located {
@@ -92,7 +109,7 @@ macro_rules! if_token {
         ) {
             $parser.next();
             $body
-        }
+        } $(else $else)?
     }};
 }
 macro_rules! skip_token {
@@ -282,26 +299,19 @@ impl Statement {
         let Located { value: _, mut pos } = parser.next().unwrap();
         let expr = Expression::parse(parser)?;
         let mut cases = vec![];
-        let mut default = None;
         expect_token!(parser: BraceLeft);
         let end_pos = until_match!(parser: BraceRight {
-            if_token!(parser: Else => {
-                expect_token!(parser: Equal);
-                default = Some(Block::parse(parser)?);
-                break
-            });
-            let variant = Expression::parse(parser)?;
-            expect_token!(parser: Equal);
+            let pattern = Pattern::parse(parser)?;
+            expect_token!(parser: EqualArrow);
             let body = Block::parse(parser)?;
             skip_token!(parser: Comma);
-            cases.push((variant, body));
+            cases.push((pattern, body));
         });
         pos.extend(&end_pos);
         Ok(Located::new(
             Self::Match {
                 expr,
                 cases,
-                default
             },
             pos,
         ))
@@ -454,6 +464,23 @@ impl Parsable for Statement {
                 pos.clone(),
             )),
         }
+    }
+}
+impl Parsable for Pattern {
+    fn parse(parser: &mut Parser) -> Result<Located<Self>, Located<ParseError>> {
+        let pattern = if_token!(parser: Ident: ident pos => {
+            Located::new(Self::Ident(ident), pos)
+        } else {
+            Atom::parse(parser)?.map(Self::Atom)
+        });
+        if_token!(parser: If => {
+            let cond = Expression::parse(parser)?;
+            let mut pos = pattern.pos.clone();
+            pos.extend(&cond.pos);
+            Ok(Located::new(Self::Guard { pattern: Box::new(pattern), cond }, pos))
+        } else {
+            Ok(pattern)
+        })
     }
 }
 impl Parsable for Expression {
@@ -794,7 +821,7 @@ impl Parsable for Parameter {
                 pos.extend(&end_pos);
                 Ok(Located::new(Self::Vector(fields), pos))
             }
-            token => Err(Located::new(ParseError::UnexpectedToken(token), pos))
+            token => Err(Located::new(ParseError::UnexpectedToken(token), pos)),
         }
     }
 }

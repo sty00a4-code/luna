@@ -1,0 +1,23 @@
+while true {
+    let args = input("> "):sep(" ")
+    let [head] = args
+    match head {
+        "send" => {
+            let [_, target, msg] = args
+            if !some(target) {
+                print("expected target")
+                continue
+            }
+            if !some(msg) {
+                print("expected message")
+                continue
+            }
+            print("sent %s the message: %q":format(target, msg))
+        }
+        "exit" => { break }
+        cmd if cmd:len() > 0 => {
+            print("invalid command: %q":format(cmd))
+        }
+        cmd => {}
+    }
+}

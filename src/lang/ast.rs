@@ -50,8 +50,7 @@ pub enum Statement {
     },
     Match {
         expr: Located<Expression>,
-        cases: Vec<(Located<Expression>, Located<Block>)>,
-        default: Option<Located<Block>>
+        cases: Vec<(Located<Pattern>, Located<Block>)>
     },
     While {
         cond: Located<Expression>,
@@ -76,6 +75,15 @@ pub enum AssignOperator {
     Percent,
     // Ampersand,
     // Pipe,
+}
+#[derive(Debug, Clone, PartialEq)]
+pub enum Pattern {
+    Ident(String),
+    Atom(Atom),
+    Guard {
+        pattern: Box<Located<Self>>,
+        cond: Located<Expression>
+    }
 }
 #[derive(Debug, Clone, PartialEq)]
 pub enum Expression {

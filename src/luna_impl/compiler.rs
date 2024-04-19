@@ -1005,11 +1005,11 @@ impl Compilable for Located<Statement> {
                         prev_scope.continues.extend(scope.continues);
                     }
                 }
-                let else_addr = compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .write(ByteCode::default(), Position::default());
                 if let Some(else_case) = else_case {
+                    let else_addr = compiler
+                        .frame_mut()
+                        .expect("no compiler frame on stack")
+                        .write(ByteCode::default(), Position::default());
                     compiler
                         .frame_mut()
                         .expect("no compiler frame on stack")
@@ -1038,35 +1038,53 @@ impl Compilable for Located<Statement> {
                             prev_scope.continues.extend(scope.continues);
                         }
                     }
+                    let exit_addr = compiler
+                        .frame_mut()
+                        .expect("no compiler frame on stack")
+                        .addr();
+                    compiler
+                        .frame_mut()
+                        .expect("no compiler frame on stack")
+                        .overwrite(
+                            check_addr,
+                            ByteCode::JumpIf {
+                                negative: true,
+                                cond,
+                                addr: else_addr + 1,
+                            },
+                            Some(pos.clone()),
+                        );
+                    compiler
+                        .frame_mut()
+                        .expect("no compiler frame on stack")
+                        .overwrite(else_addr, ByteCode::Jump { addr: exit_addr }, Some(pos));
+                } else {
+                    let exit_addr = compiler
+                        .frame_mut()
+                        .expect("no compiler frame on stack")
+                        .addr();
+                    compiler
+                        .frame_mut()
+                        .expect("no compiler frame on stack")
+                        .overwrite(
+                            check_addr,
+                            ByteCode::JumpIf {
+                                negative: true,
+                                cond,
+                                addr: exit_addr,
+                            },
+                            Some(pos.clone()),
+                        );
                 }
-                let exit_addr = compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .addr();
-                compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .overwrite(
-                        check_addr,
-                        ByteCode::JumpIf {
-                            negative: true,
-                            cond,
-                            addr: else_addr + 1,
-                        },
-                        Some(pos.clone()),
-                    );
-                compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .overwrite(else_addr, ByteCode::Jump { addr: exit_addr }, Some(pos));
+                
                 Ok(None)
             }
             Statement::Match {
                 expr,
                 cases,
-                default,
             } => {
                 let expr = expr.compile(compiler)?;
+                let registers = compiler.frame().expect("no compiler frame on stack").registers;
                 let dst = Location::Register(
                     compiler
                         .frame_mut()
@@ -1074,30 +1092,16 @@ impl Compilable for Located<Statement> {
                         .new_register(),
                 );
                 let mut exits = vec![];
-                for (variant, body) in cases {
-                    let variant_pos = variant.pos.clone();
-                    let variant = variant.compile(compiler)?;
-                    compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
-                        .write(
-                            ByteCode::Binary {
-                                op: BinaryOperation::EQ,
-                                dst,
-                                left: expr,
-                                right: variant,
-                            },
-                            variant_pos,
-                        );
-                    let check_addr = compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
-                        .write(ByteCode::default(), Position::default());
-
+                for (pattern, body) in cases {
                     compiler
                         .frame_mut()
                         .expect("no compiler frame on stack")
                         .push_scope();
+                    pattern.compile_match(compiler, expr, dst)?;
+                    let check_addr = compiler
+                        .frame_mut()
+                        .expect("no compiler frame on stack")
+                        .write(ByteCode::default(), Position::default());
                     body.compile(compiler)?;
                     let scope = compiler
                         .frame_mut()
@@ -1140,43 +1144,19 @@ impl Compilable for Located<Statement> {
                         );
                     exits.push(exit_addr);
                 }
-                if let Some(default) = default {
-                    compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
-                        .push_scope();
-                    default.compile(compiler)?;
-                    let scope = compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
-                        .pop_scope()
-                        .expect("no compiler frame on stack");
-                    if !scope.breaks.is_empty() {
-                        if let Some(prev_scope) = compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .scope_mut()
-                        {
-                            prev_scope.breaks.extend(scope.breaks);
-                        }
-                    }
-                    if !scope.continues.is_empty() {
-                        if let Some(prev_scope) = compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .scope_mut()
-                        {
-                            prev_scope.continues.extend(scope.continues);
-                        }
-                    }
-                }
-                let exit_addr = compiler.frame_mut().expect("no compiler frame on stack").addr();
+                let exit_addr = compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .addr();
                 for addr in exits {
-                    compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
-                        .overwrite(addr, ByteCode::Jump { addr: exit_addr }, Some(pos.clone()));
+                    if addr + 1 != exit_addr {
+                        compiler
+                            .frame_mut()
+                            .expect("no compiler frame on stack")
+                            .overwrite(addr, ByteCode::Jump { addr: exit_addr }, Some(pos.clone()));
+                    }
                 }
+                compiler.frame_mut().expect("no compiler frame on stack").registers = registers;
                 Ok(None)
             }
             Statement::While { cond, body } => {
@@ -1360,6 +1340,73 @@ impl Compilable for Located<Statement> {
                 Ok(None)
             }
         }
+    }
+}
+impl Located<Pattern> {
+    fn compile_match(
+        self,
+        compiler: &mut Compiler,
+        expr: Source,
+        dst: Location,
+    ) -> Result<(), Located<Box<dyn Error>>> {
+        let Located { value: pattern, pos } = self;
+        match pattern {
+            Pattern::Ident(ident) => {
+                let ident = compiler.frame_mut().expect("no compiler frame on stack").new_local(ident);
+                compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .write(
+                        ByteCode::Move {
+                            dst: Location::Register(ident),
+                            src: expr
+                        },
+                        pos.clone(),
+                    );
+                compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .write(
+                        ByteCode::Move {
+                            dst,
+                            src: Source::Bool(true)
+                        },
+                        pos,
+                    );
+            }
+            Pattern::Atom(atom) => {
+                let atom = Located::new(atom, pos.clone()).compile(compiler)?;
+                compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .write(
+                        ByteCode::Binary {
+                            op: BinaryOperation::EQ,
+                            dst,
+                            left: expr,
+                            right: atom,
+                        },
+                        pos,
+                    );
+            }
+            Pattern::Guard { pattern, cond } => {
+                pattern.compile_match(compiler, expr, dst)?;
+                let cond = cond.compile(compiler)?;
+                compiler
+                    .frame_mut()
+                    .expect("no compiler frame on stack")
+                    .write(
+                        ByteCode::Binary {
+                            op: BinaryOperation::And,
+                            dst,
+                            left: dst.into(),
+                            right: cond,
+                        },
+                        pos,
+                    );
+            }
+        }
+        Ok(())
     }
 }
 impl Compilable for Located<Expression> {

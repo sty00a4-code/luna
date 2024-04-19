@@ -86,6 +86,11 @@ impl<'source> Iterator for Lexer<'source> {
                     pos.extend(&self.pos());
                     self.advance();
                     Some(Ok(Located::new(Token::EqualEqual, pos)))
+                } else if self.source.peek() == Some(&'>') {
+                    self.source.next();
+                    pos.extend(&self.pos());
+                    self.advance();
+                    Some(Ok(Located::new(Token::EqualArrow, pos)))
                 } else {
                     Some(Ok(Located::new(Token::Equal, pos)))
                 }

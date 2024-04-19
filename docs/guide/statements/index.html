@@ -186,8 +186,8 @@
 <p>Classical match-case statement to check over multiple variants of one value.</p>
 <p>Examples:</p>
 <pre><code>match cmd {
-    &quot;exit&quot; = { os.exit() }
-    else = {
+    &quot;exit&quot; =&gt; { os.exit() }
+    cmd =&gt; {
         print(&quot;invalid command: %s&quot;:format(cmd))
     }
 }
