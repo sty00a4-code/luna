@@ -205,6 +205,7 @@ pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
         "object_raw" = function!(_typed_object_raw),
         "function" = function!(_typed_function),
         "numeric" = function!(_typed_numeric),
+        "iterable" = function!(_typed_iterable),
         "options" = globals["options"].borrow().clone(),
         "some" = globals["some"].borrow().clone()
     });
