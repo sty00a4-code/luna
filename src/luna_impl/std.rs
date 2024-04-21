@@ -44,6 +44,7 @@ pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
     set_field!(globals."raw_type" = function!(_raw_type));
     set_field!(globals."raw_get" = function!(_raw_get));
     set_field!(globals."raw_set" = function!(_raw_set));
+    set_field!(globals."iter" = function!(_iter));
     set_field!(
         globals.INT_MODULE = object! {
             "from" = function!(_int_from),
@@ -115,20 +116,20 @@ pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
             "clear" = function!(_vector_clear)
         }
     );
-    set_field!(
-        globals.OBJECT_MODULE = object! {
-            "len" = function!(_object_len),
-            "keys" = function!(_object_keys),
-            "values" = function!(_object_values),
-            "setmeta" = function!(_object_setmeta),
-            "getmeta" = function!(_object_getmeta),
-            "clear" = function!(_object_clear)
-        }
-    );
     set_field!(globals."keys" = function!(_object_keys));
     set_field!(globals."values" = function!(_object_values));
     set_field!(globals."setmeta" = function!(_object_setmeta));
     set_field!(globals."getmeta" = function!(_object_getmeta));
+    set_field!(
+        globals.OBJECT_MODULE = object! {
+            "len" = function!(_object_len),
+            "keys" = globals["keys"].borrow().clone(),
+            "values" = globals["values"].borrow().clone(),
+            "setmeta" = globals["setmeta"].borrow().clone(),
+            "getmeta" = globals["getmeta"].borrow().clone(),
+            "clear" = function!(_object_clear)
+        }
+    );
     set_field!(globals."range" = function!(_range));
     set_field!(globals."math" = object! {
         "pi" = Value::Float(std::f64::consts::PI),
@@ -335,7 +336,7 @@ pub fn _require(interpreter: &mut Interpreter, args: Vec<Value>) -> Result<Value
         unsafe {
             let lib = libloading::Library::new(format!("{path}.so"))?;
             let func: libloading::Symbol<
-                unsafe extern fn(&mut Interpreter, Vec<Value>) -> Result<Value, Box<dyn Error>>,
+                unsafe extern "C" fn(&mut Interpreter, Vec<Value>) -> Result<Value, Box<dyn Error>>,
             > = lib.get(b"require")?;
             return func(interpreter, Vec::from_iter(args.map(|(_, v)| v)));
         }
@@ -354,7 +355,10 @@ pub fn _require(interpreter: &mut Interpreter, args: Vec<Value>) -> Result<Value
             unsafe {
                 let lib = libloading::Library::new(format!("{global_path}/{path}.so"))?;
                 let func: libloading::Symbol<
-                    unsafe extern fn(&mut Interpreter, Vec<Value>) -> Result<Value, Box<dyn Error>>,
+                    unsafe extern "C" fn(
+                        &mut Interpreter,
+                        Vec<Value>,
+                    ) -> Result<Value, Box<dyn Error>>,
                 > = lib.get(b"require")?;
                 return func(interpreter, Vec::from_iter(args.map(|(_, v)| v)));
             }
@@ -1428,6 +1432,44 @@ pub fn _os_sleep(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn
     Ok(Value::default())
 }
 
+fn _iter(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let value = typed!(args);
+    match value {
+        Value::Vector(vector) => {
+            let vector = vector.borrow();
+            Ok(Value::UserObject(Rc::new(RefCell::new(Box::new(
+                IteratorObject(Box::new(vector.clone().into_iter())),
+            )))))
+        }
+        Value::String(string) => {
+            Ok(Value::UserObject(Rc::new(RefCell::new(Box::new(
+                IteratorObject(Box::new(
+                    string
+                        .chars()
+                        .map(Value::Char)
+                        .collect::<Vec<Value>>()
+                        .into_iter(),
+                )),
+            )))))
+        }
+        Value::Object(object) => {
+            let object = object.borrow();
+            Ok(Value::UserObject(Rc::new(RefCell::new(Box::new(
+                IteratorObject(Box::new(
+                    object
+                        .fields
+                        .keys()
+                        .cloned()
+                        .map(Value::String)
+                        .collect::<Vec<Value>>()
+                        .into_iter(),
+                )),
+            )))))
+        }
+        value => Err(format!("cannot iterate over {}", value.dynamic_typ()).into()),
+    }
+}
 fn _iter_next(_: &mut Interpreter, mut args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let Some(_self) = args.first().cloned() else {
         return Err(Box::new(UserObjectError::ExpectedSelf("null")));
