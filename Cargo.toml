@@ -5,6 +5,7 @@ edition = "2021"
 description = "a light weight interpreted programming language"
 license = "MIT"
 readme = "README_lib.md"
+repository = "https://github.com/sty00a4-code/luna"
 [package.metadata.bundle.bin.luna]
 name = "Luna"
 identifier = "luna"
