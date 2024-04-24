@@ -6,7 +6,7 @@ use super::{
 };
 use crate::lang::{
     code::{Address, BinaryOperation, ByteCode, Location, Register, Source, UnaryOperation},
-    value::{Function, FunctionKind, Object, Value, META_CALL, META_GET, META_NEXT, META_SET},
+    value::{Function, FunctionKind, Object, Value, META_CALL, META_GET, META_SET},
 };
 use std::{cell::RefCell, collections::HashMap, error::Error, fmt::Display, rc::Rc};
 
@@ -209,57 +209,56 @@ impl Interpreter {
                     self.call_frames.last_mut().expect("no call frame").idx = addr;
                 }
             }
-            ByteCode::Next { dst, src } => {
-                let iter = self
+            ByteCode::CallSingle { dst, func, arg } => {
+                let func = self
                     .call_frames
                     .last_mut()
                     .expect("no call frame")
-                    .source(&src)
-                    .expect("source not found");
-                let value_dst = self
+                    .source(&func)
+                    .expect("func not found");
+                let mut args = vec![self
                     .call_frames
                     .last_mut()
                     .expect("no call frame")
-                    .location(&dst)
-                    .expect("location not found");
-                *value_dst.borrow_mut() = match &iter {
-                    Value::UserObject(object) => {
-                        let object = Rc::clone(object);
-                        let mut object = object.borrow_mut();
-                        object
-                            .call_mut("next", vec![iter])
-                            .map_err(|err| RunTimeError::Custom(err.to_string()))
-                            .map_err(|err| Located::new(err, pos))?
-                    }
+                    .source(&arg)
+                    .expect("func not found")];
+                match func {
+                    Value::Function(kind) => self.call_kind(kind, args, dst, pos)?,
                     Value::Object(object) => {
-                        let object: Rc<RefCell<Object>> = Rc::clone(object);
+                        args.insert(0, Value::Object(Rc::clone(&object)));
                         let object = object.borrow();
-                        let value = object.get_meta(META_NEXT).unwrap_or_default();
-                        match value {
-                            Value::Function(kind) => match kind {
-                                FunctionKind::Function(function) => {
-                                    self.call(&function, vec![], Some(dst));
-                                    return Ok(None);
-                                }
-                                FunctionKind::UserFunction(func) => func(self, vec![])
-                                    .map_err(|err| RunTimeError::Custom(err.to_string()))
-                                    .map_err(|err| Located::new(err, pos))?,
-                            },
-                            _ => Value::default(),
+                        if let Some(Value::Function(kind)) = object.get_meta(META_CALL) {
+                            self.call_kind(kind, args, dst, pos)?;
                         }
                     }
-                    Value::Function(kind) => match kind {
-                        FunctionKind::Function(function) => {
-                            self.call(function, vec![], Some(dst));
-                            return Ok(None);
-                        }
-                        FunctionKind::UserFunction(func) => func(self, vec![])
-                            .map_err(|err| RunTimeError::Custom(err.to_string()))
-                            .map_err(|err| Located::new(err, pos))?,
-                    },
-                    iter => {
+                    value => {
                         return Err(Located::new(
-                            RunTimeError::CannotIter(iter.dynamic_typ()),
+                            RunTimeError::CannotCall(value.dynamic_typ()),
+                            pos,
+                        ))
+                    }
+                };
+            }
+            ByteCode::CallZero { dst, func } => {
+                let func = self
+                    .call_frames
+                    .last_mut()
+                    .expect("no call frame")
+                    .source(&func)
+                    .expect("func not found");
+                let mut args = Vec::with_capacity(1);
+                match func {
+                    Value::Function(kind) => self.call_kind(kind, args, dst, pos)?,
+                    Value::Object(object) => {
+                        args.insert(0, Value::Object(Rc::clone(&object)));
+                        let object = object.borrow();
+                        if let Some(Value::Function(kind)) = object.get_meta(META_CALL) {
+                            self.call_kind(kind, args, dst, pos)?;
+                        }
+                    }
+                    value => {
+                        return Err(Located::new(
+                            RunTimeError::CannotCall(value.dynamic_typ()),
                             pos,
                         ))
                     }

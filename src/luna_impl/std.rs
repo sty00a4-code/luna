@@ -1,7 +1,7 @@
 #![allow(unused_macros)]
 use crate::{
     function,
-    lang::value::{FunctionKind, Object, UserObject, UserObjectError, Value},
+    lang::value::{FunctionKind, Object, UserObject, UserObjectError, Value, META_NEXT},
     object, option, run_str, set_field, typed, userobject, ExpectedType, ExpectedTypes,
 };
 use std::{
@@ -20,7 +20,12 @@ use std::{
     time::Duration,
 };
 
-use super::interpreter::Interpreter;
+use super::{
+    interpreter::{Interpreter, RunTimeError},
+    position::Located,
+};
+
+pub const FOR_FUNC: &str = "next";
 
 pub const INT_MODULE: &str = "int";
 pub const FLOAT_MODULE: &str = "float";
@@ -45,6 +50,7 @@ pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
     set_field!(globals."raw_get" = function!(_raw_get));
     set_field!(globals."raw_set" = function!(_raw_set));
     set_field!(globals."iter" = function!(_iter));
+    set_field!(globals."next" = function!(_next));
     set_field!(
         globals.INT_MODULE = object! {
             "from" = function!(_int_from),
@@ -1442,17 +1448,15 @@ fn _iter(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>>
                 IteratorObject(Box::new(vector.clone().into_iter())),
             )))))
         }
-        Value::String(string) => {
-            Ok(Value::UserObject(Rc::new(RefCell::new(Box::new(
-                IteratorObject(Box::new(
-                    string
-                        .chars()
-                        .map(Value::Char)
-                        .collect::<Vec<Value>>()
-                        .into_iter(),
-                )),
-            )))))
-        }
+        Value::String(string) => Ok(Value::UserObject(Rc::new(RefCell::new(Box::new(
+            IteratorObject(Box::new(
+                string
+                    .chars()
+                    .map(Value::Char)
+                    .collect::<Vec<Value>>()
+                    .into_iter(),
+            )),
+        ))))),
         Value::Object(object) => {
             let object = object.borrow();
             Ok(Value::UserObject(Rc::new(RefCell::new(Box::new(
@@ -1469,6 +1473,49 @@ fn _iter(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>>
         }
         value => Err(format!("cannot iterate over {}", value.dynamic_typ()).into()),
     }
+}
+fn _next(interpreter: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let iter = typed!(args);
+    Ok(match &iter {
+        Value::UserObject(object) => {
+            let object = Rc::clone(object);
+            let mut object = object.borrow_mut();
+            object.call_mut("next", vec![iter])?
+        }
+        Value::Object(object) => {
+            let object: Rc<RefCell<Object>> = Rc::clone(object);
+            let object = object.borrow();
+            let value = object.get_meta(META_NEXT).unwrap_or_default();
+            match value {
+                Value::Function(kind) => match kind {
+                    FunctionKind::Function(function) => {
+                        interpreter.call(&function, vec![], None);
+                        return Ok(interpreter
+                            .run()
+                            .map_err(|Located { value: err, pos: _ }| err)?
+                            .unwrap_or_default());
+                    }
+                    FunctionKind::UserFunction(func) => func(interpreter, vec![])
+                        .map_err(|err| RunTimeError::Custom(err.to_string()))?,
+                },
+                _ => Value::default(),
+            }
+        }
+        Value::Function(kind) => match kind {
+            FunctionKind::Function(function) => {
+                interpreter.call(&function, vec![], None);
+                return Ok(interpreter
+                    .run()
+                    .map_err(|Located { value: err, pos: _ }| err)?
+                    .unwrap_or_default());
+            }
+            FunctionKind::UserFunction(func) => {
+                func(interpreter, vec![]).map_err(|err| RunTimeError::Custom(err.to_string()))?
+            }
+        },
+        iter => return Err(format!("cannot iterate over {}", iter.dynamic_typ()).into()),
+    })
 }
 fn _iter_next(_: &mut Interpreter, mut args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let Some(_self) = args.first().cloned() else {

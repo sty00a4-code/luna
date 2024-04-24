@@ -29,12 +29,18 @@ pub enum ByteCode {
         cond: Source,
         addr: Address,
     },
-    Next {
-        // 23 - 43 : u32 u32
-        dst: Location,
-        src: Source,
-    },
 
+    CallZero {
+        // 44 - 71 : u32 u32 u32 u32
+        dst: Option<Location>,
+        func: Source,
+    },
+    CallSingle {
+        // 44 - 71 : u32 u32 u32 u32
+        dst: Option<Location>,
+        func: Source,
+        arg: Source,
+    },
     Call {
         // 44 - 71 : u32 u32 u32 u32
         dst: Option<Location>,
@@ -193,7 +199,27 @@ impl Display for ByteCode {
             Self::JumpNull { cond, addr } => {
                 write!(f, "jumpnull {cond} *{addr:?}")
             }
-            Self::Next { dst, src } => write!(f, "next {dst} = {src}"),
+            Self::CallZero {
+                dst,
+                func,
+            } => {
+                if let Some(dst) = dst {
+                    write!(f, "call {func} -> {dst}")
+                } else {
+                    write!(f, "call {func}")
+                }
+            }
+            Self::CallSingle {
+                dst,
+                func,
+                arg,
+            } => {
+                if let Some(dst) = dst {
+                    write!(f, "call {func} @{arg} -> {dst}")
+                } else {
+                    write!(f, "call {func} @{arg}")
+                }
+            }
             Self::Call {
                 dst,
                 func,
