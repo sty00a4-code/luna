@@ -40,6 +40,16 @@ pub trait Compilable {
     fn compile(self, compiler: &mut Compiler) -> Result<Self::Output, Located<Box<dyn Error>>>;
 }
 
+macro_rules! compiler_frame {
+    ($compiler:ident) => {
+        $compiler.frame().expect("no compiler frame on stack")
+    };
+}
+macro_rules! compiler_frame_mut {
+    ($compiler:ident) => {
+        $compiler.frame_mut().expect("no compiler frame on stack")
+    };
+}
 impl Compiler {
     pub fn new(path: Option<String>) -> Self {
         Self {
@@ -198,10 +208,7 @@ impl Compilable for Located<Chunk> {
         for stat in chunk.0 {
             stat.compile(compiler)?;
         }
-        compiler
-            .frame_mut()
-            .expect("no compiler frame on stack")
-            .write(ByteCode::Return { src: None }, pos);
+        compiler_frame_mut!(compiler).write(ByteCode::Return { src: None }, pos);
         Ok(compiler
             .pop_frame()
             .expect("no compiler frame on stack")
@@ -227,31 +234,18 @@ impl Compilable for Located<Statement> {
         let Located { value: stat, pos } = self;
         match stat {
             Statement::Block(block) => {
-                compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .push_scope();
+                compiler_frame_mut!(compiler).push_scope();
                 Located::new(block, pos).compile(compiler)?;
-                let scope = compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
+                let scope = compiler_frame_mut!(compiler)
                     .pop_scope()
-                    .expect("no compiler frame on stack");
+                    .expect("no scope on stack");
                 if !scope.breaks.is_empty() {
-                    if let Some(prev_scope) = compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
-                        .scope_mut()
-                    {
+                    if let Some(prev_scope) = compiler_frame_mut!(compiler).scope_mut() {
                         prev_scope.breaks.extend(scope.breaks);
                     }
                 }
                 if !scope.continues.is_empty() {
-                    if let Some(prev_scope) = compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
-                        .scope_mut()
-                    {
+                    if let Some(prev_scope) = compiler_frame_mut!(compiler).scope_mut() {
                         prev_scope.continues.extend(scope.continues);
                     }
                 }
@@ -266,42 +260,27 @@ impl Compilable for Located<Statement> {
                     };
                     match param {
                         Parameter::Ident(ident) => {
-                            let dst = Location::Register(
-                                compiler
-                                    .frame_mut()
-                                    .expect("no compiler frame on stack")
-                                    .new_local(ident),
-                            );
-                            compiler
-                                .frame_mut()
-                                .expect("no compiler frame on stack")
-                                .write(ByteCode::Move { dst, src }, pos);
+                            let dst =
+                                Location::Register(compiler_frame_mut!(compiler).new_local(ident));
+                            compiler_frame_mut!(compiler).write(ByteCode::Move { dst, src }, pos);
                         }
                         Parameter::Object(fields) => {
                             for Located { value: ident, pos } in fields.into_iter() {
                                 let field = Source::Constant(
-                                    compiler
-                                        .frame_mut()
-                                        .expect("no compiler frame on stack")
+                                    compiler_frame_mut!(compiler)
                                         .new_const(Value::String(ident.clone())),
                                 );
                                 let dst = Location::Register(
-                                    compiler
-                                        .frame_mut()
-                                        .expect("no compiler frame on stack")
-                                        .new_local(ident),
+                                    compiler_frame_mut!(compiler).new_local(ident),
                                 );
-                                compiler
-                                    .frame_mut()
-                                    .expect("no compiler frame on stack")
-                                    .write(
-                                        ByteCode::Field {
-                                            dst,
-                                            head: src,
-                                            field,
-                                        },
-                                        pos,
-                                    );
+                                compiler_frame_mut!(compiler).write(
+                                    ByteCode::Field {
+                                        dst,
+                                        head: src,
+                                        field,
+                                    },
+                                    pos,
+                                );
                             }
                         }
                         Parameter::Vector(idents) => {
@@ -309,28 +288,20 @@ impl Compilable for Located<Statement> {
                                 idents.into_iter().enumerate()
                             {
                                 let field = Source::Constant(
-                                    compiler
-                                        .frame_mut()
-                                        .expect("no compiler frame on stack")
+                                    compiler_frame_mut!(compiler)
                                         .new_const(Value::Int(idx as isize as i64)),
                                 );
                                 let dst = Location::Register(
-                                    compiler
-                                        .frame_mut()
-                                        .expect("no compiler frame on stack")
-                                        .new_local(ident),
+                                    compiler_frame_mut!(compiler).new_local(ident),
                                 );
-                                compiler
-                                    .frame_mut()
-                                    .expect("no compiler frame on stack")
-                                    .write(
-                                        ByteCode::Field {
-                                            dst,
-                                            head: src,
-                                            field,
-                                        },
-                                        pos,
-                                    );
+                                compiler_frame_mut!(compiler).write(
+                                    ByteCode::Field {
+                                        dst,
+                                        head: src,
+                                        field,
+                                    },
+                                    pos,
+                                );
                             }
                         }
                     }
@@ -351,15 +322,11 @@ impl Compilable for Located<Statement> {
                     match path {
                         Path::Ident(ident) => {
                             let dst = compiler.get_variable_location(&ident).unwrap_or_else(|| {
-                                let addr = compiler
-                                    .frame_mut()
-                                    .expect("no compiler frame on stack")
-                                    .new_const(Value::String(ident));
+                                let addr =
+                                    compiler_frame_mut!(compiler).new_const(Value::String(ident));
                                 Location::Global(addr)
                             });
-                            compiler
-                                .frame_mut()
-                                .expect("no compiler frame on stack")
+                            compiler_frame_mut!(compiler)
                                 .write(ByteCode::Move { dst, src }, path_pos);
                         }
                         Path::Field {
@@ -371,36 +338,28 @@ impl Compilable for Located<Statement> {
                                 },
                         } => {
                             let head = head.compile(compiler)?;
-                            let field = compiler
-                                .frame_mut()
-                                .expect("no compiler frame on stack")
-                                .new_const(Value::String(field));
-                            compiler
-                                .frame_mut()
-                                .expect("no compiler frame on stack")
-                                .write(
-                                    ByteCode::SetField {
-                                        head: head.into(),
-                                        field: Source::Constant(field),
-                                        src,
-                                    },
-                                    path_pos,
-                                );
+                            let field =
+                                compiler_frame_mut!(compiler).new_const(Value::String(field));
+                            compiler_frame_mut!(compiler).write(
+                                ByteCode::SetField {
+                                    head: head.into(),
+                                    field: Source::Constant(field),
+                                    src,
+                                },
+                                path_pos,
+                            );
                         }
                         Path::Index { head, index } => {
                             let head = head.compile(compiler)?;
                             let field = index.compile(compiler)?;
-                            compiler
-                                .frame_mut()
-                                .expect("no compiler frame on stack")
-                                .write(
-                                    ByteCode::SetField {
-                                        head: head.into(),
-                                        field,
-                                        src,
-                                    },
-                                    path_pos,
-                                );
+                            compiler_frame_mut!(compiler).write(
+                                ByteCode::SetField {
+                                    head: head.into(),
+                                    field,
+                                    src,
+                                },
+                                path_pos,
+                            );
                         }
                     }
                 }
@@ -419,24 +378,19 @@ impl Compilable for Located<Statement> {
                 match path {
                     Path::Ident(ident) => {
                         let dst = compiler.get_variable_location(&ident).unwrap_or_else(|| {
-                            let addr = compiler
-                                .frame_mut()
-                                .expect("no compiler frame on stack")
-                                .new_const(Value::String(ident));
+                            let addr =
+                                compiler_frame_mut!(compiler).new_const(Value::String(ident));
                             Location::Global(addr)
                         });
-                        compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .write(
-                                ByteCode::Binary {
-                                    op: op.into(),
-                                    dst,
-                                    left: dst.into(),
-                                    right: src,
-                                },
-                                path_pos,
-                            );
+                        compiler_frame_mut!(compiler).write(
+                            ByteCode::Binary {
+                                op: op.into(),
+                                dst,
+                                left: dst.into(),
+                                right: src,
+                            },
+                            path_pos,
+                        );
                     }
                     Path::Field {
                         head,
@@ -447,90 +401,63 @@ impl Compilable for Located<Statement> {
                             },
                     } => {
                         let head = head.compile(compiler)?;
-                        let field = compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .new_const(Value::String(field));
-                        let dst = compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .new_register();
-                        compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .write(
-                                ByteCode::Field {
-                                    dst: Location::Register(dst),
-                                    head: head.into(),
-                                    field: Source::Constant(field),
-                                },
-                                path_pos.clone(),
-                            );
-                        compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .write(
-                                ByteCode::Binary {
-                                    op: op.into(),
-                                    dst: Location::Register(dst),
-                                    left: Source::Register(dst),
-                                    right: src,
-                                },
-                                path_pos.clone(),
-                            );
-                        compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .write(
-                                ByteCode::SetField {
-                                    head: head.into(),
-                                    field: Source::Constant(field),
-                                    src: Source::Register(dst),
-                                },
-                                path_pos,
-                            );
+                        let field = compiler_frame_mut!(compiler).new_const(Value::String(field));
+                        let dst = compiler_frame_mut!(compiler).new_register();
+                        compiler_frame_mut!(compiler).write(
+                            ByteCode::Field {
+                                dst: Location::Register(dst),
+                                head: head.into(),
+                                field: Source::Constant(field),
+                            },
+                            path_pos.clone(),
+                        );
+                        compiler_frame_mut!(compiler).write(
+                            ByteCode::Binary {
+                                op: op.into(),
+                                dst: Location::Register(dst),
+                                left: Source::Register(dst),
+                                right: src,
+                            },
+                            path_pos.clone(),
+                        );
+                        compiler_frame_mut!(compiler).write(
+                            ByteCode::SetField {
+                                head: head.into(),
+                                field: Source::Constant(field),
+                                src: Source::Register(dst),
+                            },
+                            path_pos,
+                        );
                     }
                     Path::Index { head, index } => {
                         let head = head.compile(compiler)?;
                         let field = index.compile(compiler)?;
-                        let dst = compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .new_register();
-                        compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .write(
-                                ByteCode::Field {
-                                    dst: Location::Register(dst),
-                                    head: head.into(),
-                                    field,
-                                },
-                                path_pos.clone(),
-                            );
-                        compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .write(
-                                ByteCode::Binary {
-                                    op: op.into(),
-                                    dst: Location::Register(dst),
-                                    left: Source::Register(dst),
-                                    right: src,
-                                },
-                                path_pos.clone(),
-                            );
-                        compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .write(
-                                ByteCode::SetField {
-                                    head: head.into(),
-                                    field,
-                                    src: Source::Register(dst),
-                                },
-                                path_pos,
-                            );
+                        let dst = compiler_frame_mut!(compiler).new_register();
+                        compiler_frame_mut!(compiler).write(
+                            ByteCode::Field {
+                                dst: Location::Register(dst),
+                                head: head.into(),
+                                field,
+                            },
+                            path_pos.clone(),
+                        );
+                        compiler_frame_mut!(compiler).write(
+                            ByteCode::Binary {
+                                op: op.into(),
+                                dst: Location::Register(dst),
+                                left: Source::Register(dst),
+                                right: src,
+                            },
+                            path_pos.clone(),
+                        );
+                        compiler_frame_mut!(compiler).write(
+                            ByteCode::SetField {
+                                head: head.into(),
+                                field,
+                                src: Source::Register(dst),
+                            },
+                            path_pos,
+                        );
                     }
                 }
                 Ok(None)
@@ -540,72 +467,51 @@ impl Compilable for Located<Statement> {
                 let amount = args.len() as u8;
                 match amount {
                     0 => {
-                        compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .write(
-                                ByteCode::CallZero {
-                                    dst: None,
-                                    func: path_location.into(),
-                                },
-                                pos,
-                            );
+                        compiler_frame_mut!(compiler).write(
+                            ByteCode::CallZero {
+                                dst: None,
+                                func: path_location.into(),
+                            },
+                            pos,
+                        );
                     }
                     1 => {
                         let arg = args.remove(0).compile(compiler)?;
-                        compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .write(
-                                ByteCode::CallSingle {
-                                    dst: None,
-                                    func: path_location.into(),
-                                    arg,
-                                },
-                                pos,
-                            );
+                        compiler_frame_mut!(compiler).write(
+                            ByteCode::CallSingle {
+                                dst: None,
+                                func: path_location.into(),
+                                arg,
+                            },
+                            pos,
+                        );
                     }
                     amount => {
-                        let offset = compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .registers;
-                        compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .add_registers(amount as Register);
+                        let offset = compiler_frame_mut!(compiler).registers;
+                        compiler_frame_mut!(compiler).add_registers(amount as Register);
                         for (register, arg) in
                             (offset..offset + amount as Register).zip(args.into_iter())
                         {
                             let pos = arg.pos.clone();
                             let src = arg.compile(compiler)?;
-                            compiler
-                                .frame_mut()
-                                .expect("no compiler frame on stack")
-                                .write(
-                                    ByteCode::Move {
-                                        dst: Location::Register(register),
-                                        src,
-                                    },
-                                    pos,
-                                );
-                        }
-                        compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .registers = offset;
-                        compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .write(
-                                ByteCode::Call {
-                                    dst: None,
-                                    func: path_location.into(),
-                                    offset,
-                                    amount,
+                            compiler_frame_mut!(compiler).write(
+                                ByteCode::Move {
+                                    dst: Location::Register(register),
+                                    src,
                                 },
                                 pos,
                             );
+                        }
+                        compiler_frame_mut!(compiler).registers = offset;
+                        compiler_frame_mut!(compiler).write(
+                            ByteCode::Call {
+                                dst: None,
+                                func: path_location.into(),
+                                offset,
+                                amount,
+                            },
+                            pos,
+                        );
                     }
                 }
                 Ok(None)
@@ -623,106 +529,67 @@ impl Compilable for Located<Statement> {
                 let head_location = head.compile(compiler)?;
                 let func = {
                     let head: Source = head_location.into();
-                    let dst = compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
-                        .new_register();
-                    let field_addr = compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
-                        .new_const(Value::String(field));
-                    compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
-                        .write(
-                            ByteCode::Field {
-                                dst: Location::Register(dst),
-                                head,
-                                field: Source::Constant(field_addr),
-                            },
-                            field_pos,
-                        );
+                    let dst = compiler_frame_mut!(compiler).new_register();
+                    let field_addr = compiler_frame_mut!(compiler).new_const(Value::String(field));
+                    compiler_frame_mut!(compiler).write(
+                        ByteCode::Field {
+                            dst: Location::Register(dst),
+                            head,
+                            field: Source::Constant(field_addr),
+                        },
+                        field_pos,
+                    );
                     Source::Register(dst)
                 };
                 let amount = args.len() as u8 + 1;
                 match amount {
                     1 => {
-                        let offset = compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .registers;
+                        let offset = compiler_frame_mut!(compiler).registers;
                         let arg = head_location.into();
-                        compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .registers = offset;
-                        compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .write(
-                                ByteCode::CallSingle {
-                                    dst: None,
-                                    func,
-                                    arg,
-                                },
-                                pos,
-                            );
+                        compiler_frame_mut!(compiler).registers = offset;
+                        compiler_frame_mut!(compiler).write(
+                            ByteCode::CallSingle {
+                                dst: None,
+                                func,
+                                arg,
+                            },
+                            pos,
+                        );
                     }
                     amount => {
-                        let offset = compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .registers;
-                        let head_register = compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .new_register();
-                        compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .write(
-                                ByteCode::Move {
-                                    dst: Location::Register(head_register),
-                                    src: head_location.into(),
-                                },
-                                head_pos,
-                            );
-                        compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .registers += amount as Register;
+                        let offset = compiler_frame_mut!(compiler).registers;
+                        let head_register = compiler_frame_mut!(compiler).new_register();
+                        compiler_frame_mut!(compiler).write(
+                            ByteCode::Move {
+                                dst: Location::Register(head_register),
+                                src: head_location.into(),
+                            },
+                            head_pos,
+                        );
+                        compiler_frame_mut!(compiler).registers += amount as Register;
                         for (register, arg) in
                             (offset + 1..offset + amount as Register).zip(args.into_iter())
                         {
                             let pos = arg.pos.clone();
                             let src = arg.compile(compiler)?;
-                            compiler
-                                .frame_mut()
-                                .expect("no compiler frame on stack")
-                                .write(
-                                    ByteCode::Move {
-                                        dst: Location::Register(register),
-                                        src,
-                                    },
-                                    pos,
-                                );
-                        }
-                        compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .registers = offset;
-                        compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .write(
-                                ByteCode::Call {
-                                    dst: None,
-                                    func,
-                                    offset,
-                                    amount,
+                            compiler_frame_mut!(compiler).write(
+                                ByteCode::Move {
+                                    dst: Location::Register(register),
+                                    src,
                                 },
                                 pos,
                             );
+                        }
+                        compiler_frame_mut!(compiler).registers = offset;
+                        compiler_frame_mut!(compiler).write(
+                            ByteCode::Call {
+                                dst: None,
+                                func,
+                                offset,
+                                amount,
+                            },
+                            pos,
+                        );
                     }
                 }
                 Ok(None)
@@ -752,93 +619,57 @@ impl Compilable for Located<Statement> {
                 {
                     match param {
                         Parameter::Ident(ident) => {
-                            compiler
-                                .frame_mut()
-                                .expect("no compiler frame on stack")
-                                .new_local(ident);
+                            compiler_frame_mut!(compiler).new_local(ident);
                         }
                         Parameter::Object(fields) => {
-                            let head = Source::Register(
-                                compiler
-                                    .frame_mut()
-                                    .expect("no compiler frame on stack")
-                                    .new_register(),
-                            );
+                            let head =
+                                Source::Register(compiler_frame_mut!(compiler).new_register());
                             for Located { value: ident, pos } in fields.into_iter() {
                                 let field = Source::Constant(
-                                    compiler
-                                        .frame_mut()
-                                        .expect("no compiler frame on stack")
+                                    compiler_frame_mut!(compiler)
                                         .new_const(Value::String(ident.clone())),
                                 );
                                 let dst = Location::Register(
-                                    compiler
-                                        .frame_mut()
-                                        .expect("no compiler frame on stack")
-                                        .new_local(ident),
+                                    compiler_frame_mut!(compiler).new_local(ident),
                                 );
-                                compiler
-                                    .frame_mut()
-                                    .expect("no compiler frame on stack")
+                                compiler_frame_mut!(compiler)
                                     .write(ByteCode::Field { dst, head, field }, pos);
                             }
                         }
                         Parameter::Vector(idents) => {
-                            let head = Source::Register(
-                                compiler
-                                    .frame_mut()
-                                    .expect("no compiler frame on stack")
-                                    .new_register(),
-                            );
+                            let head =
+                                Source::Register(compiler_frame_mut!(compiler).new_register());
                             for (idx, Located { value: ident, pos }) in
                                 idents.into_iter().enumerate()
                             {
                                 let field = Source::Constant(
-                                    compiler
-                                        .frame_mut()
-                                        .expect("no compiler frame on stack")
+                                    compiler_frame_mut!(compiler)
                                         .new_const(Value::Int(idx as isize as i64)),
                                 );
                                 let dst = Location::Register(
-                                    compiler
-                                        .frame_mut()
-                                        .expect("no compiler frame on stack")
-                                        .new_local(ident),
+                                    compiler_frame_mut!(compiler).new_local(ident),
                                 );
-                                compiler
-                                    .frame_mut()
-                                    .expect("no compiler frame on stack")
+                                compiler_frame_mut!(compiler)
                                     .write(ByteCode::Field { dst, head, field }, pos);
                             }
                         }
                     }
                 }
                 body.compile(compiler)?;
-                compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .write(ByteCode::Return { src: None }, pos.clone());
+                compiler_frame_mut!(compiler).write(ByteCode::Return { src: None }, pos.clone());
                 let closure = compiler
                     .pop_frame()
                     .expect("no compiler frame on stack")
                     .closure;
-                let addr = compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .new_closure(closure);
+                let addr = compiler_frame_mut!(compiler).new_closure(closure);
                 match path {
                     Path::Ident(ident) => {
                         let dst = compiler.get_variable_location(&ident).unwrap_or_else(|| {
-                            let addr = compiler
-                                .frame_mut()
-                                .expect("no compiler frame on stack")
-                                .new_const(Value::String(ident));
+                            let addr =
+                                compiler_frame_mut!(compiler).new_const(Value::String(ident));
                             Location::Global(addr)
                         });
-                        compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .write(ByteCode::Function { dst, addr }, pos);
+                        compiler_frame_mut!(compiler).write(ByteCode::Function { dst, addr }, pos);
                     }
                     Path::Field {
                         head,
@@ -849,72 +680,45 @@ impl Compilable for Located<Statement> {
                             },
                     } => {
                         let head = head.compile(compiler)?;
-                        let field = compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .new_const(Value::String(field));
-                        let register = compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .new_register();
-                        compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .write(
-                                ByteCode::Function {
-                                    dst: Location::Register(register),
-                                    addr,
-                                },
-                                path_pos.clone(),
-                            );
-                        compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .write(
-                                ByteCode::SetField {
-                                    head: head.into(),
-                                    field: Source::Constant(field),
-                                    src: Source::Register(register),
-                                },
-                                path_pos,
-                            );
-                        compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .registers = register;
+                        let field = compiler_frame_mut!(compiler).new_const(Value::String(field));
+                        let register = compiler_frame_mut!(compiler).new_register();
+                        compiler_frame_mut!(compiler).write(
+                            ByteCode::Function {
+                                dst: Location::Register(register),
+                                addr,
+                            },
+                            path_pos.clone(),
+                        );
+                        compiler_frame_mut!(compiler).write(
+                            ByteCode::SetField {
+                                head: head.into(),
+                                field: Source::Constant(field),
+                                src: Source::Register(register),
+                            },
+                            path_pos,
+                        );
+                        compiler_frame_mut!(compiler).registers = register;
                     }
                     Path::Index { head, index } => {
                         let head = head.compile(compiler)?;
                         let field = index.compile(compiler)?;
-                        let register = compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .new_register();
-                        compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .write(
-                                ByteCode::Function {
-                                    dst: Location::Register(register),
-                                    addr,
-                                },
-                                path_pos.clone(),
-                            );
-                        compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .write(
-                                ByteCode::SetField {
-                                    head: head.into(),
-                                    field,
-                                    src: Source::Register(register),
-                                },
-                                path_pos,
-                            );
-                        compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .registers = register;
+                        let register = compiler_frame_mut!(compiler).new_register();
+                        compiler_frame_mut!(compiler).write(
+                            ByteCode::Function {
+                                dst: Location::Register(register),
+                                addr,
+                            },
+                            path_pos.clone(),
+                        );
+                        compiler_frame_mut!(compiler).write(
+                            ByteCode::SetField {
+                                head: head.into(),
+                                field,
+                                src: Source::Register(register),
+                            },
+                            path_pos,
+                        );
+                        compiler_frame_mut!(compiler).registers = register;
                     }
                 }
                 Ok(None)
@@ -929,12 +733,7 @@ impl Compilable for Located<Statement> {
                 var_args: _,
                 body,
             } => {
-                let dst = Location::Register(
-                    compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
-                        .new_local(ident),
-                );
+                let dst = Location::Register(compiler_frame_mut!(compiler).new_local(ident));
                 compiler.push_frame(CompilerFrame {
                     closure: Rc::new(RefCell::new(Closure::default())),
                     scopes: vec![Scope::default()],
@@ -947,84 +746,50 @@ impl Compilable for Located<Statement> {
                 {
                     match param {
                         Parameter::Ident(ident) => {
-                            compiler
-                                .frame_mut()
-                                .expect("no compiler frame on stack")
-                                .new_local(ident);
+                            compiler_frame_mut!(compiler).new_local(ident);
                         }
                         Parameter::Object(fields) => {
-                            let head = Source::Register(
-                                compiler
-                                    .frame_mut()
-                                    .expect("no compiler frame on stack")
-                                    .new_register(),
-                            );
+                            let head =
+                                Source::Register(compiler_frame_mut!(compiler).new_register());
                             for Located { value: ident, pos } in fields.into_iter() {
                                 let field = Source::Constant(
-                                    compiler
-                                        .frame_mut()
-                                        .expect("no compiler frame on stack")
+                                    compiler_frame_mut!(compiler)
                                         .new_const(Value::String(ident.clone())),
                                 );
                                 let dst = Location::Register(
-                                    compiler
-                                        .frame_mut()
-                                        .expect("no compiler frame on stack")
-                                        .new_local(ident),
+                                    compiler_frame_mut!(compiler).new_local(ident),
                                 );
-                                compiler
-                                    .frame_mut()
-                                    .expect("no compiler frame on stack")
+                                compiler_frame_mut!(compiler)
                                     .write(ByteCode::Field { dst, head, field }, pos);
                             }
                         }
                         Parameter::Vector(idents) => {
-                            let head = Source::Register(
-                                compiler
-                                    .frame_mut()
-                                    .expect("no compiler frame on stack")
-                                    .new_register(),
-                            );
+                            let head =
+                                Source::Register(compiler_frame_mut!(compiler).new_register());
                             for (idx, Located { value: ident, pos }) in
                                 idents.into_iter().enumerate()
                             {
                                 let field = Source::Constant(
-                                    compiler
-                                        .frame_mut()
-                                        .expect("no compiler frame on stack")
+                                    compiler_frame_mut!(compiler)
                                         .new_const(Value::Int(idx as isize as i64)),
                                 );
                                 let dst = Location::Register(
-                                    compiler
-                                        .frame_mut()
-                                        .expect("no compiler frame on stack")
-                                        .new_local(ident),
+                                    compiler_frame_mut!(compiler).new_local(ident),
                                 );
-                                compiler
-                                    .frame_mut()
-                                    .expect("no compiler frame on stack")
+                                compiler_frame_mut!(compiler)
                                     .write(ByteCode::Field { dst, head, field }, pos);
                             }
                         }
                     }
                 }
                 body.compile(compiler)?;
-                compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .write(ByteCode::Return { src: None }, pos.clone());
+                compiler_frame_mut!(compiler).write(ByteCode::Return { src: None }, pos.clone());
                 let closure = compiler
                     .pop_frame()
                     .expect("no compiler frame on stack")
                     .closure;
-                let addr = compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .new_closure(closure);
-                compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .write(ByteCode::Function { dst, addr }, pos);
+                let addr = compiler_frame_mut!(compiler).new_closure(closure);
+                compiler_frame_mut!(compiler).write(ByteCode::Function { dst, addr }, pos);
                 Ok(None)
             }
             Statement::If {
@@ -1033,250 +798,159 @@ impl Compilable for Located<Statement> {
                 else_case,
             } => {
                 let cond = cond.compile(compiler)?;
-                let check_addr = compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .write(ByteCode::default(), Position::default());
+                let check_addr =
+                    compiler_frame_mut!(compiler).write(ByteCode::default(), Position::default());
 
-                compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .push_scope();
+                compiler_frame_mut!(compiler).push_scope();
                 case.compile(compiler)?;
-                let scope = compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
+                let scope = compiler_frame_mut!(compiler)
                     .pop_scope()
-                    .expect("no compiler frame on stack");
+                    .expect("no scope on stack");
                 if !scope.breaks.is_empty() {
-                    if let Some(prev_scope) = compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
-                        .scope_mut()
-                    {
+                    if let Some(prev_scope) = compiler_frame_mut!(compiler).scope_mut() {
                         prev_scope.breaks.extend(scope.breaks);
                     }
                 }
                 if !scope.continues.is_empty() {
-                    if let Some(prev_scope) = compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
-                        .scope_mut()
-                    {
+                    if let Some(prev_scope) = compiler_frame_mut!(compiler).scope_mut() {
                         prev_scope.continues.extend(scope.continues);
                     }
                 }
                 if let Some(else_case) = else_case {
-                    let else_addr = compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
+                    let else_addr = compiler_frame_mut!(compiler)
                         .write(ByteCode::default(), Position::default());
-                    compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
-                        .push_scope();
+                    compiler_frame_mut!(compiler).push_scope();
                     else_case.compile(compiler)?;
-                    let scope = compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
+                    let scope = compiler_frame_mut!(compiler)
                         .pop_scope()
-                        .expect("no compiler frame on stack");
+                        .expect("no scope on stack");
                     if !scope.breaks.is_empty() {
-                        if let Some(prev_scope) = compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .scope_mut()
-                        {
+                        if let Some(prev_scope) = compiler_frame_mut!(compiler).scope_mut() {
                             prev_scope.breaks.extend(scope.breaks);
                         }
                     }
                     if !scope.continues.is_empty() {
-                        if let Some(prev_scope) = compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .scope_mut()
-                        {
+                        if let Some(prev_scope) = compiler_frame_mut!(compiler).scope_mut() {
                             prev_scope.continues.extend(scope.continues);
                         }
                     }
-                    let exit_addr = compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
-                        .addr();
-                    compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
-                        .overwrite(
-                            check_addr,
-                            ByteCode::JumpIf {
-                                negative: true,
-                                cond,
-                                addr: else_addr + 1,
-                            },
-                            Some(pos.clone()),
-                        );
-                    compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
-                        .overwrite(else_addr, ByteCode::Jump { addr: exit_addr }, Some(pos));
+                    let exit_addr = compiler_frame_mut!(compiler).addr();
+                    compiler_frame_mut!(compiler).overwrite(
+                        check_addr,
+                        ByteCode::JumpIf {
+                            negative: true,
+                            cond,
+                            addr: else_addr + 1,
+                        },
+                        Some(pos.clone()),
+                    );
+                    compiler_frame_mut!(compiler).overwrite(
+                        else_addr,
+                        ByteCode::Jump { addr: exit_addr },
+                        Some(pos),
+                    );
                 } else {
-                    let exit_addr = compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
-                        .addr();
-                    compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
-                        .overwrite(
-                            check_addr,
-                            ByteCode::JumpIf {
-                                negative: true,
-                                cond,
-                                addr: exit_addr,
-                            },
-                            Some(pos.clone()),
-                        );
+                    let exit_addr = compiler_frame_mut!(compiler).addr();
+                    compiler_frame_mut!(compiler).overwrite(
+                        check_addr,
+                        ByteCode::JumpIf {
+                            negative: true,
+                            cond,
+                            addr: exit_addr,
+                        },
+                        Some(pos.clone()),
+                    );
                 }
 
                 Ok(None)
             }
             Statement::Match { expr, cases } => {
                 let expr = expr.compile(compiler)?;
-                let registers = compiler
-                    .frame()
-                    .expect("no compiler frame on stack")
-                    .registers;
-                let dst = Location::Register(
-                    compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
-                        .new_register(),
-                );
+                let registers = compiler_frame!(compiler).registers;
+                let dst = Location::Register(compiler_frame_mut!(compiler).new_register());
                 let mut exits = vec![];
                 for (pattern, body) in cases {
-                    compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
-                        .push_scope();
+                    compiler_frame_mut!(compiler).push_scope();
                     pattern.compile_match(compiler, expr, dst)?;
-                    let check_addr = compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
+                    let check_addr = compiler_frame_mut!(compiler)
                         .write(ByteCode::default(), Position::default());
                     body.compile(compiler)?;
-                    let scope = compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
+                    let scope = compiler_frame_mut!(compiler)
                         .pop_scope()
-                        .expect("no compiler frame on stack");
+                        .expect("no scope on stack");
                     if !scope.breaks.is_empty() {
-                        if let Some(prev_scope) = compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .scope_mut()
-                        {
+                        if let Some(prev_scope) = compiler_frame_mut!(compiler).scope_mut() {
                             prev_scope.breaks.extend(scope.breaks);
                         }
                     }
                     if !scope.continues.is_empty() {
-                        if let Some(prev_scope) = compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .scope_mut()
-                        {
+                        if let Some(prev_scope) = compiler_frame_mut!(compiler).scope_mut() {
                             prev_scope.continues.extend(scope.continues);
                         }
                     }
-                    let exit_addr = compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
+                    let exit_addr = compiler_frame_mut!(compiler)
                         .write(ByteCode::default(), Position::default());
-                    compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
-                        .overwrite(
-                            check_addr,
-                            ByteCode::JumpIf {
-                                negative: true,
-                                cond: dst.into(),
-                                addr: exit_addr + 1,
-                            },
-                            Some(pos.clone()),
-                        );
-                    exits.push(exit_addr);
-                }
-                let exit_addr = compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .addr();
-                for addr in exits {
-                    if addr + 1 != exit_addr {
-                        compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .overwrite(addr, ByteCode::Jump { addr: exit_addr }, Some(pos.clone()));
-                    }
-                }
-                compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .registers = registers;
-                Ok(None)
-            }
-            Statement::While { cond, body } => {
-                let start_addr = compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .addr();
-                let cond = cond.compile(compiler)?;
-                let check_addr = compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .write(ByteCode::default(), Position::default());
-                compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .push_scope();
-                body.compile(compiler)?;
-                let scope = compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .pop_scope()
-                    .expect("no scope on stack");
-                let exit_addr = compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .write(ByteCode::Jump { addr: start_addr }, pos.clone());
-                for addr in scope.breaks {
-                    compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
-                        .overwrite(
-                            addr,
-                            ByteCode::Jump {
-                                addr: exit_addr + 1,
-                            },
-                            None,
-                        );
-                }
-                for addr in scope.continues {
-                    compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
-                        .overwrite(addr, ByteCode::Jump { addr: start_addr }, None);
-                }
-                compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .overwrite(
+                    compiler_frame_mut!(compiler).overwrite(
                         check_addr,
                         ByteCode::JumpIf {
                             negative: true,
-                            cond,
+                            cond: dst.into(),
                             addr: exit_addr + 1,
                         },
-                        Some(pos),
+                        Some(pos.clone()),
                     );
+                    exits.push(exit_addr);
+                }
+                let exit_addr = compiler_frame_mut!(compiler).addr();
+                for addr in exits {
+                    if addr + 1 != exit_addr {
+                        compiler_frame_mut!(compiler).overwrite(
+                            addr,
+                            ByteCode::Jump { addr: exit_addr },
+                            Some(pos.clone()),
+                        );
+                    }
+                }
+                compiler_frame_mut!(compiler).registers = registers;
+                Ok(None)
+            }
+            Statement::While { cond, body } => {
+                let start_addr = compiler_frame_mut!(compiler).addr();
+                let cond = cond.compile(compiler)?;
+                let check_addr =
+                    compiler_frame_mut!(compiler).write(ByteCode::default(), Position::default());
+                compiler_frame_mut!(compiler).push_scope();
+                body.compile(compiler)?;
+                let scope = compiler_frame_mut!(compiler)
+                    .pop_scope()
+                    .expect("no scope on stack");
+                let exit_addr = compiler_frame_mut!(compiler)
+                    .write(ByteCode::Jump { addr: start_addr }, pos.clone());
+                for addr in scope.breaks {
+                    compiler_frame_mut!(compiler).overwrite(
+                        addr,
+                        ByteCode::Jump {
+                            addr: exit_addr + 1,
+                        },
+                        None,
+                    );
+                }
+                for addr in scope.continues {
+                    compiler_frame_mut!(compiler).overwrite(
+                        addr,
+                        ByteCode::Jump { addr: start_addr },
+                        None,
+                    );
+                }
+                compiler_frame_mut!(compiler).overwrite(
+                    check_addr,
+                    ByteCode::JumpIf {
+                        negative: true,
+                        cond,
+                        addr: exit_addr + 1,
+                    },
+                    Some(pos),
+                );
                 Ok(None)
             }
             Statement::For {
@@ -1296,100 +970,66 @@ impl Compilable for Located<Statement> {
                 // exit:    ...
 
                 let iter = iter.compile(compiler)?;
-                let register = compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .new_local(ident);
+                let register = compiler_frame_mut!(compiler).new_local(ident);
                 let func = Source::Global(
-                    compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
-                        .new_const(Value::String(FOR_FUNC.into())),
+                    compiler_frame_mut!(compiler).new_const(Value::String(FOR_FUNC.into())),
                 );
-                let start_addr = compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .write(
-                        ByteCode::CallSingle {
-                            dst: Some(Location::Register(register)),
-                            func,
-                            arg: iter,
-                        },
-                        pos.clone(),
-                    );
-                let check_addr = compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .write(ByteCode::default(), Position::default());
-                compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .push_scope();
+                let start_addr = compiler_frame_mut!(compiler).write(
+                    ByteCode::CallSingle {
+                        dst: Some(Location::Register(register)),
+                        func,
+                        arg: iter,
+                    },
+                    pos.clone(),
+                );
+                let check_addr =
+                    compiler_frame_mut!(compiler).write(ByteCode::default(), Position::default());
+                compiler_frame_mut!(compiler).push_scope();
                 body.compile(compiler)?;
-                let scope = compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
+                let scope = compiler_frame_mut!(compiler)
                     .pop_scope()
                     .expect("no scope on stack");
-                let exit_addr = compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
+                let exit_addr = compiler_frame_mut!(compiler)
                     .write(ByteCode::Jump { addr: start_addr }, pos.clone());
                 for addr in scope.breaks {
-                    compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
-                        .overwrite(
-                            addr,
-                            ByteCode::Jump {
-                                addr: exit_addr + 1,
-                            },
-                            None,
-                        );
-                }
-                for addr in scope.continues {
-                    compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
-                        .overwrite(addr, ByteCode::Jump { addr: start_addr }, None);
-                }
-                compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .overwrite(
-                        check_addr,
-                        ByteCode::JumpNull {
-                            cond: Source::Register(register),
+                    compiler_frame_mut!(compiler).overwrite(
+                        addr,
+                        ByteCode::Jump {
                             addr: exit_addr + 1,
                         },
-                        Some(pos),
+                        None,
                     );
+                }
+                for addr in scope.continues {
+                    compiler_frame_mut!(compiler).overwrite(
+                        addr,
+                        ByteCode::Jump { addr: start_addr },
+                        None,
+                    );
+                }
+                compiler_frame_mut!(compiler).overwrite(
+                    check_addr,
+                    ByteCode::JumpNull {
+                        cond: Source::Register(register),
+                        addr: exit_addr + 1,
+                    },
+                    Some(pos),
+                );
                 Ok(None)
             }
             Statement::Return(expr) => {
                 if let Some(expr) = expr {
                     let src = expr.compile(compiler)?;
-                    compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
-                        .write(ByteCode::Return { src: Some(src) }, pos);
+                    compiler_frame_mut!(compiler).write(ByteCode::Return { src: Some(src) }, pos);
                     Ok(Some(src))
                 } else {
-                    compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
-                        .write(ByteCode::Return { src: None }, pos);
+                    compiler_frame_mut!(compiler).write(ByteCode::Return { src: None }, pos);
                     Ok(Some(Source::Null))
                 }
             }
             Statement::Break => {
-                let addr = compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .write(ByteCode::None, pos);
-                compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
+                let addr = compiler_frame_mut!(compiler).write(ByteCode::None, pos);
+                compiler_frame_mut!(compiler)
                     .scope_mut()
                     .expect("no scope on stack")
                     .breaks
@@ -1397,13 +1037,8 @@ impl Compilable for Located<Statement> {
                 Ok(None)
             }
             Statement::Continue => {
-                let addr = compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .write(ByteCode::None, pos);
-                compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
+                let addr = compiler_frame_mut!(compiler).write(ByteCode::None, pos);
+                compiler_frame_mut!(compiler)
                     .scope_mut()
                     .expect("no scope on stack")
                     .continues
@@ -1426,61 +1061,46 @@ impl Located<Pattern> {
         } = self;
         match pattern {
             Pattern::Ident(ident) => {
-                let ident = compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .new_local(ident);
-                compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .write(
-                        ByteCode::Move {
-                            dst: Location::Register(ident),
-                            src: expr,
-                        },
-                        pos.clone(),
-                    );
-                compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .write(
-                        ByteCode::Move {
-                            dst,
-                            src: Source::Bool(true),
-                        },
-                        pos,
-                    );
+                let ident = compiler_frame_mut!(compiler).new_local(ident);
+                compiler_frame_mut!(compiler).write(
+                    ByteCode::Move {
+                        dst: Location::Register(ident),
+                        src: expr,
+                    },
+                    pos.clone(),
+                );
+                compiler_frame_mut!(compiler).write(
+                    ByteCode::Move {
+                        dst,
+                        src: Source::Bool(true),
+                    },
+                    pos,
+                );
             }
             Pattern::Atom(atom) => {
                 let atom = Located::new(atom, pos.clone()).compile(compiler)?;
-                compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .write(
-                        ByteCode::Binary {
-                            op: BinaryOperation::EQ,
-                            dst,
-                            left: expr,
-                            right: atom,
-                        },
-                        pos,
-                    );
+                compiler_frame_mut!(compiler).write(
+                    ByteCode::Binary {
+                        op: BinaryOperation::EQ,
+                        dst,
+                        left: expr,
+                        right: atom,
+                    },
+                    pos,
+                );
             }
             Pattern::Guard { pattern, cond } => {
                 pattern.compile_match(compiler, expr, dst)?;
                 let cond = cond.compile(compiler)?;
-                compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .write(
-                        ByteCode::Binary {
-                            op: BinaryOperation::And,
-                            dst,
-                            left: dst.into(),
-                            right: cond,
-                        },
-                        pos,
-                    );
+                compiler_frame_mut!(compiler).write(
+                    ByteCode::Binary {
+                        op: BinaryOperation::And,
+                        dst,
+                        left: dst.into(),
+                        right: cond,
+                    },
+                    pos,
+                );
             }
         }
         Ok(())
@@ -1495,43 +1115,31 @@ impl Compilable for Located<Expression> {
             Expression::Binary { op, left, right } => {
                 let left = left.compile(compiler)?;
                 let right = right.compile(compiler)?;
-                let register = compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .new_register();
+                let register = compiler_frame_mut!(compiler).new_register();
                 let dst = Location::Register(register);
-                compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .write(
-                        ByteCode::Binary {
-                            op: op.into(),
-                            dst,
-                            left,
-                            right,
-                        },
-                        pos,
-                    );
+                compiler_frame_mut!(compiler).write(
+                    ByteCode::Binary {
+                        op: op.into(),
+                        dst,
+                        left,
+                        right,
+                    },
+                    pos,
+                );
                 Ok(dst.into())
             }
             Expression::Unary { op, right } => {
                 let right = right.compile(compiler)?;
-                let register = compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .new_register();
+                let register = compiler_frame_mut!(compiler).new_register();
                 let dst = Location::Register(register);
-                compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .write(
-                        ByteCode::Unary {
-                            op: op.into(),
-                            dst,
-                            src: right,
-                        },
-                        pos,
-                    );
+                compiler_frame_mut!(compiler).write(
+                    ByteCode::Unary {
+                        op: op.into(),
+                        dst,
+                        src: right,
+                    },
+                    pos,
+                );
                 Ok(dst.into())
             }
             Expression::Call { head, mut args } => {
@@ -1539,86 +1147,56 @@ impl Compilable for Located<Expression> {
                 let amount = args.len() as u8;
                 match amount {
                     0 => {
-                        let dst = compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .new_register();
-                        compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .write(
-                                ByteCode::CallZero {
-                                    dst: Some(Location::Register(dst)),
-                                    func: head.into(),
-                                },
-                                pos,
-                            );
+                        let dst = compiler_frame_mut!(compiler).new_register();
+                        compiler_frame_mut!(compiler).write(
+                            ByteCode::CallZero {
+                                dst: Some(Location::Register(dst)),
+                                func: head.into(),
+                            },
+                            pos,
+                        );
                         Ok(Source::Register(dst))
                     }
                     1 => {
                         let arg = args.remove(0).compile(compiler)?;
-                        let dst = compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .new_register();
-                        compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .write(
-                                ByteCode::CallSingle {
-                                    dst: Some(Location::Register(dst)),
-                                    func: head.into(),
-                                    arg,
-                                },
-                                pos,
-                            );
+                        let dst = compiler_frame_mut!(compiler).new_register();
+                        compiler_frame_mut!(compiler).write(
+                            ByteCode::CallSingle {
+                                dst: Some(Location::Register(dst)),
+                                func: head.into(),
+                                arg,
+                            },
+                            pos,
+                        );
                         Ok(Source::Register(dst))
                     }
                     amount => {
-                        let offset = compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .registers;
-                        compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .add_registers(amount as Register);
+                        let offset = compiler_frame_mut!(compiler).registers;
+                        compiler_frame_mut!(compiler).add_registers(amount as Register);
                         for (register, arg) in
                             (offset..offset + amount as Register).zip(args.into_iter())
                         {
                             let pos = arg.pos.clone();
                             let src = arg.compile(compiler)?;
-                            compiler
-                                .frame_mut()
-                                .expect("no compiler frame on stack")
-                                .write(
-                                    ByteCode::Move {
-                                        dst: Location::Register(register),
-                                        src,
-                                    },
-                                    pos,
-                                );
-                        }
-                        compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .registers = offset;
-                        let dst = compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .new_register();
-                        compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .write(
-                                ByteCode::Call {
-                                    dst: Some(Location::Register(dst)),
-                                    func: head,
-                                    offset,
-                                    amount,
+                            compiler_frame_mut!(compiler).write(
+                                ByteCode::Move {
+                                    dst: Location::Register(register),
+                                    src,
                                 },
                                 pos,
                             );
+                        }
+                        compiler_frame_mut!(compiler).registers = offset;
+                        let dst = compiler_frame_mut!(compiler).new_register();
+                        compiler_frame_mut!(compiler).write(
+                            ByteCode::Call {
+                                dst: Some(Location::Register(dst)),
+                                func: head,
+                                offset,
+                                amount,
+                            },
+                            pos,
+                        );
                         Ok(Source::Register(dst))
                     }
                 }
@@ -1635,115 +1213,70 @@ impl Compilable for Located<Expression> {
                 let head_pos = head.pos.clone();
                 let head = head.compile(compiler)?;
                 let func = {
-                    let dst = compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
-                        .new_register();
-                    let field_addr = compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
-                        .new_const(Value::String(field));
-                    compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
-                        .write(
-                            ByteCode::Field {
-                                dst: Location::Register(dst),
-                                head,
-                                field: Source::Constant(field_addr),
-                            },
-                            field_pos,
-                        );
+                    let dst = compiler_frame_mut!(compiler).new_register();
+                    let field_addr = compiler_frame_mut!(compiler).new_const(Value::String(field));
+                    compiler_frame_mut!(compiler).write(
+                        ByteCode::Field {
+                            dst: Location::Register(dst),
+                            head,
+                            field: Source::Constant(field_addr),
+                        },
+                        field_pos,
+                    );
                     Source::Register(dst)
                 };
                 let amount = args.len() as u8 + 1;
                 match amount {
                     1 => {
-                        let offset = compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .registers;
+                        let offset = compiler_frame_mut!(compiler).registers;
                         let arg = head.into();
-                        compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .registers = offset;
-                        let dst = compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .new_register();
-                        compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .write(
-                                ByteCode::CallSingle {
-                                    dst: Some(Location::Register(dst)),
-                                    func,
-                                    arg,
-                                },
-                                pos,
-                            );
+                        compiler_frame_mut!(compiler).registers = offset;
+                        let dst = compiler_frame_mut!(compiler).new_register();
+                        compiler_frame_mut!(compiler).write(
+                            ByteCode::CallSingle {
+                                dst: Some(Location::Register(dst)),
+                                func,
+                                arg,
+                            },
+                            pos,
+                        );
                         Ok(Source::Register(dst))
                     }
                     amount => {
-                        let offset = compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .registers;
-                        let head_register = compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .new_register();
-                        compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .write(
-                                ByteCode::Move {
-                                    dst: Location::Register(head_register),
-                                    src: head,
-                                },
-                                head_pos,
-                            );
-                        compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .add_registers(amount as Register);
+                        let offset = compiler_frame_mut!(compiler).registers;
+                        let head_register = compiler_frame_mut!(compiler).new_register();
+                        compiler_frame_mut!(compiler).write(
+                            ByteCode::Move {
+                                dst: Location::Register(head_register),
+                                src: head,
+                            },
+                            head_pos,
+                        );
+                        compiler_frame_mut!(compiler).add_registers(amount as Register);
                         for (register, arg) in
                             (offset + 1..offset + amount as Register).zip(args.into_iter())
                         {
                             let pos = arg.pos.clone();
                             let src = arg.compile(compiler)?;
-                            compiler
-                                .frame_mut()
-                                .expect("no compiler frame on stack")
-                                .write(
-                                    ByteCode::Move {
-                                        dst: Location::Register(register),
-                                        src,
-                                    },
-                                    pos,
-                                );
-                        }
-                        compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .registers = offset;
-                        let dst = compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .new_register();
-                        compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .write(
-                                ByteCode::Call {
-                                    dst: Some(Location::Register(dst)),
-                                    func,
-                                    offset,
-                                    amount,
+                            compiler_frame_mut!(compiler).write(
+                                ByteCode::Move {
+                                    dst: Location::Register(register),
+                                    src,
                                 },
                                 pos,
                             );
+                        }
+                        compiler_frame_mut!(compiler).registers = offset;
+                        let dst = compiler_frame_mut!(compiler).new_register();
+                        compiler_frame_mut!(compiler).write(
+                            ByteCode::Call {
+                                dst: Some(Location::Register(dst)),
+                                func,
+                                offset,
+                                amount,
+                            },
+                            pos,
+                        );
                         Ok(Source::Register(dst))
                     }
                 }
@@ -1757,47 +1290,31 @@ impl Compilable for Located<Expression> {
                     },
             } => {
                 let head = head.compile(compiler)?;
-                let field = Source::Constant(
-                    compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
-                        .new_const(Value::String(field)),
+                let field =
+                    Source::Constant(compiler_frame_mut!(compiler).new_const(Value::String(field)));
+                let dst = compiler_frame_mut!(compiler).new_register();
+                compiler_frame_mut!(compiler).write(
+                    ByteCode::Field {
+                        dst: Location::Register(dst),
+                        head,
+                        field,
+                    },
+                    pos,
                 );
-                let dst = compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .new_register();
-                compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .write(
-                        ByteCode::Field {
-                            dst: Location::Register(dst),
-                            head,
-                            field,
-                        },
-                        pos,
-                    );
                 Ok(Source::Register(dst))
             }
             Expression::Index { head, index } => {
                 let head = head.compile(compiler)?;
                 let field = index.compile(compiler)?;
-                let dst = compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .new_register();
-                compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .write(
-                        ByteCode::Field {
-                            dst: Location::Register(dst),
-                            head,
-                            field,
-                        },
-                        pos,
-                    );
+                let dst = compiler_frame_mut!(compiler).new_register();
+                compiler_frame_mut!(compiler).write(
+                    ByteCode::Field {
+                        dst: Location::Register(dst),
+                        head,
+                        field,
+                    },
+                    pos,
+                );
                 Ok(Source::Register(dst))
             }
         }
@@ -1811,87 +1328,47 @@ impl Compilable for Located<Atom> {
             Atom::Path(path) => Ok(Located::new(path, pos).compile(compiler)?.into()),
             Atom::Null => Ok(Source::Null),
             Atom::Int(v) => Ok(Source::Constant(
-                compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .new_const(Value::Int(v)),
+                compiler_frame_mut!(compiler).new_const(Value::Int(v)),
             )),
             Atom::Float(v) => Ok(Source::Constant(
-                compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .new_const(Value::Float(v)),
+                compiler_frame_mut!(compiler).new_const(Value::Float(v)),
             )),
             Atom::Bool(v) => Ok(Source::Bool(v)),
             Atom::Char(v) => Ok(Source::Char(v)),
             Atom::String(v) => Ok(Source::Constant(
-                compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .new_const(Value::String(v)),
+                compiler_frame_mut!(compiler).new_const(Value::String(v)),
             )),
             Atom::Expression(expr) => expr.compile(compiler),
             Atom::Vector(exprs) => {
                 let amount = exprs.len() as VectorSize;
-                let register = compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .new_register();
+                let register = compiler_frame_mut!(compiler).new_register();
                 let dst = Location::Register(register);
-                let start = compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .registers;
+                let start = compiler_frame_mut!(compiler).registers;
                 let registers = (1..=amount)
-                    .map(|_| {
-                        compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .new_register()
-                    })
+                    .map(|_| compiler_frame_mut!(compiler).new_register())
                     .collect::<Vec<Register>>();
                 for (expr, register) in exprs.into_iter().zip(registers.into_iter()) {
                     let expr_pos = expr.pos.clone();
                     let src = expr.compile(compiler)?;
-                    compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
-                        .write(
-                            ByteCode::Move {
-                                dst: Location::Register(register),
-                                src,
-                            },
-                            expr_pos,
-                        );
+                    compiler_frame_mut!(compiler).write(
+                        ByteCode::Move {
+                            dst: Location::Register(register),
+                            src,
+                        },
+                        expr_pos,
+                    );
                 }
-                compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .registers = start;
-                compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .write(ByteCode::Vector { dst, start, amount }, pos);
+                compiler_frame_mut!(compiler).registers = start;
+                compiler_frame_mut!(compiler).write(ByteCode::Vector { dst, start, amount }, pos);
                 Ok(dst.into())
             }
             Atom::Object(entries) => {
                 let amount = entries.len() as ObjectSize;
-                let register = compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .new_register();
+                let register = compiler_frame_mut!(compiler).new_register();
                 let dst = Location::Register(register);
-                let start = compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .registers;
+                let start = compiler_frame_mut!(compiler).registers;
                 let registers = (1..amount * 2 + 1)
-                    .map(|_| {
-                        compiler
-                            .frame_mut()
-                            .expect("no compiler frame on stack")
-                            .new_register()
-                    })
+                    .map(|_| compiler_frame_mut!(compiler).new_register())
                     .collect::<Vec<Register>>();
                 for (
                     (
@@ -1904,41 +1381,26 @@ impl Compilable for Located<Atom> {
                     register,
                 ) in entries.into_iter().zip(registers.into_iter().step_by(2))
                 {
-                    let addr = compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
-                        .new_const(Value::String(key));
+                    let addr = compiler_frame_mut!(compiler).new_const(Value::String(key));
                     let expr_pos = expr.pos.clone();
                     let src = expr.compile(compiler)?;
-                    compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
-                        .write(
-                            ByteCode::Move {
-                                dst: Location::Register(register),
-                                src: Source::Constant(addr),
-                            },
-                            key_pos,
-                        );
-                    compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
-                        .write(
-                            ByteCode::Move {
-                                dst: Location::Register(register + 1),
-                                src,
-                            },
-                            expr_pos,
-                        );
+                    compiler_frame_mut!(compiler).write(
+                        ByteCode::Move {
+                            dst: Location::Register(register),
+                            src: Source::Constant(addr),
+                        },
+                        key_pos,
+                    );
+                    compiler_frame_mut!(compiler).write(
+                        ByteCode::Move {
+                            dst: Location::Register(register + 1),
+                            src,
+                        },
+                        expr_pos,
+                    );
                 }
-                compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .registers = start;
-                compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .write(ByteCode::Object { dst, start, amount }, pos);
+                compiler_frame_mut!(compiler).registers = start;
+                compiler_frame_mut!(compiler).write(ByteCode::Object { dst, start, amount }, pos);
                 Ok(dst.into())
             }
             Atom::If {
@@ -1947,61 +1409,43 @@ impl Compilable for Located<Atom> {
                 else_case,
             } => {
                 let cond = cond.compile(compiler)?;
-                let register = compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .new_register();
-                let check_addr = compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .write(ByteCode::default(), Position::default());
+                let register = compiler_frame_mut!(compiler).new_register();
+                let check_addr =
+                    compiler_frame_mut!(compiler).write(ByteCode::default(), Position::default());
 
                 let case = case.compile(compiler)?;
-                compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .write(
-                        ByteCode::Move {
-                            dst: Location::Register(register),
-                            src: case,
-                        },
-                        pos.clone(),
-                    );
-                let else_addr = compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .write(ByteCode::default(), Position::default());
+                compiler_frame_mut!(compiler).write(
+                    ByteCode::Move {
+                        dst: Location::Register(register),
+                        src: case,
+                    },
+                    pos.clone(),
+                );
+                let else_addr =
+                    compiler_frame_mut!(compiler).write(ByteCode::default(), Position::default());
                 let else_case = else_case.compile(compiler)?;
-                compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .write(
-                        ByteCode::Move {
-                            dst: Location::Register(register),
-                            src: else_case,
-                        },
-                        pos.clone(),
-                    );
-                let exit_addr = compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .addr();
-                compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .overwrite(
-                        check_addr,
-                        ByteCode::JumpIf {
-                            negative: true,
-                            cond,
-                            addr: else_addr + 1,
-                        },
-                        Some(pos.clone()),
-                    );
-                compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .overwrite(else_addr, ByteCode::Jump { addr: exit_addr }, Some(pos));
+                compiler_frame_mut!(compiler).write(
+                    ByteCode::Move {
+                        dst: Location::Register(register),
+                        src: else_case,
+                    },
+                    pos.clone(),
+                );
+                let exit_addr = compiler_frame_mut!(compiler).addr();
+                compiler_frame_mut!(compiler).overwrite(
+                    check_addr,
+                    ByteCode::JumpIf {
+                        negative: true,
+                        cond,
+                        addr: else_addr + 1,
+                    },
+                    Some(pos.clone()),
+                );
+                compiler_frame_mut!(compiler).overwrite(
+                    else_addr,
+                    ByteCode::Jump { addr: exit_addr },
+                    Some(pos),
+                );
                 Ok(Source::Register(register))
             }
             Atom::Fn {
@@ -2021,94 +1465,57 @@ impl Compilable for Located<Atom> {
                 {
                     match param {
                         Parameter::Ident(ident) => {
-                            compiler
-                                .frame_mut()
-                                .expect("no compiler frame on stack")
-                                .new_local(ident);
+                            compiler_frame_mut!(compiler).new_local(ident);
                         }
                         Parameter::Object(fields) => {
-                            let head = Source::Register(
-                                compiler
-                                    .frame_mut()
-                                    .expect("no compiler frame on stack")
-                                    .new_register(),
-                            );
+                            let head =
+                                Source::Register(compiler_frame_mut!(compiler).new_register());
                             for Located { value: ident, pos } in fields.into_iter() {
                                 let field = Source::Constant(
-                                    compiler
-                                        .frame_mut()
-                                        .expect("no compiler frame on stack")
+                                    compiler_frame_mut!(compiler)
                                         .new_const(Value::String(ident.clone())),
                                 );
                                 let dst = Location::Register(
-                                    compiler
-                                        .frame_mut()
-                                        .expect("no compiler frame on stack")
-                                        .new_local(ident),
+                                    compiler_frame_mut!(compiler).new_local(ident),
                                 );
-                                compiler
-                                    .frame_mut()
-                                    .expect("no compiler frame on stack")
+                                compiler_frame_mut!(compiler)
                                     .write(ByteCode::Field { dst, head, field }, pos);
                             }
                         }
                         Parameter::Vector(idents) => {
-                            let head = Source::Register(
-                                compiler
-                                    .frame_mut()
-                                    .expect("no compiler frame on stack")
-                                    .new_register(),
-                            );
+                            let head =
+                                Source::Register(compiler_frame_mut!(compiler).new_register());
                             for (idx, Located { value: ident, pos }) in
                                 idents.into_iter().enumerate()
                             {
                                 let field = Source::Constant(
-                                    compiler
-                                        .frame_mut()
-                                        .expect("no compiler frame on stack")
+                                    compiler_frame_mut!(compiler)
                                         .new_const(Value::Int(idx as isize as i64)),
                                 );
                                 let dst = Location::Register(
-                                    compiler
-                                        .frame_mut()
-                                        .expect("no compiler frame on stack")
-                                        .new_local(ident),
+                                    compiler_frame_mut!(compiler).new_local(ident),
                                 );
-                                compiler
-                                    .frame_mut()
-                                    .expect("no compiler frame on stack")
+                                compiler_frame_mut!(compiler)
                                     .write(ByteCode::Field { dst, head, field }, pos);
                             }
                         }
                     }
                 }
                 body.compile(compiler)?;
-                compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .write(ByteCode::Return { src: None }, pos.clone());
+                compiler_frame_mut!(compiler).write(ByteCode::Return { src: None }, pos.clone());
                 let closure = compiler
                     .pop_frame()
                     .expect("no compiler frame on stack")
                     .closure;
-                let addr = compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .new_closure(closure);
-                let register = compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .new_register();
-                compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .write(
-                        ByteCode::Function {
-                            dst: Location::Register(register),
-                            addr,
-                        },
-                        pos,
-                    );
+                let addr = compiler_frame_mut!(compiler).new_closure(closure);
+                let register = compiler_frame_mut!(compiler).new_register();
+                compiler_frame_mut!(compiler).write(
+                    ByteCode::Function {
+                        dst: Location::Register(register),
+                        addr,
+                    },
+                    pos,
+                );
                 Ok(Source::Register(register))
             }
         }
@@ -2123,10 +1530,7 @@ impl Compilable for Located<Path> {
                 if let Some(location) = compiler.get_variable_location(&ident) {
                     Ok(location)
                 } else {
-                    let addr = compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
-                        .new_const(Value::String(ident));
+                    let addr = compiler_frame_mut!(compiler).new_const(Value::String(ident));
                     Ok(Location::Global(addr))
                 }
             }
@@ -2139,47 +1543,31 @@ impl Compilable for Located<Path> {
                     },
             } => {
                 let head = head.compile(compiler)?;
-                let field = Source::Constant(
-                    compiler
-                        .frame_mut()
-                        .expect("no compiler frame on stack")
-                        .new_const(Value::String(field)),
+                let field =
+                    Source::Constant(compiler_frame_mut!(compiler).new_const(Value::String(field)));
+                let dst = compiler_frame_mut!(compiler).new_register();
+                compiler_frame_mut!(compiler).write(
+                    ByteCode::Field {
+                        dst: Location::Register(dst),
+                        head: head.into(),
+                        field,
+                    },
+                    pos,
                 );
-                let dst = compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .new_register();
-                compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .write(
-                        ByteCode::Field {
-                            dst: Location::Register(dst),
-                            head: head.into(),
-                            field,
-                        },
-                        pos,
-                    );
                 Ok(Location::Register(dst))
             }
             Path::Index { head, index } => {
                 let head = head.compile(compiler)?;
                 let field = index.compile(compiler)?;
-                let dst = compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .new_register();
-                compiler
-                    .frame_mut()
-                    .expect("no compiler frame on stack")
-                    .write(
-                        ByteCode::Field {
-                            dst: Location::Register(dst),
-                            head: head.into(),
-                            field,
-                        },
-                        pos,
-                    );
+                let dst = compiler_frame_mut!(compiler).new_register();
+                compiler_frame_mut!(compiler).write(
+                    ByteCode::Field {
+                        dst: Location::Register(dst),
+                        head: head.into(),
+                        field,
+                    },
+                    pos,
+                );
                 Ok(Location::Register(dst))
             }
         }
