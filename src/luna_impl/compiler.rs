@@ -40,14 +40,16 @@ pub trait Compilable {
     fn compile(self, compiler: &mut Compiler) -> Result<Self::Output, Located<Box<dyn Error>>>;
 }
 
+pub const COMPILER_FRAME_EXPECT: &str = "no compiler frame on stack";
+pub const COMPILER_SCOPE_EXPECT: &str = "no scope on stack";
 macro_rules! compiler_frame {
     ($compiler:ident) => {
-        $compiler.frame().expect("no compiler frame on stack")
+        $compiler.frame().expect(COMPILER_FRAME_EXPECT)
     };
 }
 macro_rules! compiler_frame_mut {
     ($compiler:ident) => {
-        $compiler.frame_mut().expect("no compiler frame on stack")
+        $compiler.frame_mut().expect(COMPILER_FRAME_EXPECT)
     };
 }
 impl Compiler {
@@ -805,7 +807,7 @@ impl Compilable for Located<Statement> {
                 case.compile(compiler)?;
                 let scope = compiler_frame_mut!(compiler)
                     .pop_scope()
-                    .expect("no scope on stack");
+                    .expect(COMPILER_SCOPE_EXPECT);
                 if !scope.breaks.is_empty() {
                     if let Some(prev_scope) = compiler_frame_mut!(compiler).scope_mut() {
                         prev_scope.breaks.extend(scope.breaks);
@@ -823,7 +825,7 @@ impl Compilable for Located<Statement> {
                     else_case.compile(compiler)?;
                     let scope = compiler_frame_mut!(compiler)
                         .pop_scope()
-                        .expect("no scope on stack");
+                        .expect(COMPILER_SCOPE_EXPECT);
                     if !scope.breaks.is_empty() {
                         if let Some(prev_scope) = compiler_frame_mut!(compiler).scope_mut() {
                             prev_scope.breaks.extend(scope.breaks);
@@ -877,7 +879,7 @@ impl Compilable for Located<Statement> {
                     body.compile(compiler)?;
                     let scope = compiler_frame_mut!(compiler)
                         .pop_scope()
-                        .expect("no scope on stack");
+                        .expect(COMPILER_SCOPE_EXPECT);
                     if !scope.breaks.is_empty() {
                         if let Some(prev_scope) = compiler_frame_mut!(compiler).scope_mut() {
                             prev_scope.breaks.extend(scope.breaks);
@@ -923,7 +925,7 @@ impl Compilable for Located<Statement> {
                 body.compile(compiler)?;
                 let scope = compiler_frame_mut!(compiler)
                     .pop_scope()
-                    .expect("no scope on stack");
+                    .expect(COMPILER_SCOPE_EXPECT);
                 let exit_addr = compiler_frame_mut!(compiler)
                     .write(ByteCode::Jump { addr: start_addr }, pos.clone());
                 for addr in scope.breaks {
@@ -988,7 +990,7 @@ impl Compilable for Located<Statement> {
                 body.compile(compiler)?;
                 let scope = compiler_frame_mut!(compiler)
                     .pop_scope()
-                    .expect("no scope on stack");
+                    .expect(COMPILER_SCOPE_EXPECT);
                 let exit_addr = compiler_frame_mut!(compiler)
                     .write(ByteCode::Jump { addr: start_addr }, pos.clone());
                 for addr in scope.breaks {
@@ -1031,7 +1033,7 @@ impl Compilable for Located<Statement> {
                 let addr = compiler_frame_mut!(compiler).write(ByteCode::None, pos);
                 compiler_frame_mut!(compiler)
                     .scope_mut()
-                    .expect("no scope on stack")
+                    .expect(COMPILER_SCOPE_EXPECT)
                     .breaks
                     .insert(addr);
                 Ok(None)
@@ -1040,7 +1042,7 @@ impl Compilable for Located<Statement> {
                 let addr = compiler_frame_mut!(compiler).write(ByteCode::None, pos);
                 compiler_frame_mut!(compiler)
                     .scope_mut()
-                    .expect("no scope on stack")
+                    .expect(COMPILER_SCOPE_EXPECT)
                     .continues
                     .insert(addr);
                 Ok(None)
