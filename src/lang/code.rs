@@ -215,9 +215,9 @@ impl Display for ByteCode {
                 arg,
             } => {
                 if let Some(dst) = dst {
-                    write!(f, "call {func} @{arg} -> {dst}")
+                    write!(f, "call {func} {arg} -> {dst}")
                 } else {
-                    write!(f, "call {func} @{arg}")
+                    write!(f, "call {func} {arg}")
                 }
             }
             Self::Call {
