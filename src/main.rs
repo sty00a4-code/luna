@@ -136,7 +136,7 @@ fn main() {
                     let src = match expr.compile(&mut compiler) {
                         Ok(src) => src,
                         Err(Located { value: err, pos }) => {
-                            eprintln!("ERROR {}:{}: {err:?}", pos.ln.start + 1, pos.col.start + 1);
+                            eprintln!("ERROR {}:{}: {err}", pos.ln.start + 1, pos.col.start + 1);
                             continue;
                         }
                     };
@@ -150,7 +150,7 @@ fn main() {
                     Ok(chunk) => match chunk.compile(&mut Compiler::default()) {
                         Ok(closure) => closure,
                         Err(Located { value: err, pos }) => {
-                            eprintln!("ERROR {}:{}: {err:?}", pos.ln.start + 1, pos.col.start + 1);
+                            eprintln!("ERROR {}:{}: {err}", pos.ln.start + 1, pos.col.start + 1);
                             continue;
                         }
                     },
@@ -168,7 +168,7 @@ fn main() {
             match interpreter.run() {
                 Ok(Some(value)) => println!("{value:?}"),
                 Err(Located { value: err, pos }) => {
-                    eprintln!("ERROR {}:{}: {err:?}", pos.ln.start + 1, pos.col.start + 1);
+                    eprintln!("ERROR {}:{}: {err}", pos.ln.start + 1, pos.col.start + 1);
                     continue;
                 }
                 _ => {}

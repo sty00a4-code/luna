@@ -804,14 +804,6 @@ impl Interpreter {
                         self.call_kind(kind, vec![left, right], Some(dst), pos)?;
                         return Ok(None);
                     }
-                    return Err(Located::new(
-                        RunTimeError::InvalidBinary {
-                            op,
-                            left: left.dynamic_typ(),
-                            right: right.dynamic_typ(),
-                        },
-                        pos,
-                    ));
                 }
                 *dst_value.borrow_mut() = match op {
                     BinaryOperation::Add => match (left, right) {

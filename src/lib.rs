@@ -4,7 +4,6 @@ pub mod luna_impl;
 pub mod tests;
 
 use lang::{
-    ast::Chunk,
     code::Closure,
     tokens::Token,
     value::{Function, Value},
