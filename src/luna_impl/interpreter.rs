@@ -1036,13 +1036,6 @@ impl Interpreter {
                         self.call_kind(kind, vec![src], Some(dst), pos)?;
                         return Ok(None);
                     }
-                    return Err(Located::new(
-                        RunTimeError::InvalidUnary {
-                            op,
-                            right: src.dynamic_typ(),
-                        },
-                        pos,
-                    ));
                 }
                 *dst_value.borrow_mut() = match op {
                     UnaryOperation::Neg => match src {

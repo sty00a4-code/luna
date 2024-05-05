@@ -12,7 +12,7 @@ use luna_impl::{
     compiler::{Compilable, Compiler},
     interpreter::Interpreter,
     lexer::Lexer,
-    parser::Parsable,
+    parser::{Parsable, ParseError},
     position::{Located, PathLocated},
 };
 use std::{cell::RefCell, env, error::Error, fmt::Display, rc::Rc};
@@ -23,7 +23,12 @@ pub fn lex_str(text: &str) -> Result<Vec<Located<Token>>, Located<Box<dyn Error>
         .map_err(|err| err.map(|err| err.into()))
 }
 pub fn parse_str<A: Parsable>(text: &str) -> Result<Located<A>, Located<Box<dyn Error>>> {
-    A::parse(&mut lex_str(text)?.into_iter().peekable()).map_err(|err| err.map(|err| err.into()))
+    let mut lexer = lex_str(text)?.into_iter().peekable();
+    let ast = A::parse(&mut lexer).map_err(|err| err.map(|err| err.into()))?;
+    if let Some(Located { value: token, pos }) = lexer.next() {
+        return Err(Located::new(ParseError::UnexpectedToken(token).into(), pos));
+    }
+    Ok(ast)
 }
 pub fn compile_str<A: Parsable>(
     text: &str,
