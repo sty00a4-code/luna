@@ -1,7 +1,7 @@
 #![allow(unused_macros)]
 use crate::{
     function,
-    lang::value::{FunctionKind, Object, UserObject, UserObjectError, Value, META_NEXT},
+    lang::{ast::Chunk, value::{FunctionKind, Object, UserObject, UserObjectError, Value, META_NEXT}},
     object, option, run_str, set_field, typed, userobject, ExpectedType, ExpectedTypes,
 };
 use std::{
@@ -381,7 +381,7 @@ pub fn _require(interpreter: &mut Interpreter, args: Vec<Value>) -> Result<Value
             global_path: None,
         }));
     };
-    Ok(run_str(&text, Some(&full_path))
+    Ok(run_str::<Chunk>(&text, Some(&full_path))
         .map_err(|err| {
             format!(
                 "{full_path}:{}:{}: {}",

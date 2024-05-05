@@ -24,7 +24,7 @@ pub struct Compiler {
 }
 #[derive(Debug, Default)]
 pub struct CompilerFrame {
-    pub(crate) closure: Rc<RefCell<Closure>>,
+    pub closure: Rc<RefCell<Closure>>,
     pub(crate) scopes: Vec<Scope>,
     pub(crate) registers: Register,
 }

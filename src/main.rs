@@ -1,12 +1,5 @@
 pub extern crate luna_lib;
 
-use luna_lib::luna_impl::{
-    compiler::{Compilable, Compiler},
-    interpreter::Interpreter,
-    lexer::Lexer,
-    parser::Parsable,
-    position::Located,
-};
 use luna_lib::{
     lang::{
         ast::Chunk,
@@ -14,7 +7,18 @@ use luna_lib::{
         tokens::Token,
         value::{Function, Value},
     },
-    luna_impl::position::PathLocated,
+    luna_impl::{compiler::CompilerFrame, position::PathLocated},
+};
+use luna_lib::{
+    lang::{ast::Expression, code::ByteCode},
+    luna_impl::{
+        compiler::{Compilable, Compiler},
+        interpreter::Interpreter,
+        lexer::Lexer,
+        parser::Parsable,
+        position::{Located, Position},
+    },
+    parse_str,
 };
 use std::{
     cell::RefCell,
@@ -22,7 +26,9 @@ use std::{
     env::{self, Args},
     error::Error,
     fmt::Display,
-    fs, process,
+    fs,
+    io::{self, Write},
+    process,
     rc::Rc,
 };
 
@@ -53,7 +59,7 @@ pub fn compile(
 ) -> Result<Rc<RefCell<Closure>>, Located<Box<dyn Error>>> {
     let ast = parse(text, args)?;
     let closure = ast.compile(&mut Compiler {
-        path: Some(args.path.clone()),
+        path: args.path.as_ref().cloned(),
         ..Default::default()
     })?;
     if args.code {
@@ -63,7 +69,9 @@ pub fn compile(
     Ok(closure)
 }
 pub fn run(text: &str, args: &LunaArgs) -> Result<Option<Value>, PathLocated<Box<dyn Error>>> {
-    let closure = compile(text, args).map_err(|err| err.with_path(args.path.clone()))?;
+    let closure = compile(text, args).map_err(|err| {
+        err.with_path(args.path.as_ref().cloned().unwrap_or("<input>".to_string()))
+    })?;
     let function = Rc::new(Function {
         closure,
         upvalues: vec![],
@@ -83,36 +91,95 @@ fn main() {
             process::exit(1);
         })
         .unwrap();
-    let text = fs::read_to_string(&args.path)
-        .map_err(|err| {
-            eprintln!("ERROR: error while reading {:?}: {err}", args.path);
-            process::exit(1);
-        })
-        .unwrap();
-    let value = run(&text, &args)
-        .map_err(
-            |PathLocated {
-                 value: err,
-                 path,
-                 pos,
-             }| {
-                eprintln!(
-                    "ERROR {path}:{}:{}: {err}",
-                    pos.ln.start + 1,
-                    pos.col.start + 1
-                );
+    if let Some(path) = &args.path {
+        let text = fs::read_to_string(path)
+            .map_err(|err| {
+                eprintln!("ERROR: error while reading {:?}: {err}", args.path);
                 process::exit(1);
-            },
-        )
-        .unwrap();
-    if let Some(value) = value {
-        println!("{value}");
+            })
+            .unwrap();
+        let value = run(&text, &args)
+            .map_err(
+                |PathLocated {
+                     value: err,
+                     path,
+                     pos,
+                 }| {
+                    eprintln!(
+                        "ERROR {path}:{}:{}: {err}",
+                        pos.ln.start + 1,
+                        pos.col.start + 1
+                    );
+                },
+            )
+            .unwrap();
+        if let Some(value) = value {
+            println!("{value}");
+        }
+    } else {
+        let mut interpreter = Interpreter::default().with_global_path(env::var("LUNA_PATH").ok());
+        loop {
+            let mut input = String::new();
+            print!("> ");
+            let _ = io::stdout().flush();
+            io::stdin()
+                .read_line(&mut input)
+                .map_err(|err| {
+                    eprintln!("ERROR: error while reading from input: {err}");
+                    process::exit(1);
+                })
+                .unwrap();
+            let closure = match parse_str::<Expression>(&input) {
+                Ok(expr) => {
+                    let mut compiler = Compiler::default();
+                    compiler.push_frame(CompilerFrame::default());
+                    let src = match expr.compile(&mut compiler) {
+                        Ok(src) => src,
+                        Err(Located { value: err, pos }) => {
+                            eprintln!("ERROR {}:{}: {err:?}", pos.ln.start + 1, pos.col.start + 1);
+                            continue;
+                        }
+                    };
+                    compiler
+                        .frame_mut()
+                        .unwrap()
+                        .write(ByteCode::Return { src: Some(src) }, Position::default());
+                    compiler.pop_frame().unwrap().closure
+                }
+                Err(Located { value: err, pos }) => match parse_str::<Chunk>(&input) {
+                    Ok(chunk) => match chunk.compile(&mut Compiler::default()) {
+                        Ok(closure) => closure,
+                        Err(Located { value: err, pos }) => {
+                            eprintln!("ERROR {}:{}: {err:?}", pos.ln.start + 1, pos.col.start + 1);
+                            continue;
+                        }
+                    },
+                    Err(_) => {
+                        eprintln!("ERROR {}:{}: {err}", pos.ln.start + 1, pos.col.start + 1);
+                        continue;
+                    }
+                },
+            };
+            let function = Rc::new(Function {
+                closure,
+                upvalues: vec![],
+            });
+            interpreter.call(&function, vec![], None);
+            match interpreter.run() {
+                Ok(Some(value)) => println!("{value:?}"),
+                Err(Located { value: err, pos }) => {
+                    eprintln!("ERROR {}:{}: {err:?}", pos.ln.start + 1, pos.col.start + 1);
+                    continue;
+                }
+                _ => {}
+            }
+        }
     }
 }
 
 #[derive(Debug, Clone, Default)]
 pub struct LunaArgs {
-    path: String,
+    path: Option<String>,
 
     tokens: bool,
     ast: bool,
@@ -165,9 +232,9 @@ impl TryFrom<Args> for LunaArgs {
         }
         Ok(Self {
             path: if !singles.is_empty() {
-                singles.remove(0)
+                Some(singles.remove(0))
             } else {
-                return Err(LunaArgsError);
+                None
             },
             tokens: flags.contains("tokens") || flags.contains("t"),
             ast: flags.contains("ast") || flags.contains("a"),

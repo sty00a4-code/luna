@@ -23,25 +23,30 @@ pub fn lex_str(text: &str) -> Result<Vec<Located<Token>>, Located<Box<dyn Error>
         .lex()
         .map_err(|err| err.map(|err| err.into()))
 }
-pub fn parse_str(text: &str) -> Result<Located<Chunk>, Located<Box<dyn Error>>> {
-    Chunk::parse(&mut lex_str(text)?.into_iter().peekable())
-        .map_err(|err| err.map(|err| err.into()))
+pub fn parse_str<A: Parsable>(text: &str) -> Result<Located<A>, Located<Box<dyn Error>>> {
+    A::parse(&mut lex_str(text)?.into_iter().peekable()).map_err(|err| err.map(|err| err.into()))
 }
-pub fn compile_str(
+pub fn compile_str<A: Parsable>(
     text: &str,
     path: Option<&str>,
-) -> Result<Rc<RefCell<Closure>>, Located<Box<dyn Error>>> {
-    let ast = parse_str(text)?;
+) -> Result<Rc<RefCell<Closure>>, Located<Box<dyn Error>>>
+where
+    Located<A>: Compilable<Output = Rc<RefCell<Closure>>>,
+{
+    let ast = parse_str::<A>(text)?;
     let closure = ast.compile(&mut Compiler {
         path: path.map(|s| s.to_string()),
         ..Default::default()
     })?;
     Ok(closure)
 }
-pub fn run_str(
+pub fn run_str<A: Parsable>(
     text: &str,
     path: Option<&str>,
-) -> Result<Option<Value>, PathLocated<Box<dyn Error>>> {
+) -> Result<Option<Value>, PathLocated<Box<dyn Error>>>
+where
+    Located<A>: Compilable<Output = Rc<RefCell<Closure>>>,
+{
     let closure = compile_str(text, path).map_err(|err| {
         err.with_path(
             path.map(|path| path.to_string())
