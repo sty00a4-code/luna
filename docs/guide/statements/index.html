@@ -182,6 +182,25 @@
     print(&quot;semi-yay&quot;)
 }
 </code></pre>
+<h3 id="if-branch_1">If-Branch</h3>
+<p>Assignes the right side of the equal to the parameter on the left and only enters the branch, if the value is not <code>null</code>.</p>
+<p>Examples:</p>
+<pre><code>if let name = person.name {
+    print(name)
+}
+</code></pre>
+<pre><code>if let name = person.name {
+    print(name)
+} else {
+    print(&quot;anonymous&quot;)
+}
+</code></pre>
+<pre><code>if let name = person.name {
+    print(name)
+} else if let nickname = person.nickname {
+    print(nickname)
+}
+</code></pre>
 <h3 id="match">Match</h3>
 <p>Classical match-case statement to check over multiple variants of one value.</p>
 <p>Examples:</p>
@@ -198,6 +217,13 @@
 <p>Examples:</p>
 <pre><code>while a &lt; 10 {
     a += 1
+}
+</code></pre>
+<h3 id="while-let-loop">While-Let-Loop</h3>
+<p>Assigns the right side of the equals to parameter on the left side. If it is <code>null</code>, the loop is exited. </p>
+<p>Examples:</p>
+<pre><code>while let n = range:next() {
+    print(n)
 }
 </code></pre>
 <h3 id="for-loop">For-Loop</h3>
