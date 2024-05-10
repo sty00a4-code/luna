@@ -110,6 +110,7 @@ fn main() {
                         pos.ln.start + 1,
                         pos.col.start + 1
                     );
+                    process::exit(1);
                 },
             )
             .unwrap();
