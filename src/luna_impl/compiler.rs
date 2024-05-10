@@ -386,7 +386,7 @@ impl Compilable for Located<Statement> {
                     ByteCode::JumpNull {
                         negative: true,
                         cond,
-                        addr: exit_addr + 1,
+                        addr: exit_addr,
                     },
                     Some(pos.clone()),
                 );
@@ -819,7 +819,10 @@ impl Compilable for Located<Statement> {
             } => {
                 let dst = Location::Register(compiler_frame_mut!(compiler).new_local(ident));
                 compiler.push_frame(CompilerFrame {
-                    closure: Rc::new(RefCell::new(Closure::default())),
+                    closure: Rc::new(RefCell::new(Closure {
+                        path: compiler.path.clone(),
+                        ..Default::default()
+                    })),
                     scopes: vec![Scope::default()],
                     registers: 0,
                 });
@@ -1765,7 +1768,10 @@ impl Compilable for Located<Atom> {
                 body,
             } => {
                 compiler.push_frame(CompilerFrame {
-                    closure: Rc::new(RefCell::new(Closure::default())),
+                    closure: Rc::new(RefCell::new(Closure {
+                        path: compiler.path.clone(),
+                        ..Default::default()
+                    })),
                     scopes: vec![Scope::default()],
                     registers: 0,
                 });
