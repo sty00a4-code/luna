@@ -26,6 +26,7 @@ pub enum ByteCode {
     },
     JumpNull {
         // 16 - 22 : u32 u32
+        negative: bool,
         cond: Source,
         addr: Address,
     },
@@ -196,8 +197,12 @@ impl Display for ByteCode {
                     write!(f, "jumpif {cond} *{addr:?}")
                 }
             }
-            Self::JumpNull { cond, addr } => {
-                write!(f, "jumpnull {cond} *{addr:?}")
+            Self::JumpNull { negative, cond, addr } => {
+                if *negative {
+                    write!(f, "jumpnotnull {cond} *{addr:?}")
+                } else {
+                    write!(f, "jumpnull {cond} *{addr:?}")
+                }
             }
             Self::CallZero {
                 dst,

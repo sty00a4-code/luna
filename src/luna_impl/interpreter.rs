@@ -197,7 +197,7 @@ impl Interpreter {
                     self.call_frames.last_mut().expect("no call frame").idx = addr;
                 }
             }
-            ByteCode::JumpNull { cond, addr } => {
+            ByteCode::JumpNull { negative: false, cond, addr } => {
                 if self
                     .call_frames
                     .last_mut()
@@ -205,6 +205,18 @@ impl Interpreter {
                     .source(&cond)
                     .expect("cond not found")
                     == Value::default()
+                {
+                    self.call_frames.last_mut().expect("no call frame").idx = addr;
+                }
+            }
+            ByteCode::JumpNull { negative: true, cond, addr } => {
+                if self
+                    .call_frames
+                    .last_mut()
+                    .expect("no call frame")
+                    .source(&cond)
+                    .expect("cond not found")
+                    != Value::default()
                 {
                     self.call_frames.last_mut().expect("no call frame").idx = addr;
                 }

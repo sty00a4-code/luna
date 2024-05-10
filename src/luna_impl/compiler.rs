@@ -310,6 +310,88 @@ impl Compilable for Located<Statement> {
                 }
                 Ok(None)
             }
+            Statement::LetElse {
+                param:
+                    Located {
+                        value: param,
+                        pos: _,
+                    },
+                expr,
+                else_case,
+            } => {
+                let cond = expr.compile(compiler)?;
+                match param {
+                    Parameter::Ident(ident) => {
+                        let dst =
+                            Location::Register(compiler_frame_mut!(compiler).new_local(ident));
+                        compiler_frame_mut!(compiler).write(ByteCode::Move { dst, src: cond }, pos.clone());
+                    }
+                    Parameter::Object(fields) => {
+                        for Located { value: ident, pos } in fields.into_iter() {
+                            let field = Source::Constant(
+                                compiler_frame_mut!(compiler)
+                                    .new_const(Value::String(ident.clone())),
+                            );
+                            let dst =
+                                Location::Register(compiler_frame_mut!(compiler).new_local(ident));
+                            compiler_frame_mut!(compiler).write(
+                                ByteCode::Field {
+                                    dst,
+                                    head: cond,
+                                    field,
+                                },
+                                pos,
+                            );
+                        }
+                    }
+                    Parameter::Vector(idents) => {
+                        for (idx, Located { value: ident, pos }) in idents.into_iter().enumerate() {
+                            let field = Source::Constant(
+                                compiler_frame_mut!(compiler)
+                                    .new_const(Value::Int(idx as isize as i64)),
+                            );
+                            let dst =
+                                Location::Register(compiler_frame_mut!(compiler).new_local(ident));
+                            compiler_frame_mut!(compiler).write(
+                                ByteCode::Field {
+                                    dst,
+                                    head: cond,
+                                    field,
+                                },
+                                pos,
+                            );
+                        }
+                    }
+                }
+                let check_addr =
+                    compiler_frame_mut!(compiler).write(ByteCode::default(), Position::default());
+                compiler_frame_mut!(compiler).push_scope();
+                else_case.compile(compiler)?;
+                let scope = compiler_frame_mut!(compiler)
+                    .pop_scope()
+                    .expect(COMPILER_SCOPE_EXPECT);
+                if !scope.breaks.is_empty() {
+                    if let Some(prev_scope) = compiler_frame_mut!(compiler).scope_mut() {
+                        prev_scope.breaks.extend(scope.breaks);
+                    }
+                }
+                if !scope.continues.is_empty() {
+                    if let Some(prev_scope) = compiler_frame_mut!(compiler).scope_mut() {
+                        prev_scope.continues.extend(scope.continues);
+                    }
+                }
+                let exit_addr = compiler_frame_mut!(compiler).addr();
+                compiler_frame_mut!(compiler).overwrite(
+                    check_addr,
+                    ByteCode::JumpNull {
+                        negative: true,
+                        cond,
+                        addr: exit_addr + 1,
+                    },
+                    Some(pos.clone()),
+                );
+                Ok(None)
+            }
             Statement::Assign { paths, mut exprs } => {
                 for Located {
                     value: path,
@@ -968,6 +1050,7 @@ impl Compilable for Located<Statement> {
                     compiler_frame_mut!(compiler).overwrite(
                         check_addr,
                         ByteCode::JumpNull {
+                            negative: false,
                             cond,
                             addr: else_addr + 1,
                         },
@@ -983,6 +1066,7 @@ impl Compilable for Located<Statement> {
                     compiler_frame_mut!(compiler).overwrite(
                         check_addr,
                         ByteCode::JumpNull {
+                            negative: false,
                             cond,
                             addr: exit_addr,
                         },
@@ -1171,6 +1255,7 @@ impl Compilable for Located<Statement> {
                 compiler_frame_mut!(compiler).overwrite(
                     check_addr,
                     ByteCode::JumpNull {
+                        negative: false,
                         cond,
                         addr: exit_addr + 1,
                     },
@@ -1235,6 +1320,7 @@ impl Compilable for Located<Statement> {
                 compiler_frame_mut!(compiler).overwrite(
                     check_addr,
                     ByteCode::JumpNull {
+                        negative: false,
                         cond: Source::Register(register),
                         addr: exit_addr + 1,
                     },

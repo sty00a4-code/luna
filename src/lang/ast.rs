@@ -13,6 +13,11 @@ pub enum Statement {
         params: Vec<Located<Parameter>>,
         exprs: Vec<Located<Expression>>,
     },
+    LetElse {
+        param: Located<Parameter>,
+        expr: Located<Expression>,
+        else_case: Located<Block>,
+    },
     Assign {
         paths: Vec<Located<Path>>,
         exprs: Vec<Located<Expression>>,

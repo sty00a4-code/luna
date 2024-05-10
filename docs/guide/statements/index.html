@@ -110,6 +110,13 @@
 <h3 id="let-binding">Let Binding</h3>
 <p>This is what you define local variables with. The assignees can be simple identifiers or object/vector destructurings.</p>
 <p>Examples: <code>let a = 1</code>, <code>let { name, age } = person</code>, <code>let [first, second, third] = numbers</code></p>
+<h3 id="let-else-binding">Let-Else Binding</h3>
+<p>Like a <a href="#let-binding">Let Binding</a>, except if the assigned value is <code>null</code>, the else block will be executed</p>
+<pre><code>let name = person.name else {
+    print(&quot;no name :(&quot;)
+    return null
+}
+</code></pre>
 <h3 id="assign">Assign</h3>
 <p>This is how you assign new values to existing variables. The assignees can be simple identifiers or a field/index into an object/vector</p>
 <p>Examples: <code>a = 2</code></p>

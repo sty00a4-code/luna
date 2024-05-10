@@ -15,6 +15,9 @@ pub enum ParseError {
     UnexpectedToken(Token),
     ExpectedToken { expected: Token, got: Token },
     ExpectedIdentNotPath,
+    MultipleParams,
+    NoExprs,
+    MultipleExprs,
 }
 impl Display for ParseError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -29,6 +32,9 @@ impl Display for ParseError {
                 "expected {} not a path",
                 Token::Ident(Default::default()).name()
             ),
+            ParseError::MultipleParams => write!(f, "multiple parameters not allowed for let-else"),
+            ParseError::NoExprs => write!(f, "expected one expression for let-else"),
+            ParseError::MultipleExprs => write!(f, "multiple expressions not allowed for let-else"),
         }
     }
 }
@@ -215,7 +221,22 @@ impl Statement {
                 exprs.push(expr);
             });
         });
-        Ok(Located::new(Self::LetBinding { params, exprs }, pos))
+        if_token!(parser: Else => {
+            if params.len() > 1 {
+                return Err(Located::new(ParseError::MultipleParams, pos))
+            }
+            if exprs.is_empty() {
+                return Err(Located::new(ParseError::NoExprs, pos))
+            }
+            if exprs.len() > 1 {
+                return Err(Located::new(ParseError::MultipleExprs, pos))
+            }
+            let else_case = Block::parse(parser)?;
+            pos.extend(&else_case.pos);
+            Ok(Located::new(Self::LetElse { param: params.remove(0), expr: exprs.remove(0), else_case }, pos))
+        } else {
+            Ok(Located::new(Self::LetBinding { params, exprs }, pos))
+        })
     }
     pub fn parse_fn(
         parser: &mut Parser,
@@ -344,13 +365,7 @@ impl Statement {
             cases.push((pattern, body));
         });
         pos.extend(&end_pos);
-        Ok(Located::new(
-            Self::Match {
-                expr,
-                cases,
-            },
-            pos,
-        ))
+        Ok(Located::new(Self::Match { expr, cases }, pos))
     }
     pub fn parse_while(parser: &mut Parser) -> Result<Located<Self>, Located<ParseError>> {
         let Located { value: _, mut pos } = parser.next().unwrap();
