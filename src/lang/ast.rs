@@ -48,12 +48,23 @@ pub enum Statement {
         case: Located<Block>,
         else_case: Option<Located<Block>>,
     },
+    IfLet {
+        param: Located<Parameter>,
+        expr: Located<Expression>,
+        case: Located<Block>,
+        else_case: Option<Located<Block>>,
+    },
     Match {
         expr: Located<Expression>,
         cases: Vec<(Located<Pattern>, Located<Block>)>
     },
     While {
         cond: Located<Expression>,
+        body: Located<Block>,
+    },
+    WhileLet {
+        param: Located<Parameter>,
+        expr: Located<Expression>,
         body: Located<Block>,
     },
     For {

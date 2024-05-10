@@ -866,6 +866,132 @@ impl Compilable for Located<Statement> {
 
                 Ok(None)
             }
+            Statement::IfLet {
+                param:
+                    Located {
+                        value: param,
+                        pos: _,
+                    },
+                expr,
+                case,
+                else_case,
+            } => {
+                compiler_frame_mut!(compiler).push_scope();
+                let cond = {
+                    let src = expr.compile(compiler)?;
+                    match param {
+                        Parameter::Ident(ident) => {
+                            let dst =
+                                Location::Register(compiler_frame_mut!(compiler).new_local(ident));
+                            compiler_frame_mut!(compiler)
+                                .write(ByteCode::Move { dst, src }, pos.clone());
+                        }
+                        Parameter::Object(fields) => {
+                            for Located { value: ident, pos } in fields.into_iter() {
+                                let field = Source::Constant(
+                                    compiler_frame_mut!(compiler)
+                                        .new_const(Value::String(ident.clone())),
+                                );
+                                let dst = Location::Register(
+                                    compiler_frame_mut!(compiler).new_local(ident),
+                                );
+                                compiler_frame_mut!(compiler).write(
+                                    ByteCode::Field {
+                                        dst,
+                                        head: src,
+                                        field,
+                                    },
+                                    pos,
+                                );
+                            }
+                        }
+                        Parameter::Vector(idents) => {
+                            for (idx, Located { value: ident, pos }) in
+                                idents.into_iter().enumerate()
+                            {
+                                let field = Source::Constant(
+                                    compiler_frame_mut!(compiler)
+                                        .new_const(Value::Int(idx as isize as i64)),
+                                );
+                                let dst = Location::Register(
+                                    compiler_frame_mut!(compiler).new_local(ident),
+                                );
+                                compiler_frame_mut!(compiler).write(
+                                    ByteCode::Field {
+                                        dst,
+                                        head: src,
+                                        field,
+                                    },
+                                    pos,
+                                );
+                            }
+                        }
+                    }
+                    src
+                };
+                let check_addr =
+                    compiler_frame_mut!(compiler).write(ByteCode::default(), Position::default());
+
+                case.compile(compiler)?;
+                let scope = compiler_frame_mut!(compiler)
+                    .pop_scope()
+                    .expect(COMPILER_SCOPE_EXPECT);
+                if !scope.breaks.is_empty() {
+                    if let Some(prev_scope) = compiler_frame_mut!(compiler).scope_mut() {
+                        prev_scope.breaks.extend(scope.breaks);
+                    }
+                }
+                if !scope.continues.is_empty() {
+                    if let Some(prev_scope) = compiler_frame_mut!(compiler).scope_mut() {
+                        prev_scope.continues.extend(scope.continues);
+                    }
+                }
+                if let Some(else_case) = else_case {
+                    let else_addr = compiler_frame_mut!(compiler)
+                        .write(ByteCode::default(), Position::default());
+                    compiler_frame_mut!(compiler).push_scope();
+                    else_case.compile(compiler)?;
+                    let scope = compiler_frame_mut!(compiler)
+                        .pop_scope()
+                        .expect(COMPILER_SCOPE_EXPECT);
+                    if !scope.breaks.is_empty() {
+                        if let Some(prev_scope) = compiler_frame_mut!(compiler).scope_mut() {
+                            prev_scope.breaks.extend(scope.breaks);
+                        }
+                    }
+                    if !scope.continues.is_empty() {
+                        if let Some(prev_scope) = compiler_frame_mut!(compiler).scope_mut() {
+                            prev_scope.continues.extend(scope.continues);
+                        }
+                    }
+                    let exit_addr = compiler_frame_mut!(compiler).addr();
+                    compiler_frame_mut!(compiler).overwrite(
+                        check_addr,
+                        ByteCode::JumpNull {
+                            cond,
+                            addr: else_addr + 1,
+                        },
+                        Some(pos.clone()),
+                    );
+                    compiler_frame_mut!(compiler).overwrite(
+                        else_addr,
+                        ByteCode::Jump { addr: exit_addr },
+                        Some(pos),
+                    );
+                } else {
+                    let exit_addr = compiler_frame_mut!(compiler).addr();
+                    compiler_frame_mut!(compiler).overwrite(
+                        check_addr,
+                        ByteCode::JumpNull {
+                            cond,
+                            addr: exit_addr,
+                        },
+                        Some(pos.clone()),
+                    );
+                }
+
+                Ok(None)
+            }
             Statement::Match { expr, cases } => {
                 let expr = expr.compile(compiler)?;
                 let registers = compiler_frame!(compiler).registers;
@@ -948,6 +1074,103 @@ impl Compilable for Located<Statement> {
                     check_addr,
                     ByteCode::JumpIf {
                         negative: true,
+                        cond,
+                        addr: exit_addr + 1,
+                    },
+                    Some(pos),
+                );
+                Ok(None)
+            }
+            Statement::WhileLet {
+                param:
+                    Located {
+                        value: param,
+                        pos: _,
+                    },
+                expr,
+                body,
+            } => {
+                let start_addr = compiler_frame_mut!(compiler).addr();
+                let cond = {
+                    let src = expr.compile(compiler)?;
+                    match param {
+                        Parameter::Ident(ident) => {
+                            let dst =
+                                Location::Register(compiler_frame_mut!(compiler).new_local(ident));
+                            compiler_frame_mut!(compiler)
+                                .write(ByteCode::Move { dst, src }, pos.clone());
+                        }
+                        Parameter::Object(fields) => {
+                            for Located { value: ident, pos } in fields.into_iter() {
+                                let field = Source::Constant(
+                                    compiler_frame_mut!(compiler)
+                                        .new_const(Value::String(ident.clone())),
+                                );
+                                let dst = Location::Register(
+                                    compiler_frame_mut!(compiler).new_local(ident),
+                                );
+                                compiler_frame_mut!(compiler).write(
+                                    ByteCode::Field {
+                                        dst,
+                                        head: src,
+                                        field,
+                                    },
+                                    pos,
+                                );
+                            }
+                        }
+                        Parameter::Vector(idents) => {
+                            for (idx, Located { value: ident, pos }) in
+                                idents.into_iter().enumerate()
+                            {
+                                let field = Source::Constant(
+                                    compiler_frame_mut!(compiler)
+                                        .new_const(Value::Int(idx as isize as i64)),
+                                );
+                                let dst = Location::Register(
+                                    compiler_frame_mut!(compiler).new_local(ident),
+                                );
+                                compiler_frame_mut!(compiler).write(
+                                    ByteCode::Field {
+                                        dst,
+                                        head: src,
+                                        field,
+                                    },
+                                    pos,
+                                );
+                            }
+                        }
+                    }
+                    src
+                };
+                let check_addr =
+                    compiler_frame_mut!(compiler).write(ByteCode::default(), Position::default());
+                compiler_frame_mut!(compiler).push_scope();
+                body.compile(compiler)?;
+                let scope = compiler_frame_mut!(compiler)
+                    .pop_scope()
+                    .expect(COMPILER_SCOPE_EXPECT);
+                let exit_addr = compiler_frame_mut!(compiler)
+                    .write(ByteCode::Jump { addr: start_addr }, pos.clone());
+                for addr in scope.breaks {
+                    compiler_frame_mut!(compiler).overwrite(
+                        addr,
+                        ByteCode::Jump {
+                            addr: exit_addr + 1,
+                        },
+                        None,
+                    );
+                }
+                for addr in scope.continues {
+                    compiler_frame_mut!(compiler).overwrite(
+                        addr,
+                        ByteCode::Jump { addr: start_addr },
+                        None,
+                    );
+                }
+                compiler_frame_mut!(compiler).overwrite(
+                    check_addr,
+                    ByteCode::JumpNull {
                         cond,
                         addr: exit_addr + 1,
                     },

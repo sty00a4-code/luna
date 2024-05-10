@@ -264,36 +264,72 @@ impl Statement {
     }
     pub fn parse_if(parser: &mut Parser) -> Result<Located<Self>, Located<ParseError>> {
         let Located { value: _, mut pos } = parser.next().unwrap();
-        let cond = Expression::parse(parser)?;
-        let case = Block::parse(parser)?;
-        pos.extend(&case.pos);
-        let mut else_case = None;
-        if_token!(parser: Else => {
-            else_case = Some(
-                if let Some(Located {
-                    value: Token::If,
-                    pos: _,
-                }) = parser.peek()
-                {
-                    let stat = Self::parse_if(parser)?;
-                    pos.extend(&stat.pos);
-                    let pos = stat.pos.clone();
-                    Located::new(Block(vec![stat]), pos)
-                } else {
-                    let block = Block::parse(parser)?;
-                    pos.extend(&block.pos);
-                    block
+        if_token!(parser: Let => {
+            let param = Parameter::parse(parser)?;
+            expect_token!(parser: Equal);
+            let expr = Expression::parse(parser)?;
+            let case = Block::parse(parser)?;
+            pos.extend(&case.pos);
+            let mut else_case = None;
+            if_token!(parser: Else => {
+                else_case = Some(
+                    if let Some(Located {
+                        value: Token::If,
+                        pos: _,
+                    }) = parser.peek()
+                    {
+                        let stat = Self::parse_if(parser)?;
+                        pos.extend(&stat.pos);
+                        let pos = stat.pos.clone();
+                        Located::new(Block(vec![stat]), pos)
+                    } else {
+                        let block = Block::parse(parser)?;
+                        pos.extend(&block.pos);
+                        block
+                    },
+                );
+            });
+            Ok(Located::new(
+                Self::IfLet {
+                    param,
+                    expr,
+                    case,
+                    else_case,
                 },
-            );
-        });
-        Ok(Located::new(
-            Self::If {
-                cond,
-                case,
-                else_case,
-            },
-            pos,
-        ))
+                pos,
+            ))
+        } else {
+            let cond = Expression::parse(parser)?;
+            let case = Block::parse(parser)?;
+            pos.extend(&case.pos);
+            let mut else_case = None;
+            if_token!(parser: Else => {
+                else_case = Some(
+                    if let Some(Located {
+                        value: Token::If,
+                        pos: _,
+                    }) = parser.peek()
+                    {
+                        let stat = Self::parse_if(parser)?;
+                        pos.extend(&stat.pos);
+                        let pos = stat.pos.clone();
+                        Located::new(Block(vec![stat]), pos)
+                    } else {
+                        let block = Block::parse(parser)?;
+                        pos.extend(&block.pos);
+                        block
+                    },
+                );
+            });
+            Ok(Located::new(
+                Self::If {
+                    cond,
+                    case,
+                    else_case,
+                },
+                pos,
+            ))
+        })
     }
     pub fn parse_match(parser: &mut Parser) -> Result<Located<Self>, Located<ParseError>> {
         let Located { value: _, mut pos } = parser.next().unwrap();
@@ -318,10 +354,19 @@ impl Statement {
     }
     pub fn parse_while(parser: &mut Parser) -> Result<Located<Self>, Located<ParseError>> {
         let Located { value: _, mut pos } = parser.next().unwrap();
-        let cond = Expression::parse(parser)?;
-        let body = Block::parse(parser)?;
-        pos.extend(&body.pos);
-        Ok(Located::new(Self::While { cond, body }, pos))
+        if_token!(parser: Let => {
+            let param = Parameter::parse(parser)?;
+            expect_token!(parser: Equal);
+            let expr = Expression::parse(parser)?;
+            let body = Block::parse(parser)?;
+            pos.extend(&body.pos);
+            Ok(Located::new(Self::WhileLet { param, expr, body }, pos))
+        } else {
+            let cond = Expression::parse(parser)?;
+            let body = Block::parse(parser)?;
+            pos.extend(&body.pos);
+            Ok(Located::new(Self::While { cond, body }, pos))
+        })
     }
     pub fn parse_for(parser: &mut Parser) -> Result<Located<Self>, Located<ParseError>> {
         let Located { value: _, mut pos } = parser.next().unwrap();
