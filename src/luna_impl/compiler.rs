@@ -1493,7 +1493,7 @@ impl Compilable for Located<Expression> {
                 Ok(dst.into())
             }
             Expression::Call { head, mut args } => {
-                let head = scoped!(compiler: { head.compile(compiler)? });
+                let head = head.compile(compiler)?;
                 let amount = args.len() as u8;
                 let dst = match amount {
                     0 => {
@@ -1508,7 +1508,7 @@ impl Compilable for Located<Expression> {
                         dst
                     }
                     1 => {
-                        let arg = scoped!(compiler: { args.remove(0).compile(compiler)? });
+                        let arg = args.remove(0).compile(compiler)?;
                         let dst = compiler_frame_mut!(compiler).new_register();
                         compiler_frame_mut!(compiler).write(
                             ByteCode::CallSingle {
@@ -1563,7 +1563,7 @@ impl Compilable for Located<Expression> {
                 args,
             } => {
                 let head_pos = head.pos.clone();
-                let head = scoped!(compiler: { head.compile(compiler)? });
+                let head = head.compile(compiler)?;
                 let func = {
                     let dst = compiler_frame_mut!(compiler).new_register();
                     let field_addr = compiler_frame_mut!(compiler).new_const(Value::String(field));
@@ -1640,7 +1640,7 @@ impl Compilable for Located<Expression> {
                         pos: _,
                     },
             } => {
-                let head = scoped!(compiler: { head.compile(compiler)? });
+                let head = head.compile(compiler)?;
                 let field =
                     Source::Constant(compiler_frame_mut!(compiler).new_const(Value::String(field)));
                 let dst = compiler_frame_mut!(compiler).new_register();
@@ -1655,10 +1655,8 @@ impl Compilable for Located<Expression> {
                 Ok(Source::Register(dst))
             }
             Expression::Index { head, index } => {
-                compiler_frame_mut!(compiler).push_scope();
                 let head = head.compile(compiler)?;
                 let field = index.compile(compiler)?;
-                compiler_frame_mut!(compiler).pop_scope();
                 let dst = compiler_frame_mut!(compiler).new_register();
                 compiler_frame_mut!(compiler).write(
                     ByteCode::Field {
@@ -1696,6 +1694,7 @@ impl Compilable for Located<Atom> {
                 let amount = exprs.len() as VectorSize;
                 let register = compiler_frame_mut!(compiler).new_register();
                 let dst = Location::Register(register);
+                compiler_frame_mut!(compiler).push_scope();
                 let start = compiler_frame_mut!(compiler).registers;
                 let registers = (1..=amount)
                     .map(|_| compiler_frame_mut!(compiler).new_register())
@@ -1713,6 +1712,7 @@ impl Compilable for Located<Atom> {
                 }
                 compiler_frame_mut!(compiler).registers = start;
                 compiler_frame_mut!(compiler).write(ByteCode::Vector { dst, start, amount }, pos);
+                compiler_frame_mut!(compiler).pop_scope();
                 Ok(dst.into())
             }
             Atom::Object(entries) => {
@@ -1720,6 +1720,7 @@ impl Compilable for Located<Atom> {
                 let register = compiler_frame_mut!(compiler).new_register();
                 let dst = Location::Register(register);
                 let start = compiler_frame_mut!(compiler).registers;
+                compiler_frame_mut!(compiler).push_scope();
                 let registers = (1..amount * 2 + 1)
                     .map(|_| compiler_frame_mut!(compiler).new_register())
                     .collect::<Vec<Register>>();
@@ -1754,6 +1755,7 @@ impl Compilable for Located<Atom> {
                 }
                 compiler_frame_mut!(compiler).registers = start;
                 compiler_frame_mut!(compiler).write(ByteCode::Object { dst, start, amount }, pos);
+                compiler_frame_mut!(compiler).pop_scope();
                 Ok(dst.into())
             }
             Atom::If {
