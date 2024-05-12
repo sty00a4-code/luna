@@ -2,7 +2,7 @@ let counter = setmeta({
     count = 0
 }, {
     __type = "counter"
-    __tostring = fn (self) {
+    __str = fn (self) {
         return "%s(%s)":format(type(self), self.count)
     }
     __call = fn (self) {
