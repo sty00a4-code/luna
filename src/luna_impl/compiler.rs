@@ -414,7 +414,7 @@ impl Compilable for Located<Statement> {
                     let src = if exprs.is_empty() {
                         Source::default()
                     } else {
-                        exprs.remove(0).compile(compiler)?
+                        scoped!(compiler: { exprs.remove(0).compile(compiler)? })
                     };
                     match path {
                         Path::Ident(ident) => {
@@ -471,7 +471,7 @@ impl Compilable for Located<Statement> {
                     },
                 expr,
             } => {
-                let src = expr.compile(compiler)?;
+                let src = scoped!(compiler: { expr.compile(compiler)? });
                 match path {
                     Path::Ident(ident) => {
                         let dst = compiler.get_variable_location(&ident).unwrap_or_else(|| {
@@ -980,7 +980,7 @@ impl Compilable for Located<Statement> {
             } => {
                 compiler_frame_mut!(compiler).push_scope();
                 let cond = {
-                    let src = scoped!(compiler: { expr.compile(compiler)? });
+                    let src = expr.compile(compiler)?;
                     match param {
                         Parameter::Ident(ident) => {
                             let dst =
@@ -1093,12 +1093,11 @@ impl Compilable for Located<Statement> {
                         Some(pos.clone()),
                     );
                 }
-
                 Ok(None)
             }
             Statement::Match { expr, cases } => {
                 compiler_frame_mut!(compiler).push_scope();
-                let expr = scoped!(compiler: { expr.compile(compiler)? });
+                let expr = expr.compile(compiler)?;
                 let dst = Location::Register(compiler_frame_mut!(compiler).new_register());
                 let mut exits = vec![];
                 for (pattern, body) in cases {
@@ -1147,8 +1146,9 @@ impl Compilable for Located<Statement> {
                 Ok(None)
             }
             Statement::While { cond, body } => {
+                compiler_frame_mut!(compiler).push_scope();
                 let start_addr = compiler_frame_mut!(compiler).addr();
-                let cond = scoped!(compiler: { cond.compile(compiler)? });
+                let cond = cond.compile(compiler)?;
                 let check_addr =
                     compiler_frame_mut!(compiler).write(ByteCode::default(), Position::default());
                 compiler_frame_mut!(compiler).push_scope();
@@ -1183,6 +1183,7 @@ impl Compilable for Located<Statement> {
                     },
                     Some(pos),
                 );
+                compiler_frame_mut!(compiler).pop_scope();
                 Ok(None)
             }
             Statement::WhileLet {
@@ -1197,7 +1198,7 @@ impl Compilable for Located<Statement> {
                 compiler_frame_mut!(compiler).push_scope();
                 let start_addr = compiler_frame_mut!(compiler).addr();
                 let cond = {
-                    let src = scoped!(compiler: { expr.compile(compiler)? });
+                    let src = expr.compile(compiler)?;
                     match param {
                         Parameter::Ident(ident) => {
                             let dst =
@@ -1301,7 +1302,7 @@ impl Compilable for Located<Statement> {
                 //          jump *start
                 // exit:    ...
                 compiler_frame_mut!(compiler).push_scope();
-                let iter = scoped!(compiler: { iter.compile(compiler)? });
+                let iter = iter.compile(compiler)?;
                 let register = compiler_frame_mut!(compiler).new_local(ident);
                 let func = Source::Global(
                     compiler_frame_mut!(compiler).new_const(Value::String(FOR_FUNC.into())),
@@ -1885,8 +1886,7 @@ impl Compilable for Located<Path> {
                         pos: _,
                     },
             } => {
-                compiler_frame_mut!(compiler).push_scope();
-                let head = scoped!(compiler: { head.compile(compiler)? });
+                let head = head.compile(compiler)?;
                 let field =
                     Source::Constant(compiler_frame_mut!(compiler).new_const(Value::String(field)));
                 let dst = compiler_frame_mut!(compiler).new_register();
@@ -1898,13 +1898,11 @@ impl Compilable for Located<Path> {
                     },
                     pos,
                 );
-                compiler_frame_mut!(compiler).pop_scope();
                 Ok(Location::Register(dst))
             }
             Path::Index { head, index } => {
-                compiler_frame_mut!(compiler).push_scope();
-                let head = scoped!(compiler: { head.compile(compiler)? });
-                let field = scoped!(compiler: { index.compile(compiler)? });
+                let head = head.compile(compiler)?;
+                let field = index.compile(compiler)?;
                 let dst = compiler_frame_mut!(compiler).new_register();
                 compiler_frame_mut!(compiler).write(
                     ByteCode::Field {
@@ -1914,7 +1912,6 @@ impl Compilable for Located<Path> {
                     },
                     pos,
                 );
-                compiler_frame_mut!(compiler).pop_scope();
                 Ok(Location::Register(dst))
             }
         }
