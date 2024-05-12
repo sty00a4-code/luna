@@ -267,11 +267,13 @@ impl Compilable for Located<Statement> {
             }
             Statement::LetBinding { params, mut exprs } => {
                 for Located { value: param, pos } in params.into_iter() {
+                    compiler_frame_mut!(compiler).push_scope();
                     let src = if exprs.is_empty() {
                         Source::default()
                     } else {
-                        scoped!(compiler: { exprs.remove(0).compile(compiler)? })
+                        exprs.remove(0).compile(compiler)?
                     };
+                    compiler_frame_mut!(compiler).pop_scope();
                     match param {
                         Parameter::Ident(ident) => {
                             let dst =
@@ -331,7 +333,9 @@ impl Compilable for Located<Statement> {
                 expr,
                 else_case,
             } => {
-                let cond = scoped!(compiler: { expr.compile(compiler)? });
+                compiler_frame_mut!(compiler).push_scope();
+                let cond = expr.compile(compiler)?;
+                compiler_frame_mut!(compiler).pop_scope();
                 match param {
                     Parameter::Ident(ident) => {
                         let dst =
@@ -411,11 +415,13 @@ impl Compilable for Located<Statement> {
                     pos: path_pos,
                 } in paths.into_iter()
                 {
+                    compiler_frame_mut!(compiler).push_scope();
                     let src = if exprs.is_empty() {
                         Source::default()
                     } else {
-                        scoped!(compiler: { exprs.remove(0).compile(compiler)? })
+                        exprs.remove(0).compile(compiler)?
                     };
+                    compiler_frame_mut!(compiler).pop_scope();
                     match path {
                         Path::Ident(ident) => {
                             let dst = compiler.get_variable_location(&ident).unwrap_or_else(|| {
@@ -434,6 +440,7 @@ impl Compilable for Located<Statement> {
                                     pos: _,
                                 },
                         } => {
+                            compiler_frame_mut!(compiler).push_scope();
                             let head = head.compile(compiler)?;
                             let field =
                                 compiler_frame_mut!(compiler).new_const(Value::String(field));
@@ -445,8 +452,10 @@ impl Compilable for Located<Statement> {
                                 },
                                 path_pos,
                             );
+                            compiler_frame_mut!(compiler).pop_scope();
                         }
                         Path::Index { head, index } => {
+                            compiler_frame_mut!(compiler).push_scope();
                             let head = head.compile(compiler)?;
                             let field = index.compile(compiler)?;
                             compiler_frame_mut!(compiler).write(
@@ -457,6 +466,7 @@ impl Compilable for Located<Statement> {
                                 },
                                 path_pos,
                             );
+                            compiler_frame_mut!(compiler).pop_scope();
                         }
                     }
                 }
@@ -471,7 +481,8 @@ impl Compilable for Located<Statement> {
                     },
                 expr,
             } => {
-                let src = scoped!(compiler: { expr.compile(compiler)? });
+                compiler_frame_mut!(compiler).push_scope();
+                let src = expr.compile(compiler)?;
                 match path {
                     Path::Ident(ident) => {
                         let dst = compiler.get_variable_location(&ident).unwrap_or_else(|| {
@@ -557,6 +568,7 @@ impl Compilable for Located<Statement> {
                         );
                     }
                 }
+                compiler_frame_mut!(compiler).pop_scope();
                 Ok(None)
             }
             Statement::Call { path, mut args } => {
