@@ -116,6 +116,7 @@ pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
             "len" = function!(_vector_len),
             "get" = function!(_vector_get),
             "contains" = function!(_vector_contains),
+            "pos" = function!(_vector_position),
             "push" = function!(_vector_push),
             "pop" = function!(_vector_pop),
             "insert" = function!(_vector_insert),
@@ -779,6 +780,14 @@ pub fn _vector_contains(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, 
     let value = args.next().map(|(_, v)| v).unwrap_or_default();
 
     Ok(vector.contains(&value).into())
+}
+pub fn _vector_position(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let vector = typed!(args: Vector);
+    let vector = vector.borrow();
+    let value = args.next().map(|(_, v)| v).unwrap_or_default();
+
+    Ok(vector.iter().position(|v| v == &value).map(|pos| pos.into()).unwrap_or_default())
 }
 pub fn _vector_push(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let mut args = args.into_iter().enumerate();
