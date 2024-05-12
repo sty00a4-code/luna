@@ -42,15 +42,24 @@ pub trait Compilable {
 
 pub const COMPILER_FRAME_EXPECT: &str = "no compiler frame on stack";
 pub const COMPILER_SCOPE_EXPECT: &str = "no scope on stack";
-macro_rules! compiler_frame {
-    ($compiler:ident) => {
-        $compiler.frame().expect(COMPILER_FRAME_EXPECT)
-    };
-}
 macro_rules! compiler_frame_mut {
     ($compiler:ident) => {
         $compiler.frame_mut().expect(COMPILER_FRAME_EXPECT)
     };
+}
+macro_rules! scoped {
+    ($compiler:ident: $body:block) => {{
+        compiler_frame_mut!($compiler).push_scope();
+        let res = $body;
+        compiler_frame_mut!($compiler).pop_scope();
+        res
+    }};
+    ($compiler:ident: $body:stmt) => {{
+        compiler_frame_mut!($compiler).push_scope();
+        let res = { $body }
+        compiler_frame_mut!($compiler).pop_scope();
+        res
+    }};
 }
 impl Compiler {
     pub fn new(path: Option<String>) -> Self {
@@ -173,6 +182,9 @@ impl CompilerFrame {
         self.scopes.last_mut()
     }
     pub fn new_local(&mut self, ident: String) -> Register {
+        if let Some(register) = self.get_local(&ident) {
+            return register;
+        }
         let register = self.new_register();
         let scope = self.scope_mut().expect("no scope");
         scope.set_local(ident, register);
@@ -258,7 +270,7 @@ impl Compilable for Located<Statement> {
                     let src = if exprs.is_empty() {
                         Source::default()
                     } else {
-                        exprs.remove(0).compile(compiler)?
+                        scoped!(compiler: { exprs.remove(0).compile(compiler)? })
                     };
                     match param {
                         Parameter::Ident(ident) => {
@@ -319,12 +331,13 @@ impl Compilable for Located<Statement> {
                 expr,
                 else_case,
             } => {
-                let cond = expr.compile(compiler)?;
+                let cond = scoped!(compiler: { expr.compile(compiler)? });
                 match param {
                     Parameter::Ident(ident) => {
                         let dst =
                             Location::Register(compiler_frame_mut!(compiler).new_local(ident));
-                        compiler_frame_mut!(compiler).write(ByteCode::Move { dst, src: cond }, pos.clone());
+                        compiler_frame_mut!(compiler)
+                            .write(ByteCode::Move { dst, src: cond }, pos.clone());
                     }
                     Parameter::Object(fields) => {
                         for Located { value: ident, pos } in fields.into_iter() {
@@ -547,6 +560,7 @@ impl Compilable for Located<Statement> {
                 Ok(None)
             }
             Statement::Call { path, mut args } => {
+                compiler_frame_mut!(compiler).push_scope();
                 let path_location = path.compile(compiler)?;
                 let amount = args.len() as u8;
                 match amount {
@@ -598,6 +612,7 @@ impl Compilable for Located<Statement> {
                         );
                     }
                 }
+                compiler_frame_mut!(compiler).pop_scope();
                 Ok(None)
             }
             Statement::SelfCall {
@@ -609,6 +624,7 @@ impl Compilable for Located<Statement> {
                     },
                 args,
             } => {
+                compiler_frame_mut!(compiler).push_scope();
                 let head_pos = head.pos.clone();
                 let head_location = head.compile(compiler)?;
                 let func = {
@@ -676,6 +692,7 @@ impl Compilable for Located<Statement> {
                         );
                     }
                 }
+                compiler_frame_mut!(compiler).pop_scope();
                 Ok(None)
             }
             Statement::Fn {
@@ -884,7 +901,7 @@ impl Compilable for Located<Statement> {
                 case,
                 else_case,
             } => {
-                let cond = cond.compile(compiler)?;
+                let cond = scoped!(compiler: { cond.compile(compiler)? });
                 let check_addr =
                     compiler_frame_mut!(compiler).write(ByteCode::default(), Position::default());
 
@@ -963,7 +980,7 @@ impl Compilable for Located<Statement> {
             } => {
                 compiler_frame_mut!(compiler).push_scope();
                 let cond = {
-                    let src = expr.compile(compiler)?;
+                    let src = scoped!(compiler: { expr.compile(compiler)? });
                     match param {
                         Parameter::Ident(ident) => {
                             let dst =
@@ -1080,8 +1097,8 @@ impl Compilable for Located<Statement> {
                 Ok(None)
             }
             Statement::Match { expr, cases } => {
-                let expr = expr.compile(compiler)?;
-                let registers = compiler_frame!(compiler).registers;
+                compiler_frame_mut!(compiler).push_scope();
+                let expr = scoped!(compiler: { expr.compile(compiler)? });
                 let dst = Location::Register(compiler_frame_mut!(compiler).new_register());
                 let mut exits = vec![];
                 for (pattern, body) in cases {
@@ -1126,12 +1143,12 @@ impl Compilable for Located<Statement> {
                         );
                     }
                 }
-                compiler_frame_mut!(compiler).registers = registers;
+                compiler_frame_mut!(compiler).pop_scope();
                 Ok(None)
             }
             Statement::While { cond, body } => {
                 let start_addr = compiler_frame_mut!(compiler).addr();
-                let cond = cond.compile(compiler)?;
+                let cond = scoped!(compiler: { cond.compile(compiler)? });
                 let check_addr =
                     compiler_frame_mut!(compiler).write(ByteCode::default(), Position::default());
                 compiler_frame_mut!(compiler).push_scope();
@@ -1177,9 +1194,10 @@ impl Compilable for Located<Statement> {
                 expr,
                 body,
             } => {
+                compiler_frame_mut!(compiler).push_scope();
                 let start_addr = compiler_frame_mut!(compiler).addr();
                 let cond = {
-                    let src = expr.compile(compiler)?;
+                    let src = scoped!(compiler: { expr.compile(compiler)? });
                     match param {
                         Parameter::Ident(ident) => {
                             let dst =
@@ -1264,6 +1282,7 @@ impl Compilable for Located<Statement> {
                     },
                     Some(pos),
                 );
+                compiler_frame_mut!(compiler).pop_scope();
                 Ok(None)
             }
             Statement::For {
@@ -1281,8 +1300,8 @@ impl Compilable for Located<Statement> {
                 //          [body]
                 //          jump *start
                 // exit:    ...
-
-                let iter = iter.compile(compiler)?;
+                compiler_frame_mut!(compiler).push_scope();
+                let iter = scoped!(compiler: { iter.compile(compiler)? });
                 let register = compiler_frame_mut!(compiler).new_local(ident);
                 let func = Source::Global(
                     compiler_frame_mut!(compiler).new_const(Value::String(FOR_FUNC.into())),
@@ -1329,11 +1348,12 @@ impl Compilable for Located<Statement> {
                     },
                     Some(pos),
                 );
+                compiler_frame_mut!(compiler).pop_scope();
                 Ok(None)
             }
             Statement::Return(expr) => {
                 if let Some(expr) = expr {
-                    let src = expr.compile(compiler)?;
+                    let src = scoped!(compiler: { expr.compile(compiler)? });
                     compiler_frame_mut!(compiler).write(ByteCode::Return { src: Some(src) }, pos);
                     Ok(Some(src))
                 } else {
@@ -1405,7 +1425,7 @@ impl Located<Pattern> {
             }
             Pattern::Guard { pattern, cond } => {
                 pattern.compile_match(compiler, expr, dst)?;
-                let cond = cond.compile(compiler)?;
+                let cond = scoped!(compiler: { cond.compile(compiler)? });
                 compiler_frame_mut!(compiler).write(
                     ByteCode::Binary {
                         op: BinaryOperation::And,
@@ -1427,8 +1447,11 @@ impl Compilable for Located<Expression> {
         match expr {
             Expression::Atom(atom) => Located::new(atom, pos).compile(compiler),
             Expression::Binary { op, left, right } => {
-                let left = left.compile(compiler)?;
-                let right = right.compile(compiler)?;
+                let (left, right) = scoped!(compiler: {
+                    let left = left.compile(compiler)?;
+                    let right = right.compile(compiler)?;
+                    (left, right)
+                });
                 let register = compiler_frame_mut!(compiler).new_register();
                 let dst = Location::Register(register);
                 compiler_frame_mut!(compiler).write(
@@ -1443,7 +1466,7 @@ impl Compilable for Located<Expression> {
                 Ok(dst.into())
             }
             Expression::Unary { op, right } => {
-                let right = right.compile(compiler)?;
+                let right = scoped!(compiler: { right.compile(compiler)? });
                 let register = compiler_frame_mut!(compiler).new_register();
                 let dst = Location::Register(register);
                 compiler_frame_mut!(compiler).write(
@@ -1457,9 +1480,9 @@ impl Compilable for Located<Expression> {
                 Ok(dst.into())
             }
             Expression::Call { head, mut args } => {
-                let head = head.compile(compiler)?;
+                let head = scoped!(compiler: { head.compile(compiler)? });
                 let amount = args.len() as u8;
-                match amount {
+                let dst = match amount {
                     0 => {
                         let dst = compiler_frame_mut!(compiler).new_register();
                         compiler_frame_mut!(compiler).write(
@@ -1469,10 +1492,10 @@ impl Compilable for Located<Expression> {
                             },
                             pos,
                         );
-                        Ok(Source::Register(dst))
+                        dst
                     }
                     1 => {
-                        let arg = args.remove(0).compile(compiler)?;
+                        let arg = scoped!(compiler: { args.remove(0).compile(compiler)? });
                         let dst = compiler_frame_mut!(compiler).new_register();
                         compiler_frame_mut!(compiler).write(
                             ByteCode::CallSingle {
@@ -1482,9 +1505,10 @@ impl Compilable for Located<Expression> {
                             },
                             pos,
                         );
-                        Ok(Source::Register(dst))
+                        dst
                     }
                     amount => {
+                        compiler_frame_mut!(compiler).push_scope();
                         let offset = compiler_frame_mut!(compiler).registers;
                         compiler_frame_mut!(compiler).add_registers(amount as Register);
                         for (register, arg) in
@@ -1500,7 +1524,7 @@ impl Compilable for Located<Expression> {
                                 pos,
                             );
                         }
-                        compiler_frame_mut!(compiler).registers = offset;
+                        compiler_frame_mut!(compiler).pop_scope();
                         let dst = compiler_frame_mut!(compiler).new_register();
                         compiler_frame_mut!(compiler).write(
                             ByteCode::Call {
@@ -1511,9 +1535,10 @@ impl Compilable for Located<Expression> {
                             },
                             pos,
                         );
-                        Ok(Source::Register(dst))
+                        dst
                     }
-                }
+                };
+                Ok(Source::Register(dst))
             }
             Expression::SelfCall {
                 head,
@@ -1525,7 +1550,7 @@ impl Compilable for Located<Expression> {
                 args,
             } => {
                 let head_pos = head.pos.clone();
-                let head = head.compile(compiler)?;
+                let head = scoped!(compiler: { head.compile(compiler)? });
                 let func = {
                     let dst = compiler_frame_mut!(compiler).new_register();
                     let field_addr = compiler_frame_mut!(compiler).new_const(Value::String(field));
@@ -1540,11 +1565,9 @@ impl Compilable for Located<Expression> {
                     Source::Register(dst)
                 };
                 let amount = args.len() as u8 + 1;
-                match amount {
+                let dst = match amount {
                     1 => {
-                        let offset = compiler_frame_mut!(compiler).registers;
                         let arg = head.into();
-                        compiler_frame_mut!(compiler).registers = offset;
                         let dst = compiler_frame_mut!(compiler).new_register();
                         compiler_frame_mut!(compiler).write(
                             ByteCode::CallSingle {
@@ -1554,7 +1577,7 @@ impl Compilable for Located<Expression> {
                             },
                             pos,
                         );
-                        Ok(Source::Register(dst))
+                        dst
                     }
                     amount => {
                         let offset = compiler_frame_mut!(compiler).registers;
@@ -1571,7 +1594,7 @@ impl Compilable for Located<Expression> {
                             (offset + 1..offset + amount as Register).zip(args.into_iter())
                         {
                             let pos = arg.pos.clone();
-                            let src = arg.compile(compiler)?;
+                            let src = scoped!(compiler: { arg.compile(compiler)? });
                             compiler_frame_mut!(compiler).write(
                                 ByteCode::Move {
                                     dst: Location::Register(register),
@@ -1591,9 +1614,10 @@ impl Compilable for Located<Expression> {
                             },
                             pos,
                         );
-                        Ok(Source::Register(dst))
+                        dst
                     }
-                }
+                };
+                Ok(Source::Register(dst))
             }
             Expression::Field {
                 head,
@@ -1603,7 +1627,7 @@ impl Compilable for Located<Expression> {
                         pos: _,
                     },
             } => {
-                let head = head.compile(compiler)?;
+                let head = scoped!(compiler: { head.compile(compiler)? });
                 let field =
                     Source::Constant(compiler_frame_mut!(compiler).new_const(Value::String(field)));
                 let dst = compiler_frame_mut!(compiler).new_register();
@@ -1618,8 +1642,10 @@ impl Compilable for Located<Expression> {
                 Ok(Source::Register(dst))
             }
             Expression::Index { head, index } => {
+                compiler_frame_mut!(compiler).push_scope();
                 let head = head.compile(compiler)?;
                 let field = index.compile(compiler)?;
+                compiler_frame_mut!(compiler).pop_scope();
                 let dst = compiler_frame_mut!(compiler).new_register();
                 compiler_frame_mut!(compiler).write(
                     ByteCode::Field {
@@ -1652,7 +1678,7 @@ impl Compilable for Located<Atom> {
             Atom::String(v) => Ok(Source::Constant(
                 compiler_frame_mut!(compiler).new_const(Value::String(v)),
             )),
-            Atom::Expression(expr) => expr.compile(compiler),
+            Atom::Expression(expr) => scoped!(compiler: { expr.compile(compiler) }),
             Atom::Vector(exprs) => {
                 let amount = exprs.len() as VectorSize;
                 let register = compiler_frame_mut!(compiler).new_register();
@@ -1663,7 +1689,7 @@ impl Compilable for Located<Atom> {
                     .collect::<Vec<Register>>();
                 for (expr, register) in exprs.into_iter().zip(registers.into_iter()) {
                     let expr_pos = expr.pos.clone();
-                    let src = expr.compile(compiler)?;
+                    let src = scoped!(compiler: { expr.compile(compiler)? });
                     compiler_frame_mut!(compiler).write(
                         ByteCode::Move {
                             dst: Location::Register(register),
@@ -1697,7 +1723,7 @@ impl Compilable for Located<Atom> {
                 {
                     let addr = compiler_frame_mut!(compiler).new_const(Value::String(key));
                     let expr_pos = expr.pos.clone();
-                    let src = expr.compile(compiler)?;
+                    let src = scoped!(compiler: { expr.compile(compiler)? });
                     compiler_frame_mut!(compiler).write(
                         ByteCode::Move {
                             dst: Location::Register(register),
@@ -1722,12 +1748,12 @@ impl Compilable for Located<Atom> {
                 case,
                 else_case,
             } => {
-                let cond = cond.compile(compiler)?;
+                let cond = scoped!(compiler: { cond.compile(compiler)? });
                 let register = compiler_frame_mut!(compiler).new_register();
                 let check_addr =
                     compiler_frame_mut!(compiler).write(ByteCode::default(), Position::default());
 
-                let case = case.compile(compiler)?;
+                let case = scoped!(compiler: { case.compile(compiler)? });
                 compiler_frame_mut!(compiler).write(
                     ByteCode::Move {
                         dst: Location::Register(register),
@@ -1737,7 +1763,7 @@ impl Compilable for Located<Atom> {
                 );
                 let else_addr =
                     compiler_frame_mut!(compiler).write(ByteCode::default(), Position::default());
-                let else_case = else_case.compile(compiler)?;
+                let else_case = scoped!(compiler: { else_case.compile(compiler)? });
                 compiler_frame_mut!(compiler).write(
                     ByteCode::Move {
                         dst: Location::Register(register),
@@ -1859,7 +1885,8 @@ impl Compilable for Located<Path> {
                         pos: _,
                     },
             } => {
-                let head = head.compile(compiler)?;
+                compiler_frame_mut!(compiler).push_scope();
+                let head = scoped!(compiler: { head.compile(compiler)? });
                 let field =
                     Source::Constant(compiler_frame_mut!(compiler).new_const(Value::String(field)));
                 let dst = compiler_frame_mut!(compiler).new_register();
@@ -1871,11 +1898,13 @@ impl Compilable for Located<Path> {
                     },
                     pos,
                 );
+                compiler_frame_mut!(compiler).pop_scope();
                 Ok(Location::Register(dst))
             }
             Path::Index { head, index } => {
-                let head = head.compile(compiler)?;
-                let field = index.compile(compiler)?;
+                compiler_frame_mut!(compiler).push_scope();
+                let head = scoped!(compiler: { head.compile(compiler)? });
+                let field = scoped!(compiler: { index.compile(compiler)? });
                 let dst = compiler_frame_mut!(compiler).new_register();
                 compiler_frame_mut!(compiler).write(
                     ByteCode::Field {
@@ -1885,6 +1914,7 @@ impl Compilable for Located<Path> {
                     },
                     pos,
                 );
+                compiler_frame_mut!(compiler).pop_scope();
                 Ok(Location::Register(dst))
             }
         }
