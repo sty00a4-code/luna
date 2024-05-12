@@ -1,0 +1,20 @@
+let inputs = []
+let outputs = []
+let fn fib(n) {
+    if let idx = inputs:pos(n) {
+        return outputs[idx]
+    }
+    inputs:push(n)
+    let idx = outputs:len()
+    outputs:push(null)
+    let res
+    if n <= 1 {
+        res = n
+    } else {
+        res = fib(n - 1) + fib(n - 2) 
+    }
+    outputs[idx] = res
+    return res
+}
+
+print(fib(30))
