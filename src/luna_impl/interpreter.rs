@@ -241,7 +241,7 @@ impl Interpreter {
                     .last_mut()
                     .expect("no call frame")
                     .source(&arg)
-                    .expect("func not found")];
+                    .expect("source not found")];
                 match func {
                     Value::Function(kind) => self.call_kind(kind, args, dst, pos)?,
                     Value::Object(object) => {
