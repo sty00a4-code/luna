@@ -266,11 +266,11 @@ impl Interpreter {
                     .expect("no call frame")
                     .source(&func)
                     .expect("func not found");
-                let mut args = Vec::with_capacity(1);
                 match func {
-                    Value::Function(kind) => self.call_kind(kind, args, dst, pos)?,
+                    Value::Function(kind) => self.call_kind(kind, Vec::with_capacity(0), dst, pos)?,
                     Value::Object(object) => {
-                        args.insert(0, Value::Object(Rc::clone(&object)));
+                        let mut args = Vec::with_capacity(1);
+                        args[0] = Value::Object(Rc::clone(&object));
                         let object = object.borrow();
                         if let Some(Value::Function(kind)) = object.get_meta(META_CALL) {
                             self.call_kind(kind, args, dst, pos)?;
@@ -296,7 +296,7 @@ impl Interpreter {
                     .expect("no call frame")
                     .source(&func)
                     .expect("func not found");
-                let mut args = Vec::with_capacity(amount as usize);
+                let mut args = Vec::with_capacity(amount as usize + 1);
                 for register in offset..offset + amount as Register {
                     args.push(
                         self.call_frames
