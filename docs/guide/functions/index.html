@@ -108,7 +108,7 @@ print(add(1, 2))
 <h2 id="upvalues">UpValues</h2>
 <p>UpValues are an important concept in Luna, as they let functions keep references to values even though their scope is not active anymore. The best example is a counter function.</p>
 <pre><code>let fn counter() {
-    count = 1
+    let count = 1
     return fn () {
         count += 1
         return count
