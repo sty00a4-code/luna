@@ -57,10 +57,11 @@ where
                 .unwrap_or("<input>".to_string()),
         )
     })?;
-    let function = Rc::new(Function {
+    let function = Rc::new(RefCell::new(Function {
         closure,
         upvalues: vec![],
-    });
+        meta: None
+    }));
     let mut interpreter = Interpreter::default().with_global_path(env::var("LUNA_PATH").ok());
     interpreter.call(&function, vec![], None);
     interpreter.run().map_err(|err| {

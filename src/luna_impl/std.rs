@@ -787,7 +787,11 @@ pub fn _vector_position(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, 
     let vector = vector.borrow();
     let value = args.next().map(|(_, v)| v).unwrap_or_default();
 
-    Ok(vector.iter().position(|v| v == &value).map(|pos| pos.into()).unwrap_or_default())
+    Ok(vector
+        .iter()
+        .position(|v| v == &value)
+        .map(|pos| pos.into())
+        .unwrap_or_default())
 }
 pub fn _vector_push(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let mut args = args.into_iter().enumerate();
@@ -908,24 +912,52 @@ pub fn _object_values(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Bo
 }
 pub fn _object_setmeta(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let mut args = args.into_iter().enumerate();
-    let object = typed!(args: Object);
-    {
-        let mut object = object.borrow_mut();
-        let meta = typed!(args: Object?);
+    option!(args:
+        Object => object {
+            {
+                let mut object = object.borrow_mut();
+                let meta = typed!(args: Object?);
 
-        object.meta = meta;
-    }
-    Ok(Value::Object(object))
+                object.meta = meta;
+            }
+            Ok(Value::Object(object))
+        },
+        Function => kind {
+            if let FunctionKind::Function(func) = kind {
+                let meta = typed!(args: Object?);
+                func.borrow_mut().meta = meta;
+                Ok(Value::Function(FunctionKind::Function(func)))
+            } else {
+                Ok(Value::default())
+            }
+        }
+    )
 }
 pub fn _object_getmeta(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let mut args = args.into_iter().enumerate();
-    let object = typed!(args: Object);
-    let object = object.borrow();
-    Ok(object
-        .meta
-        .as_ref()
-        .map(|o| Value::Object(Rc::clone(o)))
-        .unwrap_or_default())
+    option!(args:
+        Object => object {
+            let object = object.borrow();
+            Ok(object
+                .meta
+                .as_ref()
+                .map(|o| Value::Object(Rc::clone(o)))
+                .unwrap_or_default())
+        },
+        Function => kind {
+            if let FunctionKind::Function(func) = kind {
+                let func = func.borrow();
+                Ok(func
+                    .meta
+                    .as_ref()
+                    .map(|o| Value::Object(Rc::clone(o)))
+                    .unwrap_or_default())
+            } else {
+                Ok(Value::default())
+            }
+        }
+    )
+    
 }
 pub fn _object_clear(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let mut args = args.into_iter().enumerate();
@@ -1091,7 +1123,11 @@ pub fn _typed_options(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Bo
 pub fn _typed_some(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let mut args = args.into_iter().enumerate();
     let value = typed!(args);
-    Ok(if value.typ() != "null" { value } else { Value::default() })
+    Ok(if value.typ() != "null" {
+        value
+    } else {
+        Value::default()
+    })
 }
 
 pub fn _math_abs(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {

@@ -72,10 +72,11 @@ pub fn run(text: &str, args: &LunaArgs) -> Result<Option<Value>, PathLocated<Box
     let closure = compile(text, args).map_err(|err| {
         err.with_path(args.path.as_ref().cloned().unwrap_or("<input>".to_string()))
     })?;
-    let function = Rc::new(Function {
+    let function = Rc::new(RefCell::new(Function {
         closure,
         upvalues: vec![],
-    });
+        meta: None,
+    }));
     let mut interpreter = Interpreter::default().with_global_path(env::var("LUNA_PATH").ok());
     interpreter.call(&function, vec![], None);
     interpreter.run().map_err(|err| {
@@ -161,10 +162,11 @@ fn main() {
                     }
                 },
             };
-            let function = Rc::new(Function {
+            let function = Rc::new(RefCell::new(Function {
                 closure,
                 upvalues: vec![],
-            });
+                meta: None,
+            }));
             interpreter.call(&function, vec![], None);
             match interpreter.run() {
                 Ok(Some(value)) => println!("{value:?}"),

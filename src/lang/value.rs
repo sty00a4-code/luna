@@ -82,13 +82,14 @@ impl Display for UserObjectError {
 impl Error for UserObjectError {}
 #[derive(Clone)]
 pub enum FunctionKind {
-    Function(Rc<Function>),
+    Function(Rc<RefCell<Function>>),
     UserFunction(Rc<UserFunction>),
 }
 #[derive(Debug, Clone, Default)]
 pub struct Function {
     pub closure: Rc<RefCell<Closure>>,
     pub upvalues: Vec<Rc<RefCell<Value>>>,
+    pub meta: Option<Rc<RefCell<Object>>>,
 }
 pub type UserFunction = dyn Fn(&mut Interpreter, Vec<Value>) -> Result<Value, Box<dyn Error>>;
 
@@ -116,6 +117,12 @@ impl Object {
         self.meta.as_ref()?.borrow().get(k)
     }
 }
+impl Function {
+    #[inline(always)]
+    pub fn get_meta(&self, k: &str) -> Option<Value> {
+        self.meta.as_ref()?.borrow().get(k)
+    }
+}
 impl Value {
     #[inline(always)]
     pub fn typ(&self) -> &'static str {
@@ -138,6 +145,13 @@ impl Value {
             Value::Object(object) => {
                 let object = object.borrow();
                 if let Some(value) = object.get_meta(META_TYPE) {
+                    value.to_string()
+                } else {
+                    self.typ().to_string()
+                }
+            }
+            Value::Function(FunctionKind::Function(func)) if func.borrow().meta.is_some() => {
+                if let Some(value) = func.borrow().get_meta(META_TYPE) {
                     value.to_string()
                 } else {
                     self.typ().to_string()
@@ -190,7 +204,18 @@ impl Debug for Value {
             ),
             Value::UserObject(v) => write!(f, "{}:{:08x?}", v.borrow().typ(), v.as_ptr()),
             Value::Function(FunctionKind::Function(function)) => {
-                write!(f, "fn:{:08x?}", Rc::as_ptr(function))
+                write!(
+                    f,
+                    "{}:{:08x?}",
+                    if let Some(value) = function.borrow().get_meta(META_TYPE) {
+                        value.to_string()
+                    } else if let Some(value) = function.borrow().get_meta(META_NAME) {
+                        value.to_string()
+                    } else {
+                        "fn".to_string()
+                    },
+                    Rc::as_ptr(function)
+                )
             }
             Value::Function(FunctionKind::UserFunction(func)) => {
                 write!(f, "fn:{:08x?}", Rc::as_ptr(func))

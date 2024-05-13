@@ -20,7 +20,7 @@ pub struct Interpreter {
 }
 #[derive(Debug, Clone)]
 pub struct CallFrame {
-    pub function: Rc<Function>,
+    pub function: Rc<RefCell<Function>>,
     pub stack: Vec<Rc<RefCell<Value>>>,
     pub idx: Address,
     pub dst: Option<Location>,
@@ -75,18 +75,19 @@ impl Interpreter {
         self.call_frames
             .last()?
             .function
+            .borrow()
             .closure
             .borrow()
             .path
             .clone()
     }
     #[inline(always)]
-    pub fn call(&mut self, function: &Rc<Function>, args: Vec<Value>, dst: Option<Location>) {
-        let mut stack = Vec::with_capacity(function.closure.borrow().registers as usize + 1);
+    pub fn call(&mut self, function: &Rc<RefCell<Function>>, args: Vec<Value>, dst: Option<Location>) {
+        let mut stack = Vec::with_capacity(function.borrow().closure.borrow().registers as usize + 1);
         let args_len = args.len();
         stack.extend(args.into_iter().map(|v| Rc::new(RefCell::new(v))));
         stack.extend(
-            (args_len..function.closure.borrow().registers as usize + 1)
+            (args_len..function.borrow().closure.borrow().registers as usize + 1)
                 .map(|_| Rc::new(RefCell::new(Value::default()))),
         );
         self.call_frames.push(CallFrame {
@@ -154,6 +155,7 @@ impl Interpreter {
             .last_mut()
             .expect("no call frame")
             .function
+            .borrow()
             .closure
             .borrow()
             .code
@@ -759,6 +761,7 @@ impl Interpreter {
                         .last_mut()
                         .expect("no call frame on stack")
                         .function
+                        .borrow()
                         .closure
                         .borrow()
                         .closures
@@ -787,10 +790,11 @@ impl Interpreter {
                         Rc::default()
                     });
                 }
-                *dst.borrow_mut() = Value::Function(FunctionKind::Function(Rc::new(Function {
+                *dst.borrow_mut() = Value::Function(FunctionKind::Function(Rc::new(RefCell::new(Function {
                     upvalues,
                     closure,
-                })));
+                    meta: None
+                }))));
             }
             ByteCode::Binary {
                 op,
@@ -1090,7 +1094,7 @@ impl Interpreter {
 impl CallFrame {
     #[inline(always)]
     pub fn path(&self) -> Option<String> {
-        self.function.closure.borrow().path.clone()
+        self.function.borrow().closure.borrow().path.clone()
     }
     #[inline(always)]
     pub fn register(&self, register: Register) -> Option<Rc<RefCell<Value>>> {
@@ -1104,12 +1108,14 @@ impl CallFrame {
             }
             Source::Upvalue(addr) => self
                 .function
+                .borrow()
                 .upvalues
                 .get(*addr as usize)
                 .map(|value| value.borrow().clone()),
             Source::Global(addr) => {
                 if let Value::String(ident) = self
                     .function
+                    .borrow()
                     .closure
                     .borrow()
                     .consts
@@ -1129,6 +1135,7 @@ impl CallFrame {
             }
             Source::Constant(addr) => self
                 .function
+                .borrow()
                 .closure
                 .borrow()
                 .consts
@@ -1143,10 +1150,11 @@ impl CallFrame {
     pub fn location(&mut self, location: &Location) -> Option<Rc<RefCell<Value>>> {
         match location {
             Location::Register(register) => self.register(*register),
-            Location::Upvalue(addr) => self.function.upvalues.get(*addr as usize).map(Rc::clone),
+            Location::Upvalue(addr) => self.function.borrow().upvalues.get(*addr as usize).map(Rc::clone),
             Location::Global(addr) => {
                 if let Value::String(ident) = self
                     .function
+                    .borrow()
                     .closure
                     .borrow()
                     .consts
