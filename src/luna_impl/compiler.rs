@@ -1,9 +1,9 @@
 use super::{
     position::{Located, Position},
     std::FOR_FUNC,
+    ast::*,
 };
 use crate::lang::{
-    ast::*,
     code::{
         Address, BinaryOperation, ByteCode, Closure, Location, ObjectSize, Register, Source,
         Upvalue, VectorSize,

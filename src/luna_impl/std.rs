@@ -2,9 +2,10 @@
 use crate::{
     function,
     lang::{
-        ast::Chunk,
+        interpreter::{Interpreter, RunTimeError},
         value::{FunctionKind, Object, UserObject, UserObjectError, Value, META_NEXT},
     },
+    luna_impl::ast::Chunk,
     object, option, run_str, set_field, typed, userobject, ExpectedType, ExpectedTypes,
 };
 use std::{
@@ -23,10 +24,7 @@ use std::{
     time::Duration,
 };
 
-use super::{
-    interpreter::{Interpreter, RunTimeError},
-    position::Located,
-};
+use super::position::Located;
 
 pub const FOR_FUNC: &str = "next";
 
@@ -957,7 +955,6 @@ pub fn _object_getmeta(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, B
             }
         }
     )
-    
 }
 pub fn _object_clear(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let mut args = args.into_iter().enumerate();

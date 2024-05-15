@@ -1,4 +1,4 @@
-use crate::lang::ast::Chunk;
+use crate::luna_impl::ast::Chunk;
 
 #[test]
 fn counter() {

@@ -1,12 +1,15 @@
-use super::{
-    position::{Located, Position},
-    std::{
-        globals, BOOL_MODULE, CHAR_MODULE, FLOAT_MODULE, INT_MODULE, STRING_MODULE, VECTOR_MODULE,
+use crate::{
+    lang::{
+        code::{Address, BinaryOperation, ByteCode, Location, Register, Source, UnaryOperation},
+        value::{Function, FunctionKind, Object, Value, META_CALL, META_GET, META_SET},
     },
-};
-use crate::lang::{
-    code::{Address, BinaryOperation, ByteCode, Location, Register, Source, UnaryOperation},
-    value::{Function, FunctionKind, Object, Value, META_CALL, META_GET, META_SET},
+    luna_impl::{
+        position::{Located, Position},
+        std::{
+            globals, BOOL_MODULE, CHAR_MODULE, FLOAT_MODULE, INT_MODULE, STRING_MODULE,
+            VECTOR_MODULE,
+        },
+    },
 };
 use std::{cell::RefCell, collections::HashMap, error::Error, fmt::Display, rc::Rc};
 
@@ -82,8 +85,14 @@ impl Interpreter {
             .clone()
     }
     #[inline(always)]
-    pub fn call(&mut self, function: &Rc<RefCell<Function>>, args: Vec<Value>, dst: Option<Location>) {
-        let mut stack = Vec::with_capacity(function.borrow().closure.borrow().registers as usize + 1);
+    pub fn call(
+        &mut self,
+        function: &Rc<RefCell<Function>>,
+        args: Vec<Value>,
+        dst: Option<Location>,
+    ) {
+        let mut stack =
+            Vec::with_capacity(function.borrow().closure.borrow().registers as usize + 1);
         let args_len = args.len();
         stack.extend(args.into_iter().map(|v| Rc::new(RefCell::new(v))));
         stack.extend(
@@ -269,7 +278,9 @@ impl Interpreter {
                     .source(&func)
                     .expect("func not found");
                 match func {
-                    Value::Function(kind) => self.call_kind(kind, Vec::with_capacity(0), dst, pos)?,
+                    Value::Function(kind) => {
+                        self.call_kind(kind, Vec::with_capacity(0), dst, pos)?
+                    }
                     Value::Object(object) => {
                         let mut args = Vec::with_capacity(1);
                         args[0] = Value::Object(Rc::clone(&object));
@@ -790,11 +801,12 @@ impl Interpreter {
                         Rc::default()
                     });
                 }
-                *dst.borrow_mut() = Value::Function(FunctionKind::Function(Rc::new(RefCell::new(Function {
-                    upvalues,
-                    closure,
-                    meta: None
-                }))));
+                *dst.borrow_mut() =
+                    Value::Function(FunctionKind::Function(Rc::new(RefCell::new(Function {
+                        upvalues,
+                        closure,
+                        meta: None,
+                    }))));
             }
             ByteCode::Binary {
                 op,
@@ -1150,7 +1162,12 @@ impl CallFrame {
     pub fn location(&mut self, location: &Location) -> Option<Rc<RefCell<Value>>> {
         match location {
             Location::Register(register) => self.register(*register),
-            Location::Upvalue(addr) => self.function.borrow().upvalues.get(*addr as usize).map(Rc::clone),
+            Location::Upvalue(addr) => self
+                .function
+                .borrow()
+                .upvalues
+                .get(*addr as usize)
+                .map(Rc::clone),
             Location::Global(addr) => {
                 if let Value::String(ident) = self
                     .function

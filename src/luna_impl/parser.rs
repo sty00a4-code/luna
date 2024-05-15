@@ -1,5 +1,5 @@
 use super::position::{Located, Position};
-use crate::lang::{ast::*, tokens::Token};
+use crate::luna_impl::{ast::*, tokens::Token};
 use std::{error::Error, fmt::Display, iter::Peekable, vec::IntoIter};
 
 pub type Parser = Peekable<IntoIter<Located<Token>>>;

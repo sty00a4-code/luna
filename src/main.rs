@@ -2,21 +2,17 @@ pub extern crate luna_lib;
 
 use luna_lib::{
     lang::{
-        ast::Chunk,
-        code::Closure,
-        tokens::Token,
+        code::{ByteCode, Closure},
+        interpreter::Interpreter,
         value::{Function, Value},
     },
-    luna_impl::{compiler::CompilerFrame, position::PathLocated},
-};
-use luna_lib::{
-    lang::{ast::Expression, code::ByteCode},
     luna_impl::{
-        compiler::{Compilable, Compiler},
-        interpreter::Interpreter,
+        ast::{Chunk, Expression},
+        compiler::{Compilable, Compiler, CompilerFrame},
         lexer::Lexer,
         parser::Parsable,
-        position::{Located, Position},
+        position::{Located, PathLocated, Position},
+        tokens::Token,
     },
     parse_str,
 };

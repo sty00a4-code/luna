@@ -1,7 +1,5 @@
-use crate::luna_impl::{
-    interpreter::{Interpreter, RunTimeError},
-    position::Located,
-};
+use super::interpreter::{Interpreter, RunTimeError};
+use crate::luna_impl::position::Located;
 
 use super::code::Closure;
 use std::{

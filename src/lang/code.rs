@@ -1,8 +1,8 @@
-use super::{
+use super::value::Value;
+use crate::luna_impl::{
     ast::{BinaryOperator, UnaryOperator},
-    value::Value,
+    position::Located,
 };
-use crate::luna_impl::position::Located;
 use std::{cell::RefCell, fmt::Display, rc::Rc};
 
 pub type Register = u16;
@@ -197,28 +197,25 @@ impl Display for ByteCode {
                     write!(f, "jumpif {cond} *{addr:?}")
                 }
             }
-            Self::JumpNull { negative, cond, addr } => {
+            Self::JumpNull {
+                negative,
+                cond,
+                addr,
+            } => {
                 if *negative {
                     write!(f, "jumpnotnull {cond} *{addr:?}")
                 } else {
                     write!(f, "jumpnull {cond} *{addr:?}")
                 }
             }
-            Self::CallZero {
-                dst,
-                func,
-            } => {
+            Self::CallZero { dst, func } => {
                 if let Some(dst) = dst {
                     write!(f, "call {func} -> {dst}")
                 } else {
                     write!(f, "call {func}")
                 }
             }
-            Self::CallSingle {
-                dst,
-                func,
-                arg,
-            } => {
+            Self::CallSingle { dst, func, arg } => {
                 if let Some(dst) = dst {
                     write!(f, "call {func} {arg} -> {dst}")
                 } else {

@@ -6,7 +6,7 @@ use std::{
     str::Chars,
 };
 
-use crate::lang::tokens::Token;
+use crate::luna_impl::tokens::Token;
 
 use super::position::{Located, Position};
 

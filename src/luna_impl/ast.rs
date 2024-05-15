@@ -1,6 +1,7 @@
 use crate::luna_impl::position::Located;
 
-use super::{code::BinaryOperation, tokens::Token};
+use super::tokens::Token;
+use crate::lang::code::BinaryOperation;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Chunk(pub Vec<Located<Statement>>);
@@ -61,7 +62,7 @@ pub enum Statement {
     },
     Match {
         expr: Located<Expression>,
-        cases: Vec<(Located<Pattern>, Located<Block>)>
+        cases: Vec<(Located<Pattern>, Located<Block>)>,
     },
     While {
         cond: Located<Expression>,
@@ -98,8 +99,8 @@ pub enum Pattern {
     Atom(Atom),
     Guard {
         pattern: Box<Located<Self>>,
-        cond: Located<Expression>
-    }
+        cond: Located<Expression>,
+    },
 }
 #[derive(Debug, Clone, PartialEq)]
 pub enum Expression {
