@@ -1,7 +1,7 @@
 let set = {
 	mt = {
 		__type = "set"
-		__tostring = fn (self) {
+		__str = fn (self) {
 			return raw_get(self, "values")
 		}
 		__get = fn (self, v) {
