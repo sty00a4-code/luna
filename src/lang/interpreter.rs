@@ -283,6 +283,7 @@ impl Interpreter {
                     }
                     Value::Object(object) => {
                         let mut args = Vec::with_capacity(1);
+                        args.push(Value::default());
                         args[0] = Value::Object(Rc::clone(&object));
                         let object = object.borrow();
                         if let Some(Value::Function(kind)) = object.get_meta(META_CALL) {
