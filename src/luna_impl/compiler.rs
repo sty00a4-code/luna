@@ -273,6 +273,7 @@ impl Compilable for Located<Statement> {
                     } else {
                         exprs.remove(0).compile(compiler)?
                     };
+                    compiler_frame_mut!(compiler).pop_scope();
                     match param {
                         Parameter::Ident(ident) => {
                             let dst =
@@ -320,7 +321,6 @@ impl Compilable for Located<Statement> {
                             }
                         }
                     }
-                    compiler_frame_mut!(compiler).pop_scope();
                 }
                 Ok(None)
             }
