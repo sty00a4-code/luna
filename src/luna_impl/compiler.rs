@@ -273,7 +273,6 @@ impl Compilable for Located<Statement> {
                     } else {
                         exprs.remove(0).compile(compiler)?
                     };
-                    compiler_frame_mut!(compiler).pop_scope();
                     match param {
                         Parameter::Ident(ident) => {
                             let dst =
@@ -321,6 +320,7 @@ impl Compilable for Located<Statement> {
                             }
                         }
                     }
+                    compiler_frame_mut!(compiler).pop_scope();
                 }
                 Ok(None)
             }
@@ -335,7 +335,6 @@ impl Compilable for Located<Statement> {
             } => {
                 compiler_frame_mut!(compiler).push_scope();
                 let cond = expr.compile(compiler)?;
-                compiler_frame_mut!(compiler).pop_scope();
                 match param {
                     Parameter::Ident(ident) => {
                         let dst =
@@ -380,6 +379,7 @@ impl Compilable for Located<Statement> {
                         }
                     }
                 }
+                compiler_frame_mut!(compiler).pop_scope();
                 let check_addr =
                     compiler_frame_mut!(compiler).write(ByteCode::default(), Position::default());
                 compiler_frame_mut!(compiler).push_scope();
