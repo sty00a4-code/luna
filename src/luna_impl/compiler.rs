@@ -1,7 +1,7 @@
 use super::{
+    ast::*,
     position::{Located, Position},
     std::FOR_FUNC,
-    ast::*,
 };
 use crate::lang::{
     code::{
@@ -124,8 +124,21 @@ impl CompilerFrame {
             .push(Located::new(bytecode, pos));
         addr
     }
+    pub fn write_move(&mut self, dst: Location, src: Source, pos: Position) -> Address {
+        let addr = self.closure.borrow().code.len() as Address;
+        if Source::from(dst) != src {
+            self.closure
+                .borrow_mut()
+                .code
+                .push(Located::new(ByteCode::Move { dst, src }, pos));
+        }
+        addr
+    }
     pub fn overwrite(&mut self, addr: Address, bytecode: ByteCode, pos: Option<Position>) {
         let mut closure = self.closure.borrow_mut();
+        while addr as usize >= closure.code.len() {
+            closure.code.push(Located::default());
+        }
         let old = closure.code.get_mut(addr as usize).expect("invalid addr");
         *old = Located::new(bytecode, pos.unwrap_or(old.pos.clone()));
     }
@@ -278,7 +291,7 @@ impl Compilable for Located<Statement> {
                         Parameter::Ident(ident) => {
                             let dst =
                                 Location::Register(compiler_frame_mut!(compiler).new_local(ident));
-                            compiler_frame_mut!(compiler).write(ByteCode::Move { dst, src }, pos);
+                            compiler_frame_mut!(compiler).write_move(dst, src, pos);
                         }
                         Parameter::Object(fields) => {
                             for Located { value: ident, pos } in fields.into_iter() {
@@ -340,8 +353,7 @@ impl Compilable for Located<Statement> {
                     Parameter::Ident(ident) => {
                         let dst =
                             Location::Register(compiler_frame_mut!(compiler).new_local(ident));
-                        compiler_frame_mut!(compiler)
-                            .write(ByteCode::Move { dst, src: cond }, pos.clone());
+                        compiler_frame_mut!(compiler).write_move(dst, cond, pos.clone());
                     }
                     Parameter::Object(fields) => {
                         for Located { value: ident, pos } in fields.into_iter() {
@@ -428,8 +440,7 @@ impl Compilable for Located<Statement> {
                                     compiler_frame_mut!(compiler).new_const(Value::String(ident));
                                 Location::Global(addr)
                             });
-                            compiler_frame_mut!(compiler)
-                                .write(ByteCode::Move { dst, src }, path_pos);
+                            compiler_frame_mut!(compiler).write_move(dst, src, path_pos);
                         }
                         Path::Field {
                             head,
@@ -604,11 +615,9 @@ impl Compilable for Located<Statement> {
                         {
                             let pos = arg.pos.clone();
                             let src = arg.compile(compiler)?;
-                            compiler_frame_mut!(compiler).write(
-                                ByteCode::Move {
-                                    dst: Location::Register(register),
-                                    src,
-                                },
+                            compiler_frame_mut!(compiler).write_move(
+                                Location::Register(register),
+                                src,
                                 pos,
                             );
                         }
@@ -671,11 +680,9 @@ impl Compilable for Located<Statement> {
                     amount => {
                         let offset = compiler_frame_mut!(compiler).registers;
                         let head_register = compiler_frame_mut!(compiler).new_register();
-                        compiler_frame_mut!(compiler).write(
-                            ByteCode::Move {
-                                dst: Location::Register(head_register),
-                                src: head_location.into(),
-                            },
+                        compiler_frame_mut!(compiler).write_move(
+                            Location::Register(head_register),
+                            head_location.into(),
                             head_pos,
                         );
                         compiler_frame_mut!(compiler).registers += amount as Register;
@@ -684,11 +691,9 @@ impl Compilable for Located<Statement> {
                         {
                             let pos = arg.pos.clone();
                             let src = arg.compile(compiler)?;
-                            compiler_frame_mut!(compiler).write(
-                                ByteCode::Move {
-                                    dst: Location::Register(register),
-                                    src,
-                                },
+                            compiler_frame_mut!(compiler).write_move(
+                                Location::Register(register),
+                                src,
                                 pos,
                             );
                         }
@@ -997,8 +1002,7 @@ impl Compilable for Located<Statement> {
                         Parameter::Ident(ident) => {
                             let dst =
                                 Location::Register(compiler_frame_mut!(compiler).new_local(ident));
-                            compiler_frame_mut!(compiler)
-                                .write(ByteCode::Move { dst, src }, pos.clone());
+                            compiler_frame_mut!(compiler).write_move(dst, src, pos.clone());
                         }
                         Parameter::Object(fields) => {
                             for Located { value: ident, pos } in fields.into_iter() {
@@ -1215,8 +1219,7 @@ impl Compilable for Located<Statement> {
                         Parameter::Ident(ident) => {
                             let dst =
                                 Location::Register(compiler_frame_mut!(compiler).new_local(ident));
-                            compiler_frame_mut!(compiler)
-                                .write(ByteCode::Move { dst, src }, pos.clone());
+                            compiler_frame_mut!(compiler).write_move(dst, src, pos.clone());
                         }
                         Parameter::Object(fields) => {
                             for Located { value: ident, pos } in fields.into_iter() {
@@ -1409,20 +1412,12 @@ impl Located<Pattern> {
         match pattern {
             Pattern::Ident(ident) => {
                 let ident = compiler_frame_mut!(compiler).new_local(ident);
-                compiler_frame_mut!(compiler).write(
-                    ByteCode::Move {
-                        dst: Location::Register(ident),
-                        src: expr,
-                    },
+                compiler_frame_mut!(compiler).write_move(
+                    Location::Register(ident),
+                    expr,
                     pos.clone(),
                 );
-                compiler_frame_mut!(compiler).write(
-                    ByteCode::Move {
-                        dst,
-                        src: Source::Bool(true),
-                    },
-                    pos,
-                );
+                compiler_frame_mut!(compiler).write_move(dst, Source::Bool(true), pos);
             }
             Pattern::Atom(atom) => {
                 let atom = Located::new(atom, pos.clone()).compile(compiler)?;
@@ -1529,11 +1524,9 @@ impl Compilable for Located<Expression> {
                         {
                             let pos = arg.pos.clone();
                             let src = arg.compile(compiler)?;
-                            compiler_frame_mut!(compiler).write(
-                                ByteCode::Move {
-                                    dst: Location::Register(register),
-                                    src,
-                                },
+                            compiler_frame_mut!(compiler).write_move(
+                                Location::Register(register),
+                                src,
                                 pos,
                             );
                         }
@@ -1595,11 +1588,9 @@ impl Compilable for Located<Expression> {
                     amount => {
                         let offset = compiler_frame_mut!(compiler).registers;
                         let head_register = compiler_frame_mut!(compiler).new_register();
-                        compiler_frame_mut!(compiler).write(
-                            ByteCode::Move {
-                                dst: Location::Register(head_register),
-                                src: head,
-                            },
+                        compiler_frame_mut!(compiler).write_move(
+                            Location::Register(head_register),
+                            head,
                             head_pos,
                         );
                         compiler_frame_mut!(compiler).add_registers(amount as Register);
@@ -1608,11 +1599,9 @@ impl Compilable for Located<Expression> {
                         {
                             let pos = arg.pos.clone();
                             let src = scoped!(compiler: { arg.compile(compiler)? });
-                            compiler_frame_mut!(compiler).write(
-                                ByteCode::Move {
-                                    dst: Location::Register(register),
-                                    src,
-                                },
+                            compiler_frame_mut!(compiler).write_move(
+                                Location::Register(register),
+                                src,
                                 pos,
                             );
                         }
@@ -1702,11 +1691,9 @@ impl Compilable for Located<Atom> {
                 for (expr, register) in exprs.into_iter().zip(registers.into_iter()) {
                     let expr_pos = expr.pos.clone();
                     let src = scoped!(compiler: { expr.compile(compiler)? });
-                    compiler_frame_mut!(compiler).write(
-                        ByteCode::Move {
-                            dst: Location::Register(register),
-                            src,
-                        },
+                    compiler_frame_mut!(compiler).write_move(
+                        Location::Register(register),
+                        src,
                         expr_pos,
                     );
                 }
@@ -1738,18 +1725,14 @@ impl Compilable for Located<Atom> {
                     let addr = compiler_frame_mut!(compiler).new_const(Value::String(key));
                     let expr_pos = expr.pos.clone();
                     let src = scoped!(compiler: { expr.compile(compiler)? });
-                    compiler_frame_mut!(compiler).write(
-                        ByteCode::Move {
-                            dst: Location::Register(register),
-                            src: Source::Constant(addr),
-                        },
+                    compiler_frame_mut!(compiler).write_move(
+                        Location::Register(register),
+                        Source::Constant(addr),
                         key_pos,
                     );
-                    compiler_frame_mut!(compiler).write(
-                        ByteCode::Move {
-                            dst: Location::Register(register + 1),
-                            src,
-                        },
+                    compiler_frame_mut!(compiler).write_move(
+                        Location::Register(register + 1),
+                        src,
                         expr_pos,
                     );
                 }
@@ -1769,21 +1752,17 @@ impl Compilable for Located<Atom> {
                     compiler_frame_mut!(compiler).write(ByteCode::default(), Position::default());
 
                 let case = scoped!(compiler: { case.compile(compiler)? });
-                compiler_frame_mut!(compiler).write(
-                    ByteCode::Move {
-                        dst: Location::Register(register),
-                        src: case,
-                    },
+                compiler_frame_mut!(compiler).write_move(
+                    Location::Register(register),
+                    case,
                     pos.clone(),
                 );
                 let else_addr =
                     compiler_frame_mut!(compiler).write(ByteCode::default(), Position::default());
                 let else_case = scoped!(compiler: { else_case.compile(compiler)? });
-                compiler_frame_mut!(compiler).write(
-                    ByteCode::Move {
-                        dst: Location::Register(register),
-                        src: else_case,
-                    },
+                compiler_frame_mut!(compiler).write_move(
+                    Location::Register(register),
+                    else_case,
                     pos.clone(),
                 );
                 let exit_addr = compiler_frame_mut!(compiler).addr();
