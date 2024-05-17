@@ -421,7 +421,6 @@ impl Compilable for Located<Statement> {
                     } else {
                         exprs.remove(0).compile(compiler)?
                     };
-                    compiler_frame_mut!(compiler).pop_scope();
                     match path {
                         Path::Ident(ident) => {
                             let dst = compiler.get_variable_location(&ident).unwrap_or_else(|| {
@@ -469,6 +468,7 @@ impl Compilable for Located<Statement> {
                             compiler_frame_mut!(compiler).pop_scope();
                         }
                     }
+                    compiler_frame_mut!(compiler).pop_scope();
                 }
                 Ok(None)
             }
