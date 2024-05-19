@@ -1573,7 +1573,7 @@ fn _next(interpreter: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<d
         Value::UserObject(object) => {
             let object = Rc::clone(object);
             let mut object = object.borrow_mut();
-            object.call_mut("next", vec![iter])?
+            object.call_mut("next", interpreter, vec![iter])?
         }
         Value::Object(object) => {
             let object: Rc<RefCell<Object>> = Rc::clone(object);
@@ -1609,26 +1609,32 @@ fn _next(interpreter: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<d
         iter => return Err(format!("cannot iterate over {}", iter.dynamic_typ()).into()),
     })
 }
-fn _iter_next(_: &mut Interpreter, mut args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+fn _iter_next(
+    interpreter: &mut Interpreter,
+    mut args: Vec<Value>,
+) -> Result<Value, Box<dyn Error>> {
     let Some(_self) = args.first().cloned() else {
         return Err(Box::new(UserObjectError::ExpectedSelf("null")));
     };
     args.remove(0);
     if let Value::UserObject(_self) = _self {
         let mut _self = _self.borrow_mut();
-        _self.call_mut("next", args)
+        _self.call_mut("next", interpreter, args)
     } else {
         Err(Box::new(UserObjectError::ExpectedSelf(_self.typ())))
     }
 }
-fn _iter_collect(_: &mut Interpreter, mut args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+fn _iter_collect(
+    interpreter: &mut Interpreter,
+    mut args: Vec<Value>,
+) -> Result<Value, Box<dyn Error>> {
     let Some(_self) = args.first().cloned() else {
         return Err(Box::new(UserObjectError::ExpectedSelf("null")));
     };
     args.remove(0);
     if let Value::UserObject(_self) = _self {
         let mut _self = _self.borrow_mut();
-        _self.call_mut("collect", args)
+        _self.call_mut("collect", interpreter, args)
     } else {
         Err(Box::new(UserObjectError::ExpectedSelf(_self.typ())))
     }
@@ -1642,6 +1648,60 @@ pub trait CanBeIterator: Iterator<Item = Value> + Debug {
             self.collect::<Vec<Value>>(),
         ))))
     }
+    fn call_any(
+        &mut self,
+        interpreter: &mut Interpreter,
+        func: FunctionKind,
+    ) -> Result<Value, Box<dyn Error>> {
+        match func {
+            FunctionKind::Function(func) => {
+                for v in self {
+                    interpreter.call(&func, vec![v], None);
+                    let res = interpreter.run().map_err(|err| Box::new(err.value))?.unwrap_or_default();
+                    if bool::from(res) {
+                        return Ok(true.into())
+                    }
+                }
+                Ok(false.into())
+            }
+            FunctionKind::UserFunction(func) => {
+                for v in self {
+                    let res = func(interpreter, vec![v])?;
+                    if bool::from(res) {
+                        return Ok(true.into())
+                    }
+                }
+                Ok(false.into())
+            },
+        }
+    }
+    fn call_all(
+        &mut self,
+        interpreter: &mut Interpreter,
+        func: FunctionKind,
+    ) -> Result<Value, Box<dyn Error>> {
+        match func {
+            FunctionKind::Function(func) => {
+                for v in self {
+                    interpreter.call(&func, vec![v], None);
+                    let res = interpreter.run().map_err(|err| Box::new(err.value))?.unwrap_or_default();
+                    if !bool::from(res) {
+                        return Ok(false.into())
+                    }
+                }
+                Ok(true.into())
+            }
+            FunctionKind::UserFunction(func) => {
+                for v in self {
+                    let res = func(interpreter, vec![v])?;
+                    if !bool::from(res) {
+                        return Ok(false.into())
+                    }
+                }
+                Ok(true.into())
+            },
+        }
+    }
 }
 impl CanBeIterator for std::vec::IntoIter<Value> {}
 #[derive(Debug)]
@@ -1649,9 +1709,19 @@ pub struct IteratorObject(pub Box<dyn CanBeIterator>);
 userobject! {
     IteratorObject: "iterator";
     self
-    mut (self, args) {
+    mut (self, interpreter, args) {
         next : "next" {
             self.0.call_next()
+        }
+        any : "any" {
+            let mut args = args.into_iter().enumerate();
+            let func = typed!(args: Function);
+            self.0.call_any(interpreter, func)
+        }
+        all : "all" {
+            let mut args = args.into_iter().enumerate();
+            let func = typed!(args: Function);
+            self.0.call_all(interpreter, func)
         }
         collect : "collect" {
             self.0.call_collect()
@@ -1664,7 +1734,7 @@ pub struct StdinObject(Stdin);
 userobject! {
     StdinObject: "stdin";
     self
-    mut (self, args) {
+    mut (self, _i, args) {
         read : "read" {
             let mut args = args.into_iter().enumerate();
             let mode = typed!(args: String);
@@ -1683,7 +1753,7 @@ pub struct StdoutObject(Stdout);
 userobject! {
     StdoutObject: "stdout";
     self
-    mut (self, args) {
+    mut (self, _i, args) {
         write : "write" {
             let mut args = args.into_iter().enumerate();
             let buf = typed!(args: String);
@@ -1700,7 +1770,7 @@ pub struct StderrObject(Stderr);
 userobject! {
     StderrObject: "stderr";
     self
-    mut (self, args) {
+    mut (self, _i, args) {
         write : "write" {
             let mut args = args.into_iter().enumerate();
             let buf = typed!(args: String);
@@ -1714,7 +1784,7 @@ pub struct FileObject(File);
 userobject! {
     FileObject: "file";
     self
-    mut (self, args) {
+    mut (self, _i, args) {
         read : "read" {
             let mut string = String::new();
             self.0.read_to_string(&mut string)?;
@@ -1733,7 +1803,7 @@ pub struct TcpListenerObject(TcpListener);
 userobject! {
     TcpListenerObject: "tcp-listener";
     self
-    static (self, args) {
+    static (self, _i, args) {
         addr : "addr"  {
             Ok(self
                 .0
@@ -1742,7 +1812,7 @@ userobject! {
                 .unwrap_or_default())
         }
     }
-    mut (self, args) {
+    mut (self, _i, args) {
         accept : "accept" {
             Ok(self
                 .0
@@ -1759,7 +1829,7 @@ pub struct TcpStreamObject(TcpStream);
 userobject! {
     TcpStreamObject: "tcp-stream";
     self
-    static (self, _args) {
+    static (self, _i, _args) {
         local_addr : "local_addr" {
             Ok(self
                 .0
@@ -1775,7 +1845,7 @@ userobject! {
                 .unwrap_or_default())
         }
     }
-    mut (self, args) {
+    mut (self, _i, args) {
         read : "read" {
             let mut buf = String::new();
             let Ok(_) = self.0.read_to_string(&mut buf) else {

@@ -48,11 +48,11 @@ pub trait UserObject {
         Err(UserObjectError::InvalidField(key.into()))
     }
     #[allow(unused_variables)]
-    fn call(&self, key: &str, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    fn call(&self, key: &str, interpreter: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
         Err(Box::new(UserObjectError::CannotCallNull))
     }
     #[allow(unused_variables)]
-    fn call_mut(&mut self, key: &str, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    fn call_mut(&mut self, key: &str, interpreter: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
         Err(Box::new(UserObjectError::CannotCallNull))
     }
 }
