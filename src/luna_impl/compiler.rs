@@ -1496,7 +1496,7 @@ impl Compilable for Located<Expression> {
                         compiler_frame_mut!(compiler).write(
                             ByteCode::CallZero {
                                 dst: Some(Location::Register(dst)),
-                                func: head.into(),
+                                func: head,
                             },
                             pos,
                         );
@@ -1508,7 +1508,7 @@ impl Compilable for Located<Expression> {
                         compiler_frame_mut!(compiler).write(
                             ByteCode::CallSingle {
                                 dst: Some(Location::Register(dst)),
-                                func: head.into(),
+                                func: head,
                                 arg,
                             },
                             pos,
@@ -1573,7 +1573,7 @@ impl Compilable for Located<Expression> {
                 let amount = args.len() as u8 + 1;
                 let dst = match amount {
                     1 => {
-                        let arg = head.into();
+                        let arg = head;
                         let dst = compiler_frame_mut!(compiler).new_register();
                         compiler_frame_mut!(compiler).write(
                             ByteCode::CallSingle {
