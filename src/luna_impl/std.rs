@@ -99,7 +99,7 @@ pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
             "iter" = function!(_string_iter),
             "get" = function!(_string_get),
             "sub" = function!(_string_sub),
-            "sep" = function!(_string_sep),
+            "split" = function!(_string_sep),
             "rep" = function!(_string_rep),
             "rev" = function!(_string_rev),
             "find" = function!(_string_find),
