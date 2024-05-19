@@ -1596,7 +1596,7 @@ fn _next(interpreter: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<d
         }
         Value::Function(kind) => match kind {
             FunctionKind::Function(function) => {
-                interpreter.call(&function, vec![], None);
+                interpreter.call(function, vec![], None);
                 return Ok(interpreter
                     .run()
                     .map_err(|Located { value: err, pos: _ }| err)?
