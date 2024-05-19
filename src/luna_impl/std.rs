@@ -99,13 +99,18 @@ pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
             "iter" = function!(_string_iter),
             "get" = function!(_string_get),
             "sub" = function!(_string_sub),
-            "split" = function!(_string_sep),
+            "split" = function!(_string_split),
+            "split_amount" = function!(_string_split_amount),
+            "split_at" = function!(_string_split_at),
+            "split_off" = function!(_string_split_off),
             "rep" = function!(_string_rep),
             "rev" = function!(_string_rev),
             "find" = function!(_string_find),
             "format" = function!(_string_format),
             "bin" = function!(_int_from_bin),
-            "hex" = function!(_int_from_hex)
+            "hex" = function!(_int_from_hex),
+            "start" = function!(_string_starts_with),
+            "end" = function!(_string_ends_with)
         }
     );
     set_field!(
@@ -634,7 +639,7 @@ pub fn _string_sub(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<d
         .map(|slice| Value::String(slice.to_string()))
         .unwrap_or(default.map(Value::String).unwrap_or_default()))
 }
-pub fn _string_sep(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+pub fn _string_split(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let mut args = args.into_iter().enumerate();
     let string = typed!(args: String);
     let sep = typed!(args: String);
@@ -644,6 +649,38 @@ pub fn _string_sep(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<d
         .map(|s| s.to_string())
         .collect::<Vec<String>>()
         .into())
+}
+pub fn _string_split_amount(
+    _: &mut Interpreter,
+    args: Vec<Value>,
+) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let string = typed!(args: String);
+    let n = typed!(args: Int);
+    let sep = typed!(args: String);
+
+    Ok(string
+        .splitn(n.unsigned_abs() as usize, &sep)
+        .map(|s| s.to_string())
+        .collect::<Vec<String>>()
+        .into())
+}
+pub fn _string_split_at(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let string = typed!(args: String);
+    let n = typed!(args: Int);
+    let (left, right) = string.split_at(n.unsigned_abs() as usize);
+    Ok(vec![
+        Value::String(left.to_string()),
+        Value::String(right.to_string()),
+    ]
+    .into())
+}
+pub fn _string_split_off(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let mut string = typed!(args: String);
+    let n = typed!(args: Int);
+    Ok(string.split_off(n.unsigned_abs() as usize).into())
 }
 pub fn _string_rep(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let mut args = args.into_iter().enumerate();
@@ -741,6 +778,20 @@ pub fn _string_format(
         }
     }
     Ok(formatted.into())
+}
+pub fn _string_starts_with(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let string = typed!(args: String);
+    let start = typed!(args: String);
+
+    Ok(string.starts_with(&start).into())
+}
+pub fn _string_ends_with(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let string = typed!(args: String);
+    let start = typed!(args: String);
+
+    Ok(string.ends_with(&start).into())
 }
 
 pub fn _vector_iter(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
@@ -1657,9 +1708,12 @@ pub trait CanBeIterator: Iterator<Item = Value> + Debug {
             FunctionKind::Function(func) => {
                 for v in self {
                     interpreter.call(&func, vec![v], None);
-                    let res = interpreter.run().map_err(|err| Box::new(err.value))?.unwrap_or_default();
+                    let res = interpreter
+                        .run()
+                        .map_err(|err| Box::new(err.value))?
+                        .unwrap_or_default();
                     if bool::from(res) {
-                        return Ok(true.into())
+                        return Ok(true.into());
                     }
                 }
                 Ok(false.into())
@@ -1668,11 +1722,11 @@ pub trait CanBeIterator: Iterator<Item = Value> + Debug {
                 for v in self {
                     let res = func(interpreter, vec![v])?;
                     if bool::from(res) {
-                        return Ok(true.into())
+                        return Ok(true.into());
                     }
                 }
                 Ok(false.into())
-            },
+            }
         }
     }
     fn call_all(
@@ -1684,9 +1738,12 @@ pub trait CanBeIterator: Iterator<Item = Value> + Debug {
             FunctionKind::Function(func) => {
                 for v in self {
                     interpreter.call(&func, vec![v], None);
-                    let res = interpreter.run().map_err(|err| Box::new(err.value))?.unwrap_or_default();
+                    let res = interpreter
+                        .run()
+                        .map_err(|err| Box::new(err.value))?
+                        .unwrap_or_default();
                     if !bool::from(res) {
-                        return Ok(false.into())
+                        return Ok(false.into());
                     }
                 }
                 Ok(true.into())
@@ -1695,11 +1752,11 @@ pub trait CanBeIterator: Iterator<Item = Value> + Debug {
                 for v in self {
                     let res = func(interpreter, vec![v])?;
                     if !bool::from(res) {
-                        return Ok(false.into())
+                        return Ok(false.into());
                     }
                 }
                 Ok(true.into())
-            },
+            }
         }
     }
 }
