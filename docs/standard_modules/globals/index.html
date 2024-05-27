@@ -65,7 +65,12 @@
 <li class="toctree-l3"><a class="nav-item toc" href="#exitcode-int">exit(code: int?)</a></li>
 <li class="toctree-l3"><a class="nav-item toc" href="#safe_callf-fn-ok-err-string">safe_call(f: fn, ...): { ok?, err: string? }</a></li>
 <li class="toctree-l3"><a class="nav-item toc" href="#rangestart-int-end-int-iteratorint">range(start: int, end: int?): iterator&lt;int&gt;</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#raw_geto-object-k-string">raw_get(o: object, k: string)</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#raw_seto-object-k-string-value">raw_set(o: object, k: string, value)</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#iteriterable-stringvectorobject-iterator">iter(iterable: string|vector|object): iterator</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#nextiter-iteratorvobject-v">next(iter: iterator&lt;V&gt;|object): V?</a></li>
 <li class="toctree-l3"><a class="nav-item toc" href="#typevalue-string">type(value): string</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#raw_typevalue-string">raw_type(value): string</a></li>
 <li class="toctree-l3"><a class="nav-item toc" href="#optionsvalue-bool">options(value, ...): bool</a></li>
 <li class="toctree-l3"><a class="nav-item toc" href="#somevalue-bool">some(value): bool</a></li>
 <li class="toctree-l3"><a class="nav-item toc" href="#str-string">str(...): string</a></li>
@@ -126,8 +131,18 @@
 <p>Run's the function in safe manner. Errors will not cause the program to crash, but the error will be returned in form of an object as the field <code>err</code>. If it runs successfully the field <code>ok</code> holds the return value.</p>
 <h4 id="rangestart-int-end-int-iteratorint"><code>range(start: int, end: int?): iterator&lt;int&gt;</code></h4>
 <p>Creates an iterator over the given range defined by <code>start</code> and <code>end</code>. If <code>end</code> is null, <code>start</code> will be <code>0</code> and <code>end</code> will be the <code>start</code></p>
+<h4 id="raw_geto-object-k-string"><code>raw_get(o: object, k: string)</code></h4>
+<p>Returns the value with the key <code>k</code> in object <code>o</code>, without calling the custom meta-function <code>__get</code> defined for <code>o</code> </p>
+<h4 id="raw_seto-object-k-string-value"><code>raw_set(o: object, k: string, value)</code></h4>
+<p>Sets the value with the key <code>k</code> in object <code>o</code> to <code>value</code>, without calling the custom meta-function <code>__set</code> defined for <code>o</code></p>
+<h4 id="iteriterable-stringvectorobject-iterator"><code>iter(iterable: string|vector|object): iterator</code></h4>
+<p>Call the iterator function for the value <code>iterable</code></p>
+<h4 id="nextiter-iteratorvobject-v"><code>next(iter: iterator&lt;V&gt;|object): V?</code></h4>
+<p>Calls the <code>next</code> function of the <code>iter</code> iterator. If <code>iter</code> is an object that defined the meta-function <code>__next</code>, that function will be called.</p>
 <h4 id="typevalue-string"><code>type(value): string</code></h4>
 <p><em>definition: <a href="../typed/#typed.type"><code>typed.type</code></a></em></p>
+<h4 id="raw_typevalue-string"><code>raw_type(value): string</code></h4>
+<p><em>definition: <a href="../typed/#raw_typed.type"><code>typed.raw_type</code></a></em></p>
 <h4 id="optionsvalue-bool"><code>options(value, ...): bool</code></h4>
 <p><em>definition: <a href="../typed/#typed.options"><code>typed.options</code></a></em></p>
 <h4 id="somevalue-bool"><code>some(value): bool</code></h4>

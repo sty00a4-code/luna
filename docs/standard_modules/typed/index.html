@@ -75,6 +75,8 @@
     <li class="toctree-l2"><a class="nav-item" href="../os/">OS</a></li>
     <li class="toctree-l2 current"><a class="nav-item current" href="./">Typed</a>
 <ul class="subnav">
+<li class="toctree-l3"><a class="nav-item toc" href="#typedtypevalue-string">typed.type(value): string</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#typedraw_typevalue-string">typed.raw_type(value): string</a></li>
 <li class="toctree-l3"><a class="nav-item toc" href="#typedcheckvalue-v-string-v">typed.check(value: V, ...: string): V?</a></li>
 <li class="toctree-l3"><a class="nav-item toc" href="#typedcheck_rawvalue-v-string-v">typed.check_raw(value: V, ...: string): V?</a></li>
 <li class="toctree-l3"><a class="nav-item toc" href="#typedintvalue-int">typed.int(value): int?</a></li>
@@ -111,8 +113,12 @@
 </ul>
 </nav>
                 <div id="content"><h1 id="typed-module">Typed Module</h1>
+<h4 id="typedtypevalue-string"><code>typed.type(value): string</code></h4>
+<p>Returns the type of <code>value</code> as a string. For objects it looks for the meta-field <code>__type</code>, but returns <code>object</code> as a default.</p>
+<h4 id="typedraw_typevalue-string"><code>typed.raw_type(value): string</code></h4>
+<p>Returns the type of <code>value</code> as a string, ignoring the objects meta-field <code>__type</code>.</p>
 <h4 id="typedcheckvalue-v-string-v"><code>typed.check(value: V, ...: string): V?</code></h4>
-<p>Checks if the <code>value</code> is of any of the types in the rest of the arguments</p>
+<p>Checks if the <code>value</code> is of any of the types in the rest of the arguments.</p>
 <h4 id="typedcheck_rawvalue-v-string-v"><code>typed.check_raw(value: V, ...: string): V?</code></h4>
 <p>Checks if the <code>value</code> is of any of the types in the rest of the arguments. The meta-field <code>__type</code> will not have an effect.</p>
 <h4 id="typedintvalue-int"><code>typed.int(value): int?</code></h4>
@@ -140,7 +146,7 @@
 <h4 id="typedoptionsvalue-v-v"><code>typed.options(value: V, ...): V?</code></h4>
 <p>Checks if the <code>value</code> is equal to any of the values in the rest of the arguments.</p>
 <h4 id="typedsomevalue-v-v"><code>typed.some(value: V): V?</code></h4>
-<p>Checks if the <code>value</code> is not null. Any usual falsy value except null of course return <code>true</code></p></div>
+<p>Checks if the <code>value</code> is not null. Any usual falsy value except null of course return <code>true</code>.</p></div>
                 <footer>
     <div class="footer-buttons">
         <div class="previous"><a href="../os/" title="OS"><span>Previous</span></a></div>

@@ -207,6 +207,7 @@ pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
     set_field!(globals."some" = function!(_typed_some));
     set_field!(globals."typed" = object! {
         "type" = globals["type"].borrow().clone(),
+        "raw_type" = globals["raw_type"].borrow().clone(),
         "check" =  function!(_typed_check),
         "check_raw" =  function!(_typed_check_raw),
         "int" = function!(_typed_int),

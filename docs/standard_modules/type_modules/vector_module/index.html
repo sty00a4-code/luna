@@ -70,6 +70,7 @@
 <li class="toctree-l4"><a class="nav-item toc" href="#vectorlenv-vector-int">vector.len(v: vector): int</a></li>
 <li class="toctree-l4"><a class="nav-item toc" href="#vectorgetv-vector-index-int-default">vector.get(v: vector, index: int, default?)</a></li>
 <li class="toctree-l4"><a class="nav-item toc" href="#vectorcontainsv-vector-value-bool">vector.contains(v: vector, value): bool</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#vectorpositionvalue-int">vector.position(value): int?</a></li>
 <li class="toctree-l4"><a class="nav-item toc" href="#vectorpushv-vector-value">vector.push(v: vector, value)</a></li>
 <li class="toctree-l4"><a class="nav-item toc" href="#vectorpopv-vectort-index-int-t">vector.pop(v: vector&lt;T&gt;, index: int?): T?</a></li>
 <li class="toctree-l4"><a class="nav-item toc" href="#vectorjoinv-vector-sep-string-string">vector.join(v: vector, sep: string): string</a></li>
@@ -116,6 +117,8 @@
 <p>Returns the value of <code>v</code> at index <code>index</code>. If the index is out of range, <code>default</code> is returned</p>
 <h4 id="vectorcontainsv-vector-value-bool"><code>vector.contains(v: vector, value): bool</code></h4>
 <p>Checks if the <code>value</code> is contained in <code>v</code>.</p>
+<h4 id="vectorpositionvalue-int"><code>vector.position(value): int?</code></h4>
+<p>Returns the index of the element in the vector that equal <code>value</code>, if there is any.</p>
 <h4 id="vectorpushv-vector-value"><code>vector.push(v: vector, value)</code></h4>
 <p>Pushes the <code>value</code> onto <code>v</code>.</p>
 <h4 id="vectorpopv-vectort-index-int-t"><code>vector.pop(v: vector&lt;T&gt;, index: int?): T?</code></h4>

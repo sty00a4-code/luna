@@ -73,7 +73,10 @@
 <li class="toctree-l4"><a class="nav-item toc" href="#stringiters-string-iteratorchar">string.iter(s: string): iterator&lt;char&gt;</a></li>
 <li class="toctree-l4"><a class="nav-item toc" href="#stringgets-string-index-int-default-char-char">string.get(s: string, index: int, default: char?): char?</a></li>
 <li class="toctree-l4"><a class="nav-item toc" href="#stringsubs-string-i-int-j-int-default-string-string">string.sub(s: string, i: int, j: int?, default: string?): string?</a></li>
-<li class="toctree-l4"><a class="nav-item toc" href="#stringseps-string-sep-string-vectorstring">string.sep(s: string, sep: string): vector&lt;string&gt;</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#stringsplits-string-sep-string-vectorstring">string.split(s: string, sep: string): vector&lt;string&gt;</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#stringsplit_amounts-string-n-int-sep-string-vectorstring">string.split_amount(s: string, n: int, sep: string): vector&lt;string&gt;</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#stringsplit_ats-string-idx-int-vectorstring">string.split_at(s: string, idx: int): vector&lt;string&gt;</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#stringsplit_offs-string-idx-int-string">string.split_off(s: string, idx: int): string</a></li>
 <li class="toctree-l4"><a class="nav-item toc" href="#stringreps-string-n-int-string">string.rep(s: string, n: int): string</a></li>
 <li class="toctree-l4"><a class="nav-item toc" href="#stringrevs-string-string">string.rev(s: string): string</a></li>
 <li class="toctree-l4"><a class="nav-item toc" href="#stringfinds-string-patt-string-string">string.find(s: string, patt: string): string</a></li>
@@ -127,8 +130,14 @@
 <p>Returns the char at the <code>index</code> of the <code>s</code> string. Defaults to the <code>default</code> char if given.</p>
 <h4 id="stringsubs-string-i-int-j-int-default-string-string"><code>string.sub(s: string, i: int, j: int?, default: string?): string?</code></h4>
 <p>Returns the sub-string of <code>s</code> from index <code>i</code> to <code>j</code>. If <code>j</code> is not given, it is the length of the string. If the indexes are out of range, <code>default</code> will be returned.</p>
-<h4 id="stringseps-string-sep-string-vectorstring"><code>string.sep(s: string, sep: string): vector&lt;string&gt;</code></h4>
-<p>Returns a vector of the parts of the <code>s</code> string, seperated by <code>sep</code>.</p>
+<h4 id="stringsplits-string-sep-string-vectorstring"><code>string.split(s: string, sep: string): vector&lt;string&gt;</code></h4>
+<p>Returns a vector of the string <code>s</code> split by <code>sep</code>.</p>
+<h4 id="stringsplit_amounts-string-n-int-sep-string-vectorstring"><code>string.split_amount(s: string, n: int, sep: string): vector&lt;string&gt;</code></h4>
+<p>Returns a vector of the string <code>s</code> split by <code>sep</code>, but only <code>n</code> amount of times.</p>
+<h4 id="stringsplit_ats-string-idx-int-vectorstring"><code>string.split_at(s: string, idx: int): vector&lt;string&gt;</code></h4>
+<p>Returns a vector of the string <code>s</code> split at the index <code>idx</code>.</p>
+<h4 id="stringsplit_offs-string-idx-int-string"><code>string.split_off(s: string, idx: int): string</code></h4>
+<p>Returns a the string <code>s</code> from index <code>idx</code> to the end of the string.</p>
 <h4 id="stringreps-string-n-int-string"><code>string.rep(s: string, n: int): string</code></h4>
 <p>Returns a repetition of the <code>s</code> string by <code>n</code>.</p>
 <h4 id="stringrevs-string-string"><code>string.rev(s: string): string</code></h4>
