@@ -51,7 +51,7 @@ pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
     set_field!(globals."raw_get" = function!(_raw_get));
     set_field!(globals."raw_set" = function!(_raw_set));
     set_field!(globals."iter" = function!(_iter));
-    set_field!(globals."next" = function!(_next));
+    set_field!(globals.FOR_FUNC = function!(_next));
     set_field!(
         globals.INT_MODULE = object! {
             "from" = function!(_int_from),
