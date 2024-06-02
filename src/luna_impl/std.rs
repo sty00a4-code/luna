@@ -1834,6 +1834,10 @@ userobject! {
             let buf = typed!(args: String);
             Ok(Value::Int(self.0.write(&buf.into_bytes())? as i64))
         }
+        flush : "flush" {
+            self.0.flush()?;
+            Ok(Value::default())
+        }
     }
 }
 
