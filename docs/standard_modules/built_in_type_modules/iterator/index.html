@@ -6,7 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="shortcut icon" href="../../../img/favicon.ico">
-    <title>Float Module &mdash; Luna Docs</title>
+    <title>Iterator &mdash; Luna Docs</title>
     <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:400,700">
     <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/tonsky/FiraCode@1.206/distr/fira_code.css">
     <link rel="stylesheet" href="//use.fontawesome.com/releases/v5.8.1/css/all.css">
@@ -57,31 +57,31 @@
                     <li class="toctree-l1"><button class="section nav-item">Standard Modules</button>
 <ul class="subnav">
     <li class="toctree-l2"><a class="nav-item" href="../../globals/">Globals</a></li>
-    <li class="toctree-l2 current"><button class="section nav-item">Type Modules</button>
-<ul class="subnav">
-    <li class="toctree-l3"><a class="nav-item" href="../int_module/">Int Module</a></li>
-    <li class="toctree-l3 current"><a class="nav-item current" href="./">Float Module</a>
-<ul class="subnav">
-<li class="toctree-l4"><a class="nav-item toc" href="#floatfromvalue-float">float.from(value): float?</a></li>
-<li class="toctree-l4"><a class="nav-item toc" href="#floatfloorvalue-float-float">float.floor(value: float): float</a></li>
-<li class="toctree-l4"><a class="nav-item toc" href="#floatceilvalue-float-float">float.ceil(value: float): float</a></li>
-<li class="toctree-l4"><a class="nav-item toc" href="#floatroundvalue-float-float">float.round(value: float): float</a></li>
-</ul></li>
-    <li class="toctree-l3"><a class="nav-item" href="../bool_module/">Bool Module</a></li>
-    <li class="toctree-l3"><a class="nav-item" href="../char_module/">Char Module</a></li>
-    <li class="toctree-l3"><a class="nav-item" href="../string_module/">String Module</a></li>
-    <li class="toctree-l3"><a class="nav-item" href="../vector_module/">Vector Module</a></li>
-    <li class="toctree-l3"><a class="nav-item" href="../object_module/">Object Module</a></li>
-</ul></li>
-    <li class="toctree-l2"><button class="section nav-item hide">Built-in Type Modules</button>
+    <li class="toctree-l2"><button class="section nav-item hide">Type Modules</button>
 <ul class="subnav hide">
-    <li class="toctree-l3"><a class="nav-item" href="../../built_in_type_modules/iterator/">Iterator</a></li>
-    <li class="toctree-l3"><a class="nav-item" href="../../built_in_type_modules/stdin/">Stdin</a></li>
-    <li class="toctree-l3"><a class="nav-item" href="../../built_in_type_modules/stdout/">Stdout</a></li>
-    <li class="toctree-l3"><a class="nav-item" href="../../built_in_type_modules/stderr/">Stderr</a></li>
-    <li class="toctree-l3"><a class="nav-item" href="../../built_in_type_modules/file/">File</a></li>
-    <li class="toctree-l3"><a class="nav-item" href="../../built_in_type_modules/tcp_listener/">TCP Listener</a></li>
-    <li class="toctree-l3"><a class="nav-item" href="../../built_in_type_modules/tcp_stream/">TCP Stream</a></li>
+    <li class="toctree-l3"><a class="nav-item" href="../../type_modules/int_module/">Int Module</a></li>
+    <li class="toctree-l3"><a class="nav-item" href="../../type_modules/float_module/">Float Module</a></li>
+    <li class="toctree-l3"><a class="nav-item" href="../../type_modules/bool_module/">Bool Module</a></li>
+    <li class="toctree-l3"><a class="nav-item" href="../../type_modules/char_module/">Char Module</a></li>
+    <li class="toctree-l3"><a class="nav-item" href="../../type_modules/string_module/">String Module</a></li>
+    <li class="toctree-l3"><a class="nav-item" href="../../type_modules/vector_module/">Vector Module</a></li>
+    <li class="toctree-l3"><a class="nav-item" href="../../type_modules/object_module/">Object Module</a></li>
+</ul></li>
+    <li class="toctree-l2 current"><button class="section nav-item">Built-in Type Modules</button>
+<ul class="subnav">
+    <li class="toctree-l3 current"><a class="nav-item current" href="./">Iterator</a>
+<ul class="subnav">
+<li class="toctree-l4"><a class="nav-item toc" href="#iteratornextiter-iteratorv-v">&lt;iterator&gt;.next(iter: iterator&lt;V&gt;): V?</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#iteratoranyiter-iteratorv-cond-fnv-v-boolean">&lt;iterator&gt;.any(iter: iterator&lt;V&gt;, cond: fn(v: V)): boolean</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#iteratoralliter-iteratorv-cond-fnv-v-boolean">&lt;iterator&gt;.all(iter: iterator&lt;V&gt;, cond: fn(v: V)): boolean</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#iteratorcollectiter-iteratorv-vectorv">&lt;iterator&gt;.collect(iter: iterator&lt;V&gt;): vector&lt;V&gt;</a></li>
+</ul></li>
+    <li class="toctree-l3"><a class="nav-item" href="../stdin/">Stdin</a></li>
+    <li class="toctree-l3"><a class="nav-item" href="../stdout/">Stdout</a></li>
+    <li class="toctree-l3"><a class="nav-item" href="../stderr/">Stderr</a></li>
+    <li class="toctree-l3"><a class="nav-item" href="../file/">File</a></li>
+    <li class="toctree-l3"><a class="nav-item" href="../tcp_listener/">TCP Listener</a></li>
+    <li class="toctree-l3"><a class="nav-item" href="../tcp_stream/">TCP Stream</a></li>
 </ul></li>
     <li class="toctree-l2"><a class="nav-item" href="../../math/">Math</a></li>
     <li class="toctree-l2"><a class="nav-item" href="../../io/">IO</a></li>
@@ -94,8 +94,8 @@
                 </ul>
             </nav>
             <div class="repo">
-    <div class="previous"><a href="../int_module/">&laquo; Previous</a></div>
-    <div class="next"><a href="../bool_module/">Next &raquo;</a></div>
+    <div class="previous"><a href="../../type_modules/object_module/">&laquo; Previous</a></div>
+    <div class="next"><a href="../stdin/">Next &raquo;</a></div>
 </div>
         </aside>
         <div id="spacer"><button class="arrow"></button></div>
@@ -107,23 +107,23 @@
             <div id="main">
                 <nav class="breadcrumbs">
 <ul>
-    <li>Standard Modules &raquo; </li><li>Type Modules</li>
+    <li>Standard Modules &raquo; </li><li>Built-in Type Modules</li>
 </ul>
 </nav>
-                <div id="content"><h1 id="float-module">Float Module</h1>
-<p>All the functions in this module can be self-called on any float value, if that function expects a float as the first argument.</p>
-<h4 id="floatfromvalue-float"><code>float.from(value): float?</code></h4>
-<p>Casts the <code>value</code> into a float if it is possible.</p>
-<h4 id="floatfloorvalue-float-float"><code>float.floor(value: float): float</code></h4>
-<p>Returns the floored float of <code>value</code>.</p>
-<h4 id="floatceilvalue-float-float"><code>float.ceil(value: float): float</code></h4>
-<p>Returns the ceiled float of <code>value</code>.</p>
-<h4 id="floatroundvalue-float-float"><code>float.round(value: float): float</code></h4>
-<p>Returns the rounded float of <code>value</code>.</p></div>
+                <div id="content"><h1 id="iterator">Iterator</h1>
+<p>All the functions in this module can only be self-called on the iterator user-object, if that function expects an iterator user-object as the first argument.</p>
+<h4 id="iteratornextiter-iteratorv-v"><code>&lt;iterator&gt;.next(iter: iterator&lt;V&gt;): V?</code></h4>
+<p>Returns the next value in the iteration if any are left.</p>
+<h4 id="iteratoranyiter-iteratorv-cond-fnv-v-boolean"><code>&lt;iterator&gt;.any(iter: iterator&lt;V&gt;, cond: fn(v: V)): boolean</code></h4>
+<p>Returns true if any value of <code>iter</code> makes the <code>cond</code> function return a truthy value.</p>
+<h4 id="iteratoralliter-iteratorv-cond-fnv-v-boolean"><code>&lt;iterator&gt;.all(iter: iterator&lt;V&gt;, cond: fn(v: V)): boolean</code></h4>
+<p>Returns true if all values of <code>iter</code> make the <code>cond</code> function return a truthy value.</p>
+<h4 id="iteratorcollectiter-iteratorv-vectorv"><code>&lt;iterator&gt;.collect(iter: iterator&lt;V&gt;): vector&lt;V&gt;</code></h4>
+<p>Returns a vector of all the values left in the <code>iter</code> iterator.</p></div>
                 <footer>
     <div class="footer-buttons">
-        <div class="previous"><a href="../int_module/" title="Int Module"><span>Previous</span></a></div>
-        <div class="next"><a href="../bool_module/" title="Bool Module"><span>Next</span></a></div>
+        <div class="previous"><a href="../../type_modules/object_module/" title="Object Module"><span>Previous</span></a></div>
+        <div class="next"><a href="../stdin/" title="Stdin"><span>Next</span></a></div>
     </div>
     <div class="footer-note">
         <p>
