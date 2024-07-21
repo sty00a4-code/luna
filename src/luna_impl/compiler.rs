@@ -685,7 +685,7 @@ impl Compilable for Located<Statement> {
                             head_location.into(),
                             head_pos,
                         );
-                        compiler_frame_mut!(compiler).registers += amount as Register;
+                        compiler_frame_mut!(compiler).add_registers(amount as Register);
                         for (register, arg) in
                             (offset + 1..offset + amount as Register).zip(args.into_iter())
                         {
