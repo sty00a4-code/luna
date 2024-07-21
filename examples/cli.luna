@@ -1,5 +1,5 @@
 while true {
-    let args = input("> "):sep(" ")
+    let args = input("> "):split(" ")
     let [head] = args
     match head {
         "send" => {

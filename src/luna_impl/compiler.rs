@@ -1158,7 +1158,19 @@ impl Compilable for Located<Statement> {
                         );
                     }
                 }
-                compiler_frame_mut!(compiler).pop_scope();
+                let scope = compiler_frame_mut!(compiler)
+                    .pop_scope()
+                    .expect(COMPILER_SCOPE_EXPECT);
+                if !scope.breaks.is_empty() {
+                    if let Some(prev_scope) = compiler_frame_mut!(compiler).scope_mut() {
+                        prev_scope.breaks.extend(scope.breaks);
+                    }
+                }
+                if !scope.continues.is_empty() {
+                    if let Some(prev_scope) = compiler_frame_mut!(compiler).scope_mut() {
+                        prev_scope.continues.extend(scope.continues);
+                    }
+                }
                 Ok(None)
             }
             Statement::While { cond, body } => {
