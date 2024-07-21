@@ -91,7 +91,7 @@ fn main() {
     if let Some(path) = &args.path {
         let text = fs::read_to_string(path)
             .map_err(|err| {
-                eprintln!("ERROR: error while reading {:?}: {err}", args.path);
+                eprintln!("ERROR: error while reading {:?}: {err}", path);
                 process::exit(1);
             })
             .unwrap();
