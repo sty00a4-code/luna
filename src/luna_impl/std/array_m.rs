@@ -19,7 +19,11 @@ pub fn define(globals: &mut HashMap<String, Rc<RefCell<Value>>>) {
         "i16" = function!(ArrayI16::_new),
         "i32" = function!(ArrayI32::_new),
         "i64" = function!(ArrayI64::_new),
-        "i128" = function!(ArrayI128::_new)
+        "i128" = function!(ArrayI128::_new),
+        "f32" = function!(ArrayF32::_new),
+        "f64" = function!(ArrayF64::_new),
+        "bool" = function!(ArrayBool::_new),
+        "char" = function!(ArrayChar::_new)
     });
 }
 
@@ -37,7 +41,7 @@ impl Display for ArrayError {
 impl Error for ArrayError {}
 
 macro_rules! define_array {
-    ($name:ident $typ:ty : $type_name:literal; $iterator_name:ident : $iterator_type_name:literal) => {
+    ($name:ident $typ:ty = $luna_typ:ident : $type_name:literal; $iterator_name:ident : $iterator_type_name:literal) => {
         #[derive(Debug, Clone)]
         pub struct $name {
             pub array: Vec<$typ>,
@@ -48,7 +52,7 @@ macro_rules! define_array {
             self
             mut (self, interpreter, args) {
                 next : "next" {
-                    Ok(self.0.next().map(|v| Value::Int(v as i64)).unwrap_or_default())
+                    Ok(self.0.next().map(|v| v.cast().map(Value::$luna_typ).unwrap_or_default()).unwrap_or_default())
                 }
                 any : "any" {
                     let mut args = args.into_iter().enumerate();
@@ -124,7 +128,7 @@ macro_rules! define_array {
                 }
                 get : "get" {
                     let mut args = args.into_iter().enumerate();
-                    let index = typed!(args: Int);
+                    let index = typed!(args: $luna_typ);
                     let default = args.next().map(|(_, v)| v);
                     Ok(self.array.get(index as usize).map(|v| Value::Int(*v as i64)).unwrap_or(default.unwrap_or_default()))
                 }
@@ -133,12 +137,12 @@ macro_rules! define_array {
                 }
                 contains : "contains" {
                     let mut args = args.into_iter().enumerate();
-                    let value = typed!(args: Int int => int.try_into()?);
+                    let value = typed!(args: $luna_typ v => v.cast()?);
                     Ok(self.array.contains(&value).into())
                 }
                 position : "position" {
                     let mut args = args.into_iter().enumerate();
-                    let value = typed!(args: Int int => int.try_into()?);
+                    let value = typed!(args: $luna_typ v => v.cast()?);
                     Ok(self.array
                         .iter()
                         .position(|v| v == &value)
@@ -166,7 +170,7 @@ macro_rules! define_array {
                 set : "set" {
                     let mut args = args.into_iter().enumerate();
                     let index = typed!(args: Int);
-                    let value = typed!(args: Int int => int.try_into()?);
+                    let value = typed!(args: $luna_typ v => v.cast()?);
                     if let Some(old_value) = self.array.get_mut(index as usize) {
                         *old_value = value;
                     }
@@ -174,7 +178,7 @@ macro_rules! define_array {
                 }
                 push : "push" {
                     let mut args = args.into_iter().enumerate();
-                    let value = typed!(args: Int int => int.try_into()?);
+                    let value = typed!(args: $luna_typ v => v.cast()?);
                     self.array.push(value);
                     Ok(Value::default())
                 }
@@ -196,7 +200,7 @@ macro_rules! define_array {
                 insert : "insert" {
                     let mut args = args.into_iter().enumerate();
                     let index = typed!(args: Int int => int.unsigned_abs() as usize);
-                    let value = typed!(args: Int int => int.try_into()?);
+                    let value = typed!(args: $luna_typ v => v.cast()?);
                     if index <= self.array.len() {
                         self.array.insert(index, value);
                     }
@@ -231,7 +235,7 @@ macro_rules! define_array {
                 .unwrap_or_default();
                 if let Some(length) = length {
                     while array.len() < length {
-                        array.push(0);
+                        array.push(Default::default());
                     }
                 }
                 Ok(Value::UserObject(Rc::new(RefCell::new(Box::new(
@@ -240,7 +244,7 @@ macro_rules! define_array {
             }
             pub fn try_cast(value: &Value) -> Result<$typ, Box<dyn Error>> {
                 match value {
-                    Value::Int(v) => Ok((*v).try_into()?),
+                    Value::$luna_typ(v) => Ok((*v).cast()?),
                     value => Err(Box::new(ArrayError::InvalidElementType(
                         value.dynamic_typ(),
                     ))),
@@ -249,14 +253,146 @@ macro_rules! define_array {
         }
     };
 }
+#[derive(Debug, Clone)]
+pub struct CastError;
+impl Display for CastError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "cannot cast value to desired type")
+    }
+}
+impl Error for CastError {}
+pub trait CastFrom<T>: Sized {
+    fn cast_from(value: T) -> Result<Self, CastError>;
+}
+pub trait Cast<T>: Sized {
+    fn cast(self) -> Result<T, CastError>;
+}
+impl<T: CastFrom<U>, U> Cast<T> for U {
+    fn cast(self) -> Result<T, CastError> {
+        T::cast_from(self)
+    }
+}
+impl<T> CastFrom<T> for T {
+    fn cast_from(value: T) -> Result<Self, CastError> {
+        Ok(value)
+    }
+}
+impl CastFrom<f64> for f32 {
+    fn cast_from(value: f64) -> Result<Self, CastError> {
+        if value > Self::MAX as f64 || value < Self::MIN as f64 {
+            Err(CastError)
+        } else {
+            Ok(value as Self)
+        }
+    }
+}
+impl CastFrom<f32> for f64 {
+    fn cast_from(value: f32) -> Result<Self, CastError> {
+        Ok(value as Self)
+    }
+}
+impl CastFrom<i64> for u8 {
+    fn cast_from(value: i64) -> Result<Self, CastError> {
+        value.try_into().map_err(|_| CastError)
+    }
+}
+impl CastFrom<i64> for u16 {
+    fn cast_from(value: i64) -> Result<Self, CastError> {
+        value.try_into().map_err(|_| CastError)
+    }
+}
+impl CastFrom<i64> for u32 {
+    fn cast_from(value: i64) -> Result<Self, CastError> {
+        value.try_into().map_err(|_| CastError)
+    }
+}
+impl CastFrom<i64> for u64 {
+    fn cast_from(value: i64) -> Result<Self, CastError> {
+        value.try_into().map_err(|_| CastError)
+    }
+}
+impl CastFrom<i64> for u128 {
+    fn cast_from(value: i64) -> Result<Self, CastError> {
+        value.try_into().map_err(|_| CastError)
+    }
+}
+impl CastFrom<i64> for i8 {
+    fn cast_from(value: i64) -> Result<Self, CastError> {
+        value.try_into().map_err(|_| CastError)
+    }
+}
+impl CastFrom<i64> for i16 {
+    fn cast_from(value: i64) -> Result<Self, CastError> {
+        value.try_into().map_err(|_| CastError)
+    }
+}
+impl CastFrom<i64> for i32 {
+    fn cast_from(value: i64) -> Result<Self, CastError> {
+        value.try_into().map_err(|_| CastError)
+    }
+}
+impl CastFrom<i64> for i128 {
+    fn cast_from(value: i64) -> Result<Self, CastError> {
+        value.try_into().map_err(|_| CastError)
+    }
+}
+impl CastFrom<u8> for i64 {
+    fn cast_from(value: u8) -> Result<Self, CastError> {
+        value.try_into().map_err(|_| CastError)
+    }
+}
+impl CastFrom<u16> for i64 {
+    fn cast_from(value: u16) -> Result<Self, CastError> {
+        value.try_into().map_err(|_| CastError)
+    }
+}
+impl CastFrom<u32> for i64 {
+    fn cast_from(value: u32) -> Result<Self, CastError> {
+        value.try_into().map_err(|_| CastError)
+    }
+}
+impl CastFrom<u64> for i64 {
+    fn cast_from(value: u64) -> Result<Self, CastError> {
+        value.try_into().map_err(|_| CastError)
+    }
+}
+impl CastFrom<u128> for i64 {
+    fn cast_from(value: u128) -> Result<Self, CastError> {
+        value.try_into().map_err(|_| CastError)
+    }
+}
+impl CastFrom<i8> for i64 {
+    fn cast_from(value: i8) -> Result<Self, CastError> {
+        value.try_into().map_err(|_| CastError)
+    }
+}
+impl CastFrom<i16> for i64 {
+    fn cast_from(value: i16) -> Result<Self, CastError> {
+        value.try_into().map_err(|_| CastError)
+    }
+}
+impl CastFrom<i32> for i64 {
+    fn cast_from(value: i32) -> Result<Self, CastError> {
+        value.try_into().map_err(|_| CastError)
+    }
+}
+impl CastFrom<i128> for i64 {
+    fn cast_from(value: i128) -> Result<Self, CastError> {
+        value.try_into().map_err(|_| CastError)
+    }
+}
 
-define_array!(ArrayU8 u8 : "array<u8>"; ArrayIteratorU8 : "array-iterator<u8>");
-define_array!(ArrayU16 u16 : "array<u16>"; ArrayIteratorU16 : "array-iterator<u16>");
-define_array!(ArrayU32 u32 : "array<u32>"; ArrayIteratorU32 : "array-iterator<u32>");
-define_array!(ArrayU64 u64 : "array<u64>"; ArrayIteratorU64 : "array-iterator<u64>");
-define_array!(ArrayU128 u128 : "array<u128>"; ArrayIteratorU128 : "array-iterator<u128>");
-define_array!(ArrayI8 i8 : "array<i8>"; ArrayIteratorI8 : "array-iterator<i8>");
-define_array!(ArrayI16 i16 : "array<i16>"; ArrayIteratorI16 : "array-iterator<i16>");
-define_array!(ArrayI32 i32 : "array<i32>"; ArrayIteratorI32 : "array-iterator<i32>");
-define_array!(ArrayI64 i64 : "array<i64>"; ArrayIteratorI64 : "array-iterator<i64>");
-define_array!(ArrayI128 i128 : "array<i128>"; ArrayIteratorI128 : "array-iterator<i128>");
+define_array!(ArrayU8 u8 = Int : "array<u8>"; ArrayIteratorU8 : "array-iterator<u8>");
+define_array!(ArrayU16 u16 = Int : "array<u16>"; ArrayIteratorU16 : "array-iterator<u16>");
+define_array!(ArrayU32 u32 = Int : "array<u32>"; ArrayIteratorU32 : "array-iterator<u32>");
+define_array!(ArrayU64 u64 = Int : "array<u64>"; ArrayIteratorU64 : "array-iterator<u64>");
+define_array!(ArrayU128 u128 = Int : "array<u128>"; ArrayIteratorU128 : "array-iterator<u128>");
+define_array!(ArrayI8 i8 = Int : "array<i8>"; ArrayIteratorI8 : "array-iterator<i8>");
+define_array!(ArrayI16 i16 = Int : "array<i16>"; ArrayIteratorI16 : "array-iterator<i16>");
+define_array!(ArrayI32 i32 = Int : "array<i32>"; ArrayIteratorI32 : "array-iterator<i32>");
+define_array!(ArrayI64 i64 = Int : "array<i64>"; ArrayIteratorI64 : "array-iterator<i64>");
+define_array!(ArrayI128 i128 = Int : "array<i128>"; ArrayIteratorI128 : "array-iterator<i128>");
+define_array!(ArrayF32 f32 = Float : "array<f32>"; ArrayIteratorF32 : "array-iterator<f32>");
+define_array!(ArrayF64 f64 = Float : "array<f64>"; ArrayIteratorF64 : "array-iterator<f64>");
+define_array!(ArrayBool bool = Bool : "array<bool>"; ArrayIteratorBool : "array-iterator<bool>");
+define_array!(ArrayChar char = Char : "array<char>"; ArrayIteratorChar : "array-iterator<char>");
