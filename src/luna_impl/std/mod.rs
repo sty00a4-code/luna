@@ -36,6 +36,7 @@ pub mod math_m;
 pub mod net_m;
 pub mod os_m;
 pub mod typed_m;
+pub mod array_m;
 
 pub const FOR_FUNC: &str = "next";
 
@@ -63,178 +64,21 @@ pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
     set_field!(globals."raw_set" = function!(_raw_set));
     set_field!(globals."iter" = function!(_iter));
     set_field!(globals.FOR_FUNC = function!(_next));
-    set_field!(
-        globals.INT_MODULE = object! {
-            "from" = function!(int::_from),
-            "from_bin" = function!(int::_from_bin),
-            "from_hex" = function!(int::_from_hex),
-            "bytes" = function!(int::_bytes)
-        }
-    );
-    set_field!(
-        globals.FLOAT_MODULE = object! {
-            "from" = function!(float::_from),
-            "floor" = function!(float::_floor),
-            "ceil" = function!(float::_ceil),
-            "round" = function!(float::_round)
-        }
-    );
-    set_field!(
-        globals.BOOL_MODULE = object! {
-            "from" = function!(bool::_from)
-        }
-    );
-    set_field!(
-        globals.CHAR_MODULE = object! {
-            "from" = function!(char::_from),
-            "byte" = function!(char::_byte),
-            "is_whitespace" = function!(char::_is_whitespace),
-            "is_alphabetic" = function!(char::_is_alphabetic),
-            "is_alphanumeric" = function!(char::_is_alphanumeric),
-            "is_control" = function!(char::_is_control),
-            "is_digit" = function!(char::_is_digit),
-            "is_graphic" = function!(char::_is_graphic),
-            "is_hex" = function!(char::_is_hex),
-            "is_lower" = function!(char::_is_lower),
-            "is_upper" = function!(char::_is_upper)
-        }
-    );
-    set_field!(globals."str" = function!(string::_from));
-    set_field!(
-        globals.STRING_MODULE = object! {
-            "lowercase" = ('a'..='z').collect::<Vec<char>>(),
-            "uppercase" = ('A'..='Z').collect::<Vec<char>>(),
-            "letters" = ('a'..='z').chain('A'..='Z').collect::<Vec<char>>(),
-            "from" = globals["str"].borrow().clone(),
-            "len" = function!(string::_len),
-            "iter" = function!(string::_iter),
-            "get" = function!(string::_get),
-            "sub" = function!(string::_sub),
-            "split" = function!(string::_split),
-            "split_amount" = function!(string::_split_amount),
-            "split_at" = function!(string::_split_at),
-            "split_off" = function!(string::_split_off),
-            "rep" = function!(string::_rep),
-            "rev" = function!(string::_rev),
-            "find" = function!(string::_find),
-            "format" = function!(string::_format),
-            "bin" = function!(int::_from_bin),
-            "hex" = function!(int::_from_hex),
-            "start" = function!(string::_starts_with),
-            "end" = function!(string::_ends_with)
-        }
-    );
-    set_field!(
-        globals.VECTOR_MODULE = object! {
-            "iter" = function!(vector::_iter),
-            "len" = function!(vector::_len),
-            "get" = function!(vector::_get),
-            "contains" = function!(vector::_contains),
-            "pos" = function!(vector::_position),
-            "push" = function!(vector::_push),
-            "pop" = function!(vector::_pop),
-            "insert" = function!(vector::_insert),
-            "join" = function!(vector::_join),
-            "swap" = function!(vector::_swap),
-            "copy" = function!(vector::_copy),
-            "clear" = function!(vector::_clear)
-        }
-    );
-    set_field!(globals."keys" = function!(object::_keys));
-    set_field!(globals."values" = function!(object::_values));
-    set_field!(globals."setmeta" = function!(object::_setmeta));
-    set_field!(globals."getmeta" = function!(object::_getmeta));
-    set_field!(
-        globals.OBJECT_MODULE = object! {
-            "len" = function!(object::_len),
-            "keys" = globals["keys"].borrow().clone(),
-            "values" = globals["values"].borrow().clone(),
-            "setmeta" = globals["setmeta"].borrow().clone(),
-            "getmeta" = globals["getmeta"].borrow().clone(),
-            "clear" = function!(object::_clear)
-        }
-    );
-    set_field!(globals."range" = function!(object::_range));
-    set_field!(globals."math" = object! {
-        "pi" = Value::Float(std::f64::consts::PI),
-        "nan" = Value::Float(f64::NAN),
-        "inf" = Value::Float(f64::INFINITY),
-        "e" = Value::Float(f64::EPSILON),
-        "abs" = function!(math_m::_abs),
-        "sqrt" = function!(math_m::_sqrt),
-        "exp" = function!(math_m::_exp),
-        "exp2" = function!(math_m::_exp2),
-        "exp_m1" = function!(math_m::_exp_m1),
-        "signum" = function!(math_m::_signum),
-        "fract" = function!(math_m::_fract),
-        "cos" = function!(math_m::_cos),
-        "sin" = function!(math_m::_sin),
-        "tan" = function!(math_m::_tan),
-        "cosh" = function!(math_m::_cosh),
-        "sinh" = function!(math_m::_sinh),
-        "tanh" = function!(math_m::_tanh),
-        "acos" = function!(math_m::_acos),
-        "asin" = function!(math_m::_asin),
-        "atan" = function!(math_m::_atan),
-        "acosh" = function!(math_m::_acosh),
-        "asinh" = function!(math_m::_asinh),
-        "atanh" = function!(math_m::_atanh),
-        "deg" = function!(math_m::_deg),
-        "rad" = function!(math_m::_rad),
-        "random" = function!(math_m::_random)
-    });
-    set_field!(globals."io" = object! {
-        "write" = function!(io_m::_write),
-        "flush" = function!(io_m::_flush),
-        "stdin" = function!(io_m::_stdin),
-        "stdout" = function!(io_m::_stdout),
-        "stderr" = function!(io_m::_stderr)
-    });
-    set_field!(globals."fs" = object! {
-        "open" = function!(fs_m::_open),
-        "list" = function!(fs_m::_list),
-        "type" = function!(fs_m::_type)
-    });
-    set_field!(globals."env" = object! {
-        "var" = function!(env_m::_var),
-        "set_var" = function!(env_m::_set_var),
-        "remove_var" = function!(env_m::_remove_var),
-        "vars" = function!(env_m::_vars),
-        "current_dir" = function!(env_m::_current_dir),
-        "current_exe" = function!(env_m::_current_exe),
-        "set_current_dir" = function!(env_m::_set_current_dir),
-        "args" = function!(env_m::_args)
-    });
-    set_field!(globals."net" = object! {
-        "bind" = function!(net_m::_bind),
-        "connect" = function!(net_m::_connect)
-    });
-    set_field!(globals."os" = object! {
-        "exec" = function!(os_m::_exec),
-        "time" = function!(os_m::_time),
-        "sleep" = function!(os_m::_sleep)
-    });
-    set_field!(globals."options" = function!(typed_m::_options));
-    set_field!(globals."some" = function!(typed_m::_some));
-    set_field!(globals."typed" = object! {
-        "type" = globals["type"].borrow().clone(),
-        "raw_type" = globals["raw_type"].borrow().clone(),
-        "check" =  function!(typed_m::_check),
-        "check_raw" =  function!(typed_m::_check_raw),
-        "int" = function!(typed_m::_int),
-        "float" = function!(typed_m::_float),
-        "bool" = function!(typed_m::_bool),
-        "char" = function!(typed_m::_char),
-        "string" = function!(typed_m::_string),
-        "vector" = function!(typed_m::_vector),
-        "object" = function!(typed_m::_object),
-        "object_raw" = function!(typed_m::_object_raw),
-        "function" = function!(typed_m::_function),
-        "numeric" = function!(typed_m::_numeric),
-        "iterable" = function!(typed_m::_iterable),
-        "options" = globals["options"].borrow().clone(),
-        "some" = globals["some"].borrow().clone()
-    });
+    int::define(&mut globals);
+    float::define(&mut globals);
+    bool::define(&mut globals);
+    char::define(&mut globals);
+    string::define(&mut globals);
+    vector::define(&mut globals);
+    object::define(&mut globals);
+    math_m::define(&mut globals);
+    io_m::define(&mut globals);
+    fs_m::define(&mut globals);
+    env_m::define(&mut globals);
+    net_m::define(&mut globals);
+    os_m::define(&mut globals);
+    typed_m::define(&mut globals);
+    array_m::define(&mut globals);
     globals
 }
 
@@ -543,13 +387,13 @@ fn _iter_collect(
         Err(Box::new(UserObjectError::ExpectedSelf(_self.typ())))
     }
 }
-pub trait CanBeIterator: Iterator<Item = Value> + Debug {
+pub trait CanBeIterator: Iterator<Item: Into<Value>> + Debug {
     fn call_next(&mut self) -> Result<Value, Box<dyn Error>> {
-        Ok(self.next().unwrap_or_default())
+        Ok(self.next().map(|v| v.into()).unwrap_or_default())
     }
     fn call_collect(&mut self) -> Result<Value, Box<dyn Error>> {
         Ok(Value::Vector(Rc::new(RefCell::new(
-            self.collect::<Vec<Value>>(),
+            self.map(|v| v.into()).collect::<Vec<Value>>(),
         ))))
     }
     fn call_any(
@@ -560,7 +404,7 @@ pub trait CanBeIterator: Iterator<Item = Value> + Debug {
         match func {
             FunctionKind::Function(func) => {
                 for v in self {
-                    interpreter.call(&func, vec![v], None);
+                    interpreter.call(&func, vec![v.into()], None);
                     let res = interpreter
                         .run()
                         .map_err(|err| Box::new(err.value))?
@@ -573,7 +417,7 @@ pub trait CanBeIterator: Iterator<Item = Value> + Debug {
             }
             FunctionKind::UserFunction(func) => {
                 for v in self {
-                    let res = func(interpreter, vec![v])?;
+                    let res = func(interpreter, vec![v.into()])?;
                     if bool::from(res) {
                         return Ok(true.into());
                     }
@@ -590,7 +434,7 @@ pub trait CanBeIterator: Iterator<Item = Value> + Debug {
         match func {
             FunctionKind::Function(func) => {
                 for v in self {
-                    interpreter.call(&func, vec![v], None);
+                    interpreter.call(&func, vec![v.into()], None);
                     let res = interpreter
                         .run()
                         .map_err(|err| Box::new(err.value))?
@@ -603,7 +447,7 @@ pub trait CanBeIterator: Iterator<Item = Value> + Debug {
             }
             FunctionKind::UserFunction(func) => {
                 for v in self {
-                    let res = func(interpreter, vec![v])?;
+                    let res = func(interpreter, vec![v.into()])?;
                     if !bool::from(res) {
                         return Ok(false.into());
                     }
@@ -615,7 +459,7 @@ pub trait CanBeIterator: Iterator<Item = Value> + Debug {
 }
 impl CanBeIterator for std::vec::IntoIter<Value> {}
 #[derive(Debug)]
-pub struct IteratorObject(pub Box<dyn CanBeIterator>);
+pub struct IteratorObject(pub Box<dyn CanBeIterator<Item = Value>>);
 userobject! {
     IteratorObject: "iterator";
     self

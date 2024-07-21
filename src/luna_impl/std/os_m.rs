@@ -1,13 +1,22 @@
-use std::time::Duration;
-
+use super::object;
 use crate::{
-    lang::value::Object,
-    lang::{interpreter::Interpreter, value::Value},
-    option, typed, ExpectedType, ExpectedTypes,
+    function,
+    lang::{
+        interpreter::Interpreter,
+        value::{Object, Value, FunctionKind},
+    },
+    option, set_field, typed, ExpectedType, ExpectedTypes,
 };
+use std::time::Duration;
 use std::{cell::RefCell, collections::HashMap, error::Error, process::Command, rc::Rc, thread};
 
-use super::object;
+pub fn define(globals: &mut HashMap<String, Rc<RefCell<Value>>>) {
+    set_field!(globals."os" = object! {
+        "exec" = function!(_exec),
+        "time" = function!(_time),
+        "sleep" = function!(_sleep)
+    });
+}
 
 pub fn _exec(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let mut args = args.into_iter().enumerate();

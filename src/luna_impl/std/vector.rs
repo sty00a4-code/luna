@@ -1,9 +1,30 @@
 use super::IteratorObject;
 use crate::{
-    lang::{interpreter::Interpreter, value::Value},
-    typed, ExpectedType,
+    function,
+    lang::{interpreter::Interpreter, value::{Value, Object, FunctionKind}},
+    luna_impl::std::VECTOR_MODULE,
+    object, set_field, typed, ExpectedType,
 };
-use std::{cell::RefCell, error::Error, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, error::Error, rc::Rc};
+
+pub fn define(globals: &mut HashMap<String, Rc<RefCell<Value>>>) {
+    set_field!(
+        globals.VECTOR_MODULE = object! {
+            "iter" = function!(_iter),
+            "len" = function!(_len),
+            "get" = function!(_get),
+            "contains" = function!(_contains),
+            "pos" = function!(_position),
+            "push" = function!(_push),
+            "pop" = function!(_pop),
+            "insert" = function!(_insert),
+            "join" = function!(_join),
+            "swap" = function!(_swap),
+            "copy" = function!(_copy),
+            "clear" = function!(_clear)
+        }
+    );
+}
 
 pub fn _iter(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let mut args = args.into_iter().enumerate();

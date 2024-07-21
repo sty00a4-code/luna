@@ -1,16 +1,28 @@
 use crate::{
+    function,
     lang::{
         interpreter::Interpreter,
-        value::{FunctionKind, UserObject, UserObjectError, Value},
+        value::{FunctionKind, Object, UserObject, UserObjectError, Value},
     },
-    typed, userobject, ExpectedType,
+    object, set_field, typed, userobject, ExpectedType,
 };
 use std::{
     cell::RefCell,
+    collections::HashMap,
     error::Error,
     io::{self, Read, Stderr, Stdin, Stdout, Write},
     rc::Rc,
 };
+
+pub fn define(globals: &mut HashMap<String, Rc<RefCell<Value>>>) {
+    set_field!(globals."io" = object! {
+        "write" = function!(_write),
+        "flush" = function!(_flush),
+        "stdin" = function!(_stdin),
+        "stdout" = function!(_stdout),
+        "stderr" = function!(_stderr)
+    });
+}
 
 pub fn _write(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let mut args = args.into_iter().enumerate();

@@ -1,9 +1,43 @@
 use crate::{
-    lang::{interpreter::Interpreter, value::Value},
-    option,
-    ExpectedTypes
+    function,
+    lang::{
+        interpreter::Interpreter,
+        value::{FunctionKind, Object, Value},
+    },
+    object, option, set_field, ExpectedTypes,
 };
-use std::error::Error;
+use std::{cell::RefCell, collections::HashMap, error::Error, rc::Rc};
+
+pub fn define(globals: &mut HashMap<String, Rc<RefCell<Value>>>) {
+    set_field!(globals."math" = object! {
+        "pi" = Value::Float(std::f64::consts::PI),
+        "nan" = Value::Float(f64::NAN),
+        "inf" = Value::Float(f64::INFINITY),
+        "e" = Value::Float(f64::EPSILON),
+        "abs" = function!(_abs),
+        "sqrt" = function!(_sqrt),
+        "exp" = function!(_exp),
+        "exp2" = function!(_exp2),
+        "exp_m1" = function!(_exp_m1),
+        "signum" = function!(_signum),
+        "fract" = function!(_fract),
+        "cos" = function!(_cos),
+        "sin" = function!(_sin),
+        "tan" = function!(_tan),
+        "cosh" = function!(_cosh),
+        "sinh" = function!(_sinh),
+        "tanh" = function!(_tanh),
+        "acos" = function!(_acos),
+        "asin" = function!(_asin),
+        "atan" = function!(_atan),
+        "acosh" = function!(_acosh),
+        "asinh" = function!(_asinh),
+        "atanh" = function!(_atanh),
+        "deg" = function!(_deg),
+        "rad" = function!(_rad),
+        "random" = function!(_random)
+    });
+}
 
 pub fn _abs(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let mut args = args.into_iter().enumerate();

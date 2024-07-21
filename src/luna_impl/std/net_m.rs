@@ -1,17 +1,24 @@
 use crate::{
-    lang::{
+    function, lang::{
         interpreter::Interpreter,
-        value::{FunctionKind, UserObject, UserObjectError, Value},
-    },
-    typed, userobject, ExpectedType,
+        value::{FunctionKind, UserObject, UserObjectError, Value, Object},
+    }, object, set_field, typed, userobject, ExpectedType
 };
 use std::{
     cell::RefCell,
+    collections::HashMap,
     error::Error,
     io::{Read, Write},
     net::{TcpListener, TcpStream},
     rc::Rc,
 };
+
+pub fn define(globals: &mut HashMap<String, Rc<RefCell<Value>>>) {
+    set_field!(globals."net" = object! {
+        "bind" = function!(_bind),
+        "connect" = function!(_connect)
+    });
+}
 
 pub fn _bind(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let mut args = args.into_iter().enumerate();

@@ -1,13 +1,41 @@
-use std::{cell::RefCell, error::Error, fmt::Display, rc::Rc};
+use super::{int, IteratorObject};
+use crate::{
+    function,
+    lang::{interpreter::Interpreter, value::{Value, Object, FunctionKind}},
+    luna_impl::std::STRING_MODULE,
+    object, set_field, typed, ExpectedType,
+};
+use std::{cell::RefCell, collections::HashMap, error::Error, fmt::Display, rc::Rc};
 
-use crate::{lang::{interpreter::Interpreter, value::Value}, typed, ExpectedType};
+pub fn define(globals: &mut HashMap<String, Rc<RefCell<Value>>>) {
+    set_field!(globals."str" = function!(_from));
+    set_field!(
+        globals.STRING_MODULE = object! {
+            "lowercase" = ('a'..='z').collect::<Vec<char>>(),
+            "uppercase" = ('A'..='Z').collect::<Vec<char>>(),
+            "letters" = ('a'..='z').chain('A'..='Z').collect::<Vec<char>>(),
+            "from" = globals["str"].borrow().clone(),
+            "len" = function!(_len),
+            "iter" = function!(_iter),
+            "get" = function!(_get),
+            "sub" = function!(_sub),
+            "split" = function!(_split),
+            "split_amount" = function!(_split_amount),
+            "split_at" = function!(_split_at),
+            "split_off" = function!(_split_off),
+            "rep" = function!(_rep),
+            "rev" = function!(_rev),
+            "find" = function!(_find),
+            "format" = function!(_format),
+            "bin" = function!(int::_from_bin),
+            "hex" = function!(int::_from_hex),
+            "start" = function!(_starts_with),
+            "end" = function!(_ends_with)
+        }
+    );
+}
 
-use super::IteratorObject;
-
-pub fn _from(
-    interpreter: &mut Interpreter,
-    args: Vec<Value>,
-) -> Result<Value, Box<dyn Error>> {
+pub fn _from(interpreter: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let args = args.into_iter().enumerate();
     let mut string = String::new();
     for (_, value) in args {
@@ -77,10 +105,7 @@ pub fn _split(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Er
         .collect::<Vec<String>>()
         .into())
 }
-pub fn _split_amount(
-    _: &mut Interpreter,
-    args: Vec<Value>,
-) -> Result<Value, Box<dyn Error>> {
+pub fn _split_amount(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let mut args = args.into_iter().enumerate();
     let string = typed!(args: String);
     let n = typed!(args: Int);
@@ -156,10 +181,7 @@ impl Display for FormatError {
     }
 }
 impl Error for FormatError {}
-pub fn _format(
-    interpreter: &mut Interpreter,
-    args: Vec<Value>,
-) -> Result<Value, Box<dyn Error>> {
+pub fn _format(interpreter: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let mut args = args.into_iter().enumerate();
     let string = typed!(args: String);
     let mut formatted = String::new();

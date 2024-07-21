@@ -1,8 +1,24 @@
 use crate::{
-    lang::{interpreter::Interpreter, value::Value},
-    typed, ExpectedType,
+    function,
+    lang::{
+        interpreter::Interpreter,
+        value::{FunctionKind, Object, Value},
+    },
+    luna_impl::std::INT_MODULE,
+    object, set_field, typed, ExpectedType,
 };
-use std::{cell::RefCell, error::Error, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, error::Error, rc::Rc};
+
+pub fn define(globals: &mut HashMap<String, Rc<RefCell<Value>>>) {
+    set_field!(
+        globals.INT_MODULE = object! {
+            "from" = function!(_from),
+            "from_bin" = function!(_from_bin),
+            "from_hex" = function!(_from_hex),
+            "bytes" = function!(_bytes)
+        }
+    );
+}
 
 pub fn _from(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let mut args = args.into_iter().enumerate();

@@ -1,13 +1,32 @@
+use super::IteratorObject;
 use crate::{
+    function,
     lang::{
         interpreter::Interpreter,
-        value::{FunctionKind, Value},
+        value::{FunctionKind, Object, Value},
     },
-    option, typed, ExpectedType, ExpectedTypes
+    luna_impl::std::OBJECT_MODULE,
+    object, option, set_field, typed, ExpectedType, ExpectedTypes,
 };
-use std::{cell::RefCell, error::Error, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, error::Error, rc::Rc};
 
-use super::IteratorObject;
+pub fn define(globals: &mut HashMap<String, Rc<RefCell<Value>>>) {
+    set_field!(globals."keys" = function!(_keys));
+    set_field!(globals."values" = function!(_values));
+    set_field!(globals."setmeta" = function!(_setmeta));
+    set_field!(globals."getmeta" = function!(_getmeta));
+    set_field!(
+        globals.OBJECT_MODULE = object! {
+            "len" = function!(_len),
+            "keys" = globals["keys"].borrow().clone(),
+            "values" = globals["values"].borrow().clone(),
+            "setmeta" = globals["setmeta"].borrow().clone(),
+            "getmeta" = globals["getmeta"].borrow().clone(),
+            "clear" = function!(_clear)
+        }
+    );
+    set_field!(globals."range" = function!(_range));
+}
 
 pub fn _len(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let mut args = args.into_iter().enumerate();

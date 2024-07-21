@@ -1,18 +1,28 @@
 use crate::{
+    function,
     lang::{
         interpreter::Interpreter,
-        value::{FunctionKind, UserObject, UserObjectError, Value},
+        value::{FunctionKind, Object, UserObject, UserObjectError, Value},
     },
-    typed, userobject, ExpectedType,
+    object, set_field, typed, userobject, ExpectedType,
 };
 use std::{
     cell::RefCell,
+    collections::HashMap,
     error::Error,
     fmt::Display,
     fs::{self, File},
     io::{Read, Write},
     rc::Rc,
 };
+
+pub fn define(globals: &mut HashMap<String, Rc<RefCell<Value>>>) {
+    set_field!(globals."fs" = object! {
+        "open" = function!(_open),
+        "list" = function!(_list),
+        "type" = function!(_type)
+    });
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct InvalidOptionError(String);

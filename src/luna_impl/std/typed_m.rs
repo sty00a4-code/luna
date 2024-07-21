@@ -1,8 +1,36 @@
 use crate::{
-    lang::{interpreter::Interpreter, value::Value},
-    typed,
+    function,
+    lang::{
+        interpreter::Interpreter,
+        value::{FunctionKind, Object, Value},
+    },
+    object, set_field, typed,
 };
-use std::error::Error;
+use std::{cell::RefCell, collections::HashMap, error::Error, rc::Rc};
+
+pub fn define(globals: &mut HashMap<String, Rc<RefCell<Value>>>) {
+    set_field!(globals."options" = function!(_options));
+    set_field!(globals."some" = function!(_some));
+    set_field!(globals."typed" = object! {
+        "type" = globals["type"].borrow().clone(),
+        "raw_type" = globals["raw_type"].borrow().clone(),
+        "check" =  function!(_check),
+        "check_raw" =  function!(_check_raw),
+        "int" = function!(_int),
+        "float" = function!(_float),
+        "bool" = function!(_bool),
+        "char" = function!(_char),
+        "string" = function!(_string),
+        "vector" = function!(_vector),
+        "object" = function!(_object),
+        "object_raw" = function!(_object_raw),
+        "function" = function!(_function),
+        "numeric" = function!(_numeric),
+        "iterable" = function!(_iterable),
+        "options" = globals["options"].borrow().clone(),
+        "some" = globals["some"].borrow().clone()
+    });
+}
 
 pub fn _check(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let mut args = args.into_iter().enumerate();

@@ -1,9 +1,22 @@
-use std::error::Error;
+use std::{cell::RefCell, collections::HashMap, error::Error, rc::Rc};
 
 use crate::{
-    lang::{interpreter::Interpreter, value::Value},
-    typed, ExpectedType,
+    function,
+    lang::{interpreter::Interpreter, value::{Value, Object, FunctionKind}},
+    luna_impl::std::FLOAT_MODULE,
+    object, set_field, typed, ExpectedType,
 };
+
+pub fn define(globals: &mut HashMap<String, Rc<RefCell<Value>>>) {
+    set_field!(
+        globals.FLOAT_MODULE = object! {
+            "from" = function!(_from),
+            "floor" = function!(_floor),
+            "ceil" = function!(_ceil),
+            "round" = function!(_round)
+        }
+    );
+}
 
 pub fn _from(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let mut args = args.into_iter().enumerate();
