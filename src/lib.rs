@@ -129,6 +129,9 @@ macro_rules! function {
     ($name:ident) => {
         Value::Function(FunctionKind::UserFunction(Rc::new($name)))
     };
+    ($name:path) => {
+        Value::Function(FunctionKind::UserFunction(Rc::new($name)))
+    };
 }
 #[macro_export]
 macro_rules! set_field {
