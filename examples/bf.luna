@@ -1,0 +1,53 @@
+let fn run(code) {
+    let tape = array.u8(0xff)
+    let stack = []
+    let ptr = 0
+    let idx = 0
+    while let c = code[idx] {
+        match c {
+            '+' => {
+                let new = tape:get(ptr) + 1
+                tape:set(ptr, new % 0xff)
+            }
+            '-' => {
+                let new = tape:get(ptr) - 1
+                tape:set(ptr, if (new < 0) 0xff + new else new)
+            }
+            '>' => {
+                ptr += 1
+                ptr %= 0xff
+            }
+            '<' => {
+                ptr -= 1
+                if ptr < 0 {
+                    ptr = 0xff
+                }
+            }
+            '[' => {
+                stack:push(idx)
+            }
+            ']' => {
+                if tape:get(ptr) > 0 {
+                    idx = stack:get(stack:len() - 1)
+                } else {
+                    stack:pop()
+                }
+            }
+            '.' => {
+                io.write(str(char.from(tape:get(ptr))))
+            }
+            ',' => {
+                let n = int.from(input())
+                if some(n) {
+                    if n >= 0 & n <= 0xff {
+                        tape:set(ptr, n)
+                    }
+                }
+            }
+            _ => {}
+        }
+        idx += 1
+    }
+}
+
+run("++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>.")
