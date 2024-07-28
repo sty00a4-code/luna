@@ -267,6 +267,9 @@ macro_rules! userobject {
     (
         $name:ident : $typ_name:literal ;
         $self:ident
+        $(yield { $(
+            $key_literal_name:literal = $key_expression:expr
+        ) *})?
         $(static ($fn_self:ident, $fn_interpreter:ident, $fn_args:ident) { $(
             $fn_name:ident : $fn_literal_name:literal $fn_body:block
         ) *})?
@@ -280,6 +283,11 @@ macro_rules! userobject {
             }
             fn get(&$self, key: &str) -> Option<Value> {
                 match key {
+                    $(
+                        $(
+                            $key_literal_name => Some($key_expression),
+                        )*
+                    )?
                     $(
                         $(
                             $fn_literal_name => Some(Value::Function(FunctionKind::UserFunction(Rc::new(

@@ -44,6 +44,10 @@ pub trait UserObject {
         None
     }
     #[allow(unused_variables)]
+    fn get_mut(&mut self, key: &str) -> Option<&mut Value> {
+        None
+    }
+    #[allow(unused_variables)]
     fn set(&mut self, key: &str, value: Value) -> Result<(), UserObjectError> {
         Err(UserObjectError::InvalidField(key.into()))
     }

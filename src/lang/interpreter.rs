@@ -262,6 +262,13 @@ impl Interpreter {
                             self.call_kind(kind, args, dst, pos)?;
                         }
                     }
+                    Value::UserObject(object) => {
+                        args.insert(0, Value::UserObject(Rc::clone(&object)));
+                        let object = object.borrow();
+                        if let Some(Value::Function(kind)) = object.get(META_CALL) {
+                            self.call_kind(kind, args, dst, pos)?;
+                        }
+                    }
                     value => {
                         return Err(Located::new(
                             RunTimeError::CannotCall(value.dynamic_typ()),
@@ -286,6 +293,14 @@ impl Interpreter {
                         args[0] = Value::Object(Rc::clone(&object));
                         let object = object.borrow();
                         if let Some(Value::Function(kind)) = object.get_meta(META_CALL) {
+                            self.call_kind(kind, args, dst, pos)?;
+                        }
+                    }
+                    Value::UserObject(object) => {
+                        let mut args = vec![Value::default()];
+                        args[0] = Value::UserObject(Rc::clone(&object));
+                        let object = object.borrow();
+                        if let Some(Value::Function(kind)) = object.get(META_CALL) {
                             self.call_kind(kind, args, dst, pos)?;
                         }
                     }
@@ -327,6 +342,13 @@ impl Interpreter {
                         args.insert(0, Value::Object(Rc::clone(&object)));
                         let object = object.borrow();
                         if let Some(Value::Function(kind)) = object.get_meta(META_CALL) {
+                            self.call_kind(kind, args, dst, pos)?;
+                        }
+                    }
+                    Value::UserObject(object) => {
+                        args.insert(0, Value::UserObject(Rc::clone(&object)));
+                        let object = object.borrow();
+                        if let Some(Value::Function(kind)) = object.get(META_CALL) {
                             self.call_kind(kind, args, dst, pos)?;
                         }
                     }
@@ -664,6 +686,22 @@ impl Interpreter {
                         };
                         *old_value = value;
                     }
+                    Value::UserObject(object) => {
+                        let set = object.borrow().get(META_SET);
+                        if let Some(Value::Function(kind)) = set {
+                            self.call_kind(
+                                kind,
+                                vec![head.clone(), field, value],
+                                None,
+                                pos.clone(),
+                            )?;
+                            return Ok(None);
+                        }
+                        return Err(Located::new(
+                            RunTimeError::CannotSetField(object.borrow().typ().to_string()),
+                            pos,
+                        ));
+                    }
                     Value::Vector(vector) => {
                         let mut vector = vector.borrow_mut();
                         match field {
@@ -836,6 +874,15 @@ impl Interpreter {
                     if let Some(Value::Function(kind)) = {
                         let object = object.borrow();
                         object.get_meta(&format!("__{}", op))
+                    } {
+                        self.call_kind(kind, vec![left, right], Some(dst), pos)?;
+                        return Ok(None);
+                    }
+                }
+                if let Value::UserObject(object) = &left {
+                    if let Some(Value::Function(kind)) = {
+                        let object = object.borrow();
+                        object.get(&format!("__{}", op))
                     } {
                         self.call_kind(kind, vec![left, right], Some(dst), pos)?;
                         return Ok(None);
@@ -1068,6 +1115,15 @@ impl Interpreter {
                     if let Some(Value::Function(kind)) = {
                         let object = object.borrow();
                         object.get_meta(&format!("__{}", op))
+                    } {
+                        self.call_kind(kind, vec![src], Some(dst), pos)?;
+                        return Ok(None);
+                    }
+                }
+                if let Value::UserObject(object) = &src {
+                    if let Some(Value::Function(kind)) = {
+                        let object = object.borrow();
+                        object.get(&format!("__{}", op))
                     } {
                         self.call_kind(kind, vec![src], Some(dst), pos)?;
                         return Ok(None);
