@@ -131,11 +131,11 @@ impl Interpreter {
         args: Vec<Value>,
         dst: Option<Location>,
         pos: Position,
-    ) -> Result<(), Located<RunTimeError>> {
+    ) -> Result<Option<Value>, Located<RunTimeError>> {
         match kind {
             FunctionKind::Function(function) => {
                 self.call(&function, args, dst);
-                Ok(())
+                Ok(None)
             }
             FunctionKind::UserFunction(func) => {
                 let dst = dst.map(|dst| {
@@ -149,8 +149,10 @@ impl Interpreter {
                     .map_err(|err| Located::new(RunTimeError::Custom(err.to_string()), pos))?;
                 if let Some(dst) = dst {
                     *dst.borrow_mut() = value;
+                    Ok(None)
+                } else {
+                    Ok(Some(value))
                 }
-                Ok(())
             }
         }
     }
@@ -254,7 +256,9 @@ impl Interpreter {
                     .source(&arg)
                     .expect("source not found")];
                 match func {
-                    Value::Function(kind) => self.call_kind(kind, args, dst, pos)?,
+                    Value::Function(kind) => {
+                        self.call_kind(kind, args, dst, pos)?;
+                    }
                     Value::Object(object) => {
                         args.insert(0, Value::Object(Rc::clone(&object)));
                         let object = object.borrow();
@@ -286,7 +290,7 @@ impl Interpreter {
                     .expect("func not found");
                 match func {
                     Value::Function(kind) => {
-                        self.call_kind(kind, Vec::with_capacity(0), dst, pos)?
+                        self.call_kind(kind, Vec::with_capacity(0), dst, pos)?;
                     }
                     Value::Object(object) => {
                         let mut args = vec![Value::default()];
@@ -337,7 +341,9 @@ impl Interpreter {
                     )
                 }
                 match func {
-                    Value::Function(kind) => self.call_kind(kind, args, dst, pos)?,
+                    Value::Function(kind) => {
+                        self.call_kind(kind, args, dst, pos)?;
+                    }
                     Value::Object(object) => {
                         args.insert(0, Value::Object(Rc::clone(&object)));
                         let object = object.borrow();

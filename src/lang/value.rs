@@ -1,5 +1,5 @@
 use super::interpreter::{Interpreter, RunTimeError};
-use crate::luna_impl::position::Located;
+use crate::luna_impl::position::{Located, Position};
 
 use super::code::Closure;
 use std::{
@@ -170,10 +170,26 @@ impl Value {
         match self {
             Value::Object(object) => {
                 let func = object.borrow().get_meta(META_TOSTRING);
-                if let Some(Value::Function(FunctionKind::Function(func))) = func {
-                    interpreter.call(&func, vec![self.clone()], None);
-                    let value = interpreter.run()?;
-                    Ok(value.unwrap_or_default().to_string())
+                if let Some(Value::Function(kind)) = func {
+                    if let Some(value) = interpreter.call_kind(kind, vec![self.clone()], None, Position::default())? {
+                        Ok(value.to_string())
+                    } else {
+                        let value = interpreter.run()?;
+                        Ok(value.unwrap_or_default().to_string())
+                    }
+                } else {
+                    Ok(self.to_string())
+                }
+            }
+            Value::UserObject(object) => {
+                let func = object.borrow().get(META_TOSTRING);
+                if let Some(Value::Function(kind)) = func {
+                    if let Some(value) = interpreter.call_kind(kind, vec![self.clone()], None, Position::default())? {
+                        Ok(value.to_string())
+                    } else {
+                        let value = interpreter.run()?;
+                        Ok(value.unwrap_or_default().to_string())
+                    }
                 } else {
                     Ok(self.to_string())
                 }

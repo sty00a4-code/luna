@@ -20,12 +20,12 @@ pub fn define(globals: &mut HashMap<String, Rc<RefCell<Value>>>) {
             "setmeta" = globals["setmeta"].borrow().clone(),
             "getmeta" = globals["getmeta"].borrow().clone(),
             "clear" = function!(_clear),
+            "box" = function!(_box),
             "int" = function!(_int),
             "float" = function!(_float),
             "bool" = function!(_bool),
             "char" = function!(_char),
-            "string" = function!(_string),
-            "box" = function!(_box)
+            "string" = function!(_string)
         }
     );
     set_field!(globals."range" = function!(_range));
@@ -145,196 +145,7 @@ pub fn _range(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Er
     )))))
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct IntObject(i64);
-userobject! {
-    IntObject : "int";
-    self
-    yield {
-        "value" = Value::Int(self.0)
-    }
-    static (self, _i, _a) {
-        clone : "clone" {
-            Ok(Value::UserObject(Rc::new(RefCell::new(Box::new(
-                IntObject(self.0),
-            )))))
-        }
-    }
-    mut (self, _i, args) {
-        __set : "__set" {
-            let mut args = args.into_iter().enumerate();
-            let key = typed!(args: String);
-            match key.as_str() {
-                "value" => {
-                    let value = typed!(args: Int);
-                    self.0 = value;
-                }
-                _ => {}
-            }
-            Ok(Value::default())
-        }
-    }
-}
-pub fn _int(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
-    let mut args = args.into_iter().enumerate();
-    let value = typed!(args: Int);
 
-    Ok(Value::UserObject(Rc::new(RefCell::new(Box::new(
-        IntObject(value),
-    )))))
-}
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd,)]
-pub struct FloatObject(f64);
-userobject! {
-    FloatObject : "float";
-    self
-    yield {
-        "value" = Value::Float(self.0)
-    }
-    static (self, _i, _a) {
-        clone : "clone" {
-            Ok(Value::UserObject(Rc::new(RefCell::new(Box::new(
-                FloatObject(self.0),
-            )))))
-        }
-    }
-    mut (self, _i, args) {
-        __set : "__set" {
-            let mut args = args.into_iter().enumerate();
-            let key = typed!(args: String);
-            match key.as_str() {
-                "value" => {
-                    let value = typed!(args: Float);
-                    self.0 = value;
-                }
-                _ => {}
-            }
-            Ok(Value::default())
-        }
-    }
-}
-pub fn _float(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
-    let mut args = args.into_iter().enumerate();
-    let value = typed!(args: Float);
-
-    Ok(Value::UserObject(Rc::new(RefCell::new(Box::new(
-        FloatObject(value),
-    )))))
-}
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct BoolObject(bool);
-userobject! {
-    BoolObject : "bool";
-    self
-    yield {
-        "value" = Value::Bool(self.0)
-    }
-    static (self, _i, _a) {
-        clone : "clone" {
-            Ok(Value::UserObject(Rc::new(RefCell::new(Box::new(
-                BoolObject(self.0),
-            )))))
-        }
-    }
-    mut (self, _i, args) {
-        __set : "__set" {
-            let mut args = args.into_iter().enumerate();
-            let key = typed!(args: String);
-            match key.as_str() {
-                "value" => {
-                    let value = typed!(args: Bool);
-                    self.0 = value;
-                }
-                _ => {}
-            }
-            Ok(Value::default())
-        }
-    }
-}
-pub fn _bool(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
-    let mut args = args.into_iter().enumerate();
-    let value = typed!(args: Bool);
-
-    Ok(Value::UserObject(Rc::new(RefCell::new(Box::new(
-        BoolObject(value),
-    )))))
-}
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct CharObject(char);
-userobject! {
-    CharObject : "char";
-    self
-    yield {
-        "value" = Value::Char(self.0)
-    }
-    static (self, _i, _a) {
-        clone : "clone" {
-            Ok(Value::UserObject(Rc::new(RefCell::new(Box::new(
-                CharObject(self.0),
-            )))))
-        }
-    }
-    mut (self, _i, args) {
-        __set : "__set" {
-            let mut args = args.into_iter().enumerate();
-            let key = typed!(args: String);
-            match key.as_str() {
-                "value" => {
-                    let value = typed!(args: Char);
-                    self.0 = value;
-                }
-                _ => {}
-            }
-            Ok(Value::default())
-        }
-    }
-}
-pub fn _char(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
-    let mut args = args.into_iter().enumerate();
-    let value = typed!(args: Char);
-
-    Ok(Value::UserObject(Rc::new(RefCell::new(Box::new(
-        CharObject(value),
-    )))))
-}
-#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct StringObject(String);
-userobject! {
-    StringObject : "string";
-    self
-    yield {
-        "value" = Value::String(self.0.clone())
-    }
-    static (self, _i, _a) {
-        clone : "clone" {
-            Ok(Value::UserObject(Rc::new(RefCell::new(Box::new(
-                StringObject(self.0.clone()),
-            )))))
-        }
-    }
-    mut (self, _i, args) {
-        __set : "__set" {
-            let mut args = args.into_iter().enumerate();
-            let key = typed!(args: String);
-            match key.as_str() {
-                "value" => {
-                    let value = typed!(args: String);
-                    self.0 = value;
-                }
-                _ => {}
-            }
-            Ok(Value::default())
-        }
-    }
-}
-pub fn _string(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
-    let mut args = args.into_iter().enumerate();
-    let value = typed!(args: String);
-
-    Ok(Value::UserObject(Rc::new(RefCell::new(Box::new(
-        StringObject(value),
-    )))))
-}
 #[derive(Debug, Clone, PartialEq)]
 pub struct BoxObject(Value);
 userobject! {
@@ -363,6 +174,9 @@ userobject! {
             }
             Ok(Value::default())
         }
+        __str : "__str" {
+            Ok(Value::String(format!("box({:?})", self.0)))
+        }
     }
 }
 pub fn _box(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
@@ -371,5 +185,210 @@ pub fn _box(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Erro
 
     Ok(Value::UserObject(Rc::new(RefCell::new(Box::new(
         BoxObject(value),
+    )))))
+}
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct IntBoxObject(i64);
+userobject! {
+    IntBoxObject : "int-box";
+    self
+    yield {
+        "value" = Value::Int(self.0)
+    }
+    static (self, _i, _a) {
+        clone : "clone" {
+            Ok(Value::UserObject(Rc::new(RefCell::new(Box::new(
+                IntBoxObject(self.0),
+            )))))
+        }
+    }
+    mut (self, _i, args) {
+        __set : "__set" {
+            let mut args = args.into_iter().enumerate();
+            let key = typed!(args: String);
+            match key.as_str() {
+                "value" => {
+                    let value = typed!(args: Int);
+                    self.0 = value;
+                }
+                _ => {}
+            }
+            Ok(Value::default())
+        }
+        __str : "__str" {
+            Ok(Value::String(format!("int-box({:?})", self.0)))
+        }
+    }
+}
+pub fn _int(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let value = typed!(args: Int);
+
+    Ok(Value::UserObject(Rc::new(RefCell::new(Box::new(
+        IntBoxObject(value),
+    )))))
+}
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd,)]
+pub struct FloatBoxObject(f64);
+userobject! {
+    FloatBoxObject : "float-box";
+    self
+    yield {
+        "value" = Value::Float(self.0)
+    }
+    static (self, _i, _a) {
+        clone : "clone" {
+            Ok(Value::UserObject(Rc::new(RefCell::new(Box::new(
+                FloatBoxObject(self.0),
+            )))))
+        }
+    }
+    mut (self, _i, args) {
+        __set : "__set" {
+            let mut args = args.into_iter().enumerate();
+            let key = typed!(args: String);
+            match key.as_str() {
+                "value" => {
+                    let value = typed!(args: Float);
+                    self.0 = value;
+                }
+                _ => {}
+            }
+            Ok(Value::default())
+        }
+        __str : "__str" {
+            Ok(Value::String(format!("float-box({:?})", self.0)))
+        }
+    }
+}
+pub fn _float(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let value = typed!(args: Float);
+
+    Ok(Value::UserObject(Rc::new(RefCell::new(Box::new(
+        FloatBoxObject(value),
+    )))))
+}
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct BoolBoxObject(bool);
+userobject! {
+    BoolBoxObject : "boolean-box";
+    self
+    yield {
+        "value" = Value::Bool(self.0)
+    }
+    static (self, _i, _a) {
+        clone : "clone" {
+            Ok(Value::UserObject(Rc::new(RefCell::new(Box::new(
+                BoolBoxObject(self.0),
+            )))))
+        }
+    }
+    mut (self, _i, args) {
+        __set : "__set" {
+            let mut args = args.into_iter().enumerate();
+            let key = typed!(args: String);
+            match key.as_str() {
+                "value" => {
+                    let value = typed!(args: Bool);
+                    self.0 = value;
+                }
+                _ => {}
+            }
+            Ok(Value::default())
+        }
+        __str : "__str" {
+            Ok(Value::String(format!("boolean-box({:?})", self.0)))
+        }
+    }
+}
+pub fn _bool(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let value = typed!(args: Bool);
+
+    Ok(Value::UserObject(Rc::new(RefCell::new(Box::new(
+        BoolBoxObject(value),
+    )))))
+}
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct CharBoxObject(char);
+userobject! {
+    CharBoxObject : "char-box";
+    self
+    yield {
+        "value" = Value::Char(self.0)
+    }
+    static (self, _i, _a) {
+        clone : "clone" {
+            Ok(Value::UserObject(Rc::new(RefCell::new(Box::new(
+                CharBoxObject(self.0),
+            )))))
+        }
+    }
+    mut (self, _i, args) {
+        __set : "__set" {
+            let mut args = args.into_iter().enumerate();
+            let key = typed!(args: String);
+            match key.as_str() {
+                "value" => {
+                    let value = typed!(args: Char);
+                    self.0 = value;
+                }
+                _ => {}
+            }
+            Ok(Value::default())
+        }
+        __str : "__str" {
+            Ok(Value::String(format!("char-box({:?})", self.0)))
+        }
+    }
+}
+pub fn _char(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let value = typed!(args: Char);
+
+    Ok(Value::UserObject(Rc::new(RefCell::new(Box::new(
+        CharBoxObject(value),
+    )))))
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct StringBoxObject(String);
+userobject! {
+    StringBoxObject : "string-box";
+    self
+    yield {
+        "value" = Value::String(self.0.clone())
+    }
+    static (self, _i, _a) {
+        clone : "clone" {
+            Ok(Value::UserObject(Rc::new(RefCell::new(Box::new(
+                StringBoxObject(self.0.clone()),
+            )))))
+        }
+    }
+    mut (self, _i, args) {
+        __set : "__set" {
+            let mut args = args.into_iter().enumerate();
+            let key = typed!(args: String);
+            match key.as_str() {
+                "value" => {
+                    let value = typed!(args: String);
+                    self.0 = value;
+                }
+                _ => {}
+            }
+            Ok(Value::default())
+        }
+        __str : "__str" {
+            Ok(Value::String(format!("string-box({:?})", self.0)))
+        }
+    }
+}
+pub fn _string(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let value = typed!(args: String);
+
+    Ok(Value::UserObject(Rc::new(RefCell::new(Box::new(
+        StringBoxObject(value),
     )))))
 }

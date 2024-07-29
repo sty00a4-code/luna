@@ -1,0 +1,5 @@
+let a = object.box("hello")
+let b = a
+print(a, b) # box("hello") box("hello")
+a.value += " there"
+print(a, b) # box("hello there") box("hello there")
