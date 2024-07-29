@@ -73,6 +73,12 @@
 <li class="toctree-l4"><a class="nav-item toc" href="#objectsetmetao-objectvfn-meta-object-objectvfn">object.setmeta(o: object&lt;V&gt;|fn, meta: object?): object&lt;V&gt;|fn</a></li>
 <li class="toctree-l4"><a class="nav-item toc" href="#objectgetmetao-objectfn-object">object.getmeta(o: object|fn): object?</a></li>
 <li class="toctree-l4"><a class="nav-item toc" href="#objectclearo-object">object.clear(o: object)</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#objectboxv-box">object.box(v): box</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#objectintv-int-int-box">object.int(v: int): int-box</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#objectfloatv-float-float-box">object.float(v: float): float-box</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#objectboolv-boolean-boolean-box">object.bool(v: boolean): boolean-box</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#objectcharv-char-char-box">object.char(v: char): char-box</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#objectstringv-string-string-box">object.string(v: string): string-box</a></li>
 </ul></li>
 </ul></li>
     <li class="toctree-l2"><button class="section nav-item hide">Built-in Type Modules</button>
@@ -125,7 +131,21 @@
 <h4 id="objectgetmetao-objectfn-object"><code>object.getmeta(o: object|fn): object?</code></h4>
 <p>Returns the meta-object of <code>o</code> if it has any.</p>
 <h4 id="objectclearo-object"><code>object.clear(o: object)</code></h4>
-<p>Clears <code>o</code> of it's values.</p></div>
+<p>Clears <code>o</code> of it's values.</p>
+<h4 id="objectboxv-box"><code>object.box(v): box</code></h4>
+<p>Returns the value <code>v</code> wrapped around a box. The box holds the inner value to be passed around by reference, without copying the inner value. This allows multiple variables to reference the same value.
+To read the inner value write <code>box.value</code>.
+To change the inner value write <code>box.value = new_value</code>.</p>
+<h4 id="objectintv-int-int-box"><code>object.int(v: int): int-box</code></h4>
+<p>Returns the value <code>v</code> wrapped around a box that can only hold an integer.</p>
+<h4 id="objectfloatv-float-float-box"><code>object.float(v: float): float-box</code></h4>
+<p>Returns the value <code>v</code> wrapped around a box that can only hold an float.</p>
+<h4 id="objectboolv-boolean-boolean-box"><code>object.bool(v: boolean): boolean-box</code></h4>
+<p>Returns the value <code>v</code> wrapped around a box that can only hold an boolean.</p>
+<h4 id="objectcharv-char-char-box"><code>object.char(v: char): char-box</code></h4>
+<p>Returns the value <code>v</code> wrapped around a box that can only hold an character.</p>
+<h4 id="objectstringv-string-string-box"><code>object.string(v: string): string-box</code></h4>
+<p>Returns the value <code>v</code> wrapped around a box that can only hold an string.</p></div>
                 <footer>
     <div class="footer-buttons">
         <div class="previous"><a href="../vector_module/" title="Vector Module"><span>Previous</span></a></div>
