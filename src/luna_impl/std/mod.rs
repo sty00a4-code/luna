@@ -29,6 +29,7 @@ pub mod object;
 pub mod string;
 pub mod vector;
 
+pub mod array_m;
 pub mod env_m;
 pub mod fs_m;
 pub mod io_m;
@@ -36,7 +37,6 @@ pub mod math_m;
 pub mod net_m;
 pub mod os_m;
 pub mod typed_m;
-pub mod array_m;
 
 pub const FOR_FUNC: &str = "next";
 
@@ -194,6 +194,7 @@ impl Display for RequireError {
     }
 }
 impl Error for RequireError {}
+pub const REQUIRE_SO_FUNC_NAME: &[u8] = b"luna_require";
 pub fn _require(interpreter: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let mut args = args.into_iter().enumerate();
     let path = typed!(args: String path => path.split('.').collect::<Vec<&str>>().join("/"));
@@ -205,8 +206,8 @@ pub fn _require(interpreter: &mut Interpreter, args: Vec<Value>) -> Result<Value
         unsafe {
             let lib = libloading::Library::new(format!("{path}.so"))?;
             let func: libloading::Symbol<
-                unsafe extern "C" fn(&mut Interpreter, Vec<Value>) -> Result<Value, Box<dyn Error>>,
-            > = lib.get(b"require")?;
+                unsafe extern fn(&mut Interpreter, Vec<Value>) -> Result<Value, Box<dyn Error>>,
+            > = lib.get(REQUIRE_SO_FUNC_NAME)?;
             return func(interpreter, Vec::from_iter(args.map(|(_, v)| v)));
         }
     } else if let Some(global_path) = &interpreter.global_path {
@@ -224,11 +225,11 @@ pub fn _require(interpreter: &mut Interpreter, args: Vec<Value>) -> Result<Value
             unsafe {
                 let lib = libloading::Library::new(format!("{global_path}/{path}.so"))?;
                 let func: libloading::Symbol<
-                    unsafe extern "C" fn(
+                    unsafe extern fn(
                         &mut Interpreter,
                         Vec<Value>,
                     ) -> Result<Value, Box<dyn Error>>,
-                > = lib.get(b"require")?;
+                > = lib.get(REQUIRE_SO_FUNC_NAME)?;
                 return func(interpreter, Vec::from_iter(args.map(|(_, v)| v)));
             }
         } else {
