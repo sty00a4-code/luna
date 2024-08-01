@@ -210,6 +210,14 @@ pub fn _require(interpreter: &mut Interpreter, args: Vec<Value>) -> Result<Value
             > = lib.get(REQUIRE_SO_FUNC_NAME)?;
             return func(interpreter, Vec::from_iter(args.map(|(_, v)| v)));
         }
+    } else if fs::File::open(format!("{path}/mod.so")).is_ok() {
+        unsafe {
+            let lib = libloading::Library::new(format!("{path}/mod.so"))?;
+            let func: libloading::Symbol<
+                unsafe extern fn(&mut Interpreter, Vec<Value>) -> Result<Value, Box<dyn Error>>,
+            > = lib.get(REQUIRE_SO_FUNC_NAME)?;
+            return func(interpreter, Vec::from_iter(args.map(|(_, v)| v)));
+        }
     } else if let Some(global_path) = &interpreter.global_path {
         let current_path = env::current_dir().map_err(|_| "couldn't resolve current directory")?;
         let root_path = "/";
@@ -224,6 +232,17 @@ pub fn _require(interpreter: &mut Interpreter, args: Vec<Value>) -> Result<Value
         } else if fs::File::open(format!("{global_path}/{path}.so")).is_ok() {
             unsafe {
                 let lib = libloading::Library::new(format!("{global_path}/{path}.so"))?;
+                let func: libloading::Symbol<
+                    unsafe extern fn(
+                        &mut Interpreter,
+                        Vec<Value>,
+                    ) -> Result<Value, Box<dyn Error>>,
+                > = lib.get(REQUIRE_SO_FUNC_NAME)?;
+                return func(interpreter, Vec::from_iter(args.map(|(_, v)| v)));
+            }
+        } else if fs::File::open(format!("{global_path}/{path}/mod.so")).is_ok() {
+            unsafe {
+                let lib = libloading::Library::new(format!("{global_path}/{path}/mod.so"))?;
                 let func: libloading::Symbol<
                     unsafe extern fn(
                         &mut Interpreter,
