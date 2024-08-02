@@ -165,12 +165,9 @@ userobject! {
         __set : "__set" {
             let mut args = args.into_iter().enumerate();
             let key = typed!(args: String);
-            match key.as_str() {
-                "value" => {
-                    let value = typed!(args);
-                    self.0 = value;
-                }
-                _ => {}
+            if key.as_str() == "value" {
+                let value = typed!(args);
+                self.0 = value;
             }
             Ok(Value::default())
         }
@@ -206,12 +203,9 @@ userobject! {
         __set : "__set" {
             let mut args = args.into_iter().enumerate();
             let key = typed!(args: String);
-            match key.as_str() {
-                "value" => {
-                    let value = typed!(args: Int);
-                    self.0 = value;
-                }
-                _ => {}
+            if key.as_str() == "value" {
+                let value = typed!(args: Int);
+                self.0 = value;
             }
             Ok(Value::default())
         }
@@ -247,12 +241,9 @@ userobject! {
         __set : "__set" {
             let mut args = args.into_iter().enumerate();
             let key = typed!(args: String);
-            match key.as_str() {
-                "value" => {
-                    let value = typed!(args: Float);
-                    self.0 = value;
-                }
-                _ => {}
+            if key.as_str() == "value" {
+                let value = typed!(args: Float);
+                self.0 = value;
             }
             Ok(Value::default())
         }
@@ -288,12 +279,9 @@ userobject! {
         __set : "__set" {
             let mut args = args.into_iter().enumerate();
             let key = typed!(args: String);
-            match key.as_str() {
-                "value" => {
-                    let value = typed!(args: Bool);
-                    self.0 = value;
-                }
-                _ => {}
+            if key.as_str() == "value" {
+                let value = typed!(args: Bool);
+                self.0 = value;
             }
             Ok(Value::default())
         }
@@ -329,12 +317,9 @@ userobject! {
         __set : "__set" {
             let mut args = args.into_iter().enumerate();
             let key = typed!(args: String);
-            match key.as_str() {
-                "value" => {
-                    let value = typed!(args: Char);
-                    self.0 = value;
-                }
-                _ => {}
+            if key.as_str() == "value" {
+                let value = typed!(args: Char);
+                self.0 = value;
             }
             Ok(Value::default())
         }
@@ -370,12 +355,9 @@ userobject! {
         __set : "__set" {
             let mut args = args.into_iter().enumerate();
             let key = typed!(args: String);
-            match key.as_str() {
-                "value" => {
-                    let value = typed!(args: String);
-                    self.0 = value;
-                }
-                _ => {}
+            if key.as_str() == "value" {
+                let value = typed!(args: String);
+                self.0 = value;
             }
             Ok(Value::default())
         }
