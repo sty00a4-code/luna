@@ -333,22 +333,22 @@ impl CastFrom<i64> for i32 {
 }
 impl CastFrom<i64> for i128 {
     fn cast_from(value: i64) -> Result<Self, CastError> {
-        value.try_into().map_err(|_| CastError)
+        Ok(value as Self)
     }
 }
 impl CastFrom<u8> for i64 {
     fn cast_from(value: u8) -> Result<Self, CastError> {
-        value.try_into().map_err(|_| CastError)
+        Ok(value as Self)
     }
 }
 impl CastFrom<u16> for i64 {
     fn cast_from(value: u16) -> Result<Self, CastError> {
-        value.try_into().map_err(|_| CastError)
+        Ok(value as Self)
     }
 }
 impl CastFrom<u32> for i64 {
     fn cast_from(value: u32) -> Result<Self, CastError> {
-        value.try_into().map_err(|_| CastError)
+        Ok(value as Self)
     }
 }
 impl CastFrom<u64> for i64 {
@@ -363,17 +363,17 @@ impl CastFrom<u128> for i64 {
 }
 impl CastFrom<i8> for i64 {
     fn cast_from(value: i8) -> Result<Self, CastError> {
-        value.try_into().map_err(|_| CastError)
+        Ok(value as Self)
     }
 }
 impl CastFrom<i16> for i64 {
     fn cast_from(value: i16) -> Result<Self, CastError> {
-        value.try_into().map_err(|_| CastError)
+        Ok(value as Self)
     }
 }
 impl CastFrom<i32> for i64 {
     fn cast_from(value: i32) -> Result<Self, CastError> {
-        value.try_into().map_err(|_| CastError)
+        Ok(value as Self)
     }
 }
 impl CastFrom<i128> for i64 {
