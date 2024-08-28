@@ -1,9 +1,14 @@
 use super::{int, IteratorObject};
 use crate::{
     function,
-    lang::{interpreter::Interpreter, value::{Value, Object, FunctionKind}},
+    lang::{
+        interpreter::Interpreter,
+        value::{FunctionKind, Object, Value},
+    },
     luna_impl::std::STRING_MODULE,
-    object, set_field, typed, ExpectedType,
+    object,
+    regex::Regex,
+    set_field, typed, ExpectedType,
 };
 use std::{cell::RefCell, collections::HashMap, error::Error, fmt::Display, rc::Rc};
 
@@ -30,7 +35,8 @@ pub fn define(globals: &mut HashMap<String, Rc<RefCell<Value>>>) {
             "bin" = function!(int::_from_bin),
             "hex" = function!(int::_from_hex),
             "start" = function!(_starts_with),
-            "end" = function!(_ends_with)
+            "end" = function!(_ends_with),
+            "rmatch" = function!(_rmatch)
         }
     );
 }
@@ -241,4 +247,23 @@ pub fn _ends_with(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dy
     let start = typed!(args: String);
 
     Ok(string.ends_with(&start).into())
+}
+
+pub fn _rmatch(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let string = typed!(args: String);
+    let pattern = typed!(args: String);
+    let re = Regex::new(&pattern).map_err(Box::new)?;
+    let Some(caps) = re.captures(&string) else {
+        return Ok(Value::default());
+    };
+    let mut matches: Vec<Value> = caps
+        .iter()
+        .flatten()
+        .map(|s| Value::String(s.as_str().to_string()))
+        .collect();
+    if matches.len() == 1 {
+        return Ok(matches.remove(0));
+    }
+    Ok(Value::Vector(Rc::new(RefCell::new(matches))))
 }

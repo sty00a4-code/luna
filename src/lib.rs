@@ -1,3 +1,4 @@
+extern crate regex;
 pub mod lang;
 pub mod luna_impl;
 #[cfg(test)]
