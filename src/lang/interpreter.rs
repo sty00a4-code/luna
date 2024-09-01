@@ -831,18 +831,15 @@ impl Interpreter {
                             .expect("no call frame")
                             .register(upvalue.register)
                             .expect("register not found")
-                    } else if let Some(value) = self
-                        .call_frames
-                        .get(self.call_frames.len() - 1 - upvalue.depth as usize)
-                        .map(|frame| {
-                            frame
-                                .register(upvalue.register)
-                                .expect("register not found")
-                        })
-                    {
-                        value
                     } else {
-                        Rc::default()
+                        self.call_frames
+                            .get(self.call_frames.len() - 1 - upvalue.depth as usize)
+                            .map(|frame| {
+                                frame
+                                    .register(upvalue.register)
+                                    .expect("register not found")
+                            })
+                            .unwrap_or_default()
                     });
                 }
                 *dst.borrow_mut() =
