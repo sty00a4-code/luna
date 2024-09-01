@@ -81,6 +81,9 @@
 <li class="toctree-l4"><a class="nav-item toc" href="#stringrevs-string-string">string.rev(s: string): string</a></li>
 <li class="toctree-l4"><a class="nav-item toc" href="#stringfinds-string-patt-string-string">string.find(s: string, patt: string): string</a></li>
 <li class="toctree-l4"><a class="nav-item toc" href="#stringformats-string-string">string.format(s: string, ...): string</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#stringstarts-string-start-string-boolean">string.start(s: string, start: string): boolean</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#stringends-string-end-string-boolean">string.end(s: string, end: string): boolean</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#stringrmatchs-string-pattern-string-stringvectorstring">string.rmatch(s: string, pattern: string): string|vector&lt;string&gt;?</a></li>
 </ul></li>
     <li class="toctree-l3"><a class="nav-item" href="../vector_module/">Vector Module</a></li>
     <li class="toctree-l3"><a class="nav-item" href="../object_module/">Object Module</a></li>
@@ -162,7 +165,13 @@
 <li><code>%q</code>: next argument quoted if it is a string</li>
 <li><code>%x</code>: next argument as a hexadecimal integer if it is a integer</li>
 <li><code>%%</code>: just <code>%</code></li>
-</ul></div>
+</ul>
+<h4 id="stringstarts-string-start-string-boolean"><code>string.start(s: string, start: string): boolean</code></h4>
+<p>Returns true if the string <code>s</code> starts with the substring <code>start</code>.</p>
+<h4 id="stringends-string-end-string-boolean"><code>string.end(s: string, end: string): boolean</code></h4>
+<p>Returns true if the string <code>s</code> ends with the substring <code>end</code>.</p>
+<h4 id="stringrmatchs-string-pattern-string-stringvectorstring"><code>string.rmatch(s: string, pattern: string): string|vector&lt;string&gt;?</code></h4>
+<p>Returns true if the string <code>s</code> ends with the substring <code>end</code>.</p></div>
                 <footer>
     <div class="footer-buttons">
         <div class="previous"><a href="../char_module/" title="Char Module"><span>Previous</span></a></div>
