@@ -1,13 +1,15 @@
 #![allow(unused_macros)]
-use super::position::Located;
+use super::{
+    ast::Chunk,
+    position::{Located, PathLocated},
+};
 use crate::{
-    function,
+    compile_str, function,
     lang::{
         interpreter::{Interpreter, RunTimeError},
-        value::{FunctionKind, Object, UserObject, UserObjectError, Value, META_NEXT},
+        value::{Function, FunctionKind, Object, UserObject, UserObjectError, Value, META_NEXT},
     },
-    luna_impl::ast::Chunk,
-    object, run_str, set_field, typed, userobject, ExpectedType,
+    object, set_field, typed, userobject, ExpectedType,
 };
 use std::{
     cell::RefCell,
@@ -206,7 +208,7 @@ pub fn _require(interpreter: &mut Interpreter, args: Vec<Value>) -> Result<Value
         unsafe {
             let lib = libloading::Library::new(format!("{path}.so"))?;
             let func: libloading::Symbol<
-                unsafe extern fn(&mut Interpreter, Vec<Value>) -> Result<Value, Box<dyn Error>>,
+                unsafe extern "C" fn(&mut Interpreter, Vec<Value>) -> Result<Value, Box<dyn Error>>,
             > = lib.get(REQUIRE_SO_FUNC_NAME)?;
             return func(interpreter, Vec::from_iter(args.map(|(_, v)| v)));
         }
@@ -214,7 +216,7 @@ pub fn _require(interpreter: &mut Interpreter, args: Vec<Value>) -> Result<Value
         unsafe {
             let lib = libloading::Library::new(format!("{path}/mod.so"))?;
             let func: libloading::Symbol<
-                unsafe extern fn(&mut Interpreter, Vec<Value>) -> Result<Value, Box<dyn Error>>,
+                unsafe extern "C" fn(&mut Interpreter, Vec<Value>) -> Result<Value, Box<dyn Error>>,
             > = lib.get(REQUIRE_SO_FUNC_NAME)?;
             return func(interpreter, Vec::from_iter(args.map(|(_, v)| v)));
         }
@@ -233,7 +235,7 @@ pub fn _require(interpreter: &mut Interpreter, args: Vec<Value>) -> Result<Value
             unsafe {
                 let lib = libloading::Library::new(format!("{global_path}/{path}.so"))?;
                 let func: libloading::Symbol<
-                    unsafe extern fn(
+                    unsafe extern "C" fn(
                         &mut Interpreter,
                         Vec<Value>,
                     ) -> Result<Value, Box<dyn Error>>,
@@ -244,7 +246,7 @@ pub fn _require(interpreter: &mut Interpreter, args: Vec<Value>) -> Result<Value
             unsafe {
                 let lib = libloading::Library::new(format!("{global_path}/{path}/mod.so"))?;
                 let func: libloading::Symbol<
-                    unsafe extern fn(
+                    unsafe extern "C" fn(
                         &mut Interpreter,
                         Vec<Value>,
                     ) -> Result<Value, Box<dyn Error>>,
@@ -264,8 +266,26 @@ pub fn _require(interpreter: &mut Interpreter, args: Vec<Value>) -> Result<Value
             global_path: None,
         }));
     };
-    Ok(run_str::<Chunk>(&text, Some(&full_path))
+    let closure = compile_str::<Chunk>(&text, Some(&path))
+        .map_err(|err| err.with_path(path))
         .map_err(|err| {
+            format!(
+                "{full_path}:{}:{}: {}",
+                err.pos.ln.start + 1,
+                err.pos.col.start + 1,
+                err.value
+            )
+        })?;
+    let function = Rc::new(RefCell::new(Function {
+        closure,
+        upvalues: vec![],
+        meta: None,
+    }));
+    interpreter.call(&function, vec![], None);
+    Ok(interpreter
+        .run()
+        .map_err(|err| err.with_path(interpreter.path().unwrap_or("<input>".to_string())))
+        .map_err(|err: PathLocated<RunTimeError>| {
             format!(
                 "{full_path}:{}:{}: {}",
                 err.pos.ln.start + 1,
