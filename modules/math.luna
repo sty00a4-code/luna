@@ -1,0 +1,7 @@
+math = math | {}
+fn math.max(a, b) {
+    return if a > b a else b
+}
+fn math.min(a, b) {
+    return if a < b a else b
+}

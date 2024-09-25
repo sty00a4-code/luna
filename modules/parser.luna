@@ -1,0 +1,298 @@
+let module = {}
+
+let node_meta = {
+    __type = "node",
+    __str = fn (self) {
+        match self.type {
+            "atom" => {
+                return "%q":format(self.atom)
+            }
+            "pattern" => {
+                return "r/%s/":format(self.pattern)
+            }
+            "any" => {
+                return "%s*":format(self.node)
+            }
+            "more" => {
+                return "%s+":format(self.node)
+            }
+            "maybe" => {
+                return "%s?":format(self.node)
+            }
+            "seq" => {
+                let s = "{ "
+                for node in self.nodes:iter() {
+                    s += str(node) + " "
+                }
+                s += "}"
+                return s
+            }
+            "opts" => {
+                let s = "("
+                for node in self.nodes:iter() {
+                    s += str(node) + "|"
+                }
+                s = s:sub(0, s:len() - 2) + ")"
+                return s
+            }
+        }
+    }
+}
+fn module.parse(text, node) {
+    let text = typed.string(text) else {
+        error "expected string"
+    }
+    let node = typed.check(node, "node") else {
+        error "expected node"
+    }
+    let input = {
+        idx = 0
+        ln = 0
+        col = 0
+    }
+    let ctx = {}
+    fn input.sub(self) {
+        return text:sub(self.idx)
+    }
+    fn input.advance(self, amount) {
+        amount = if some(amount) amount else 1
+        for _ in range(amount) {
+            if text[self.idx] == '\n' {
+                self.ln += 1
+                self.col = 0
+            } else {
+                self.col += 1
+            }
+            self.idx += 1
+        }
+    }
+    return node:parse(input, ctx)
+}
+
+let fn parse_atom(self, input, ctx) {
+    if input:sub():start(self.atom) {
+        input:advance(self.atom:len())
+        return {
+            ok = self.atom
+        }
+    }
+    return {
+        err = "expected %q":format(self.atom)
+    }
+}
+fn module.atom(atom) {
+    let atom = typed.string(atom) else {
+        error "expected string"
+    }
+    return setmeta({
+        type = "atom"
+        atom = atom
+        parse = parse_atom
+    }, node_meta)
+}
+let fn parse_patt(self, input, ctx) {
+    let sub = input:sub()
+    let catch = sub:rmatch(self.pattern)
+    if !some(catch) {
+        return {
+            err = "expected %q":format(self.name)
+        }
+    }
+    catch = if typed.vector(catch) catch[0] else catch
+    if sub:start(catch) {
+        input:advance(catch:len())
+        return {
+            ok = catch
+        }
+    }
+    return {
+        err = "expected %s":format(if self.name self.name else "?")
+    }
+}
+fn module.patt(pattern, name) {
+    let pattern = typed.string(pattern) else {
+        error "expected string"
+    }
+    return setmeta({
+        type = "pattern"
+        pattern = pattern
+        name = name
+        parse = parse_patt
+    }, node_meta)
+}
+
+fn module.any(node) {
+    let node = typed.check(node, "node") else {
+        error "expected node"
+    }
+    return setmeta({
+        type = "any"
+        node = node
+    }, node_meta)
+}
+fn module.more(node) {
+    let node = typed.check(node, "node") else {
+        error "expected node"
+    }
+    return setmeta({
+        type = "more"
+        node = node
+    }, node_meta)
+}
+let fn parse_maybe(self, input, ctx) {
+    let res = self.node:parse(input, ctx)
+    if some(res.err) {
+        return {}
+    }
+    return res
+}
+fn module.maybe(node) {
+    let node = typed.check(node, "node") else {
+        error "expected node"
+    }
+    return setmeta({
+        type = "maybe"
+        node = node
+        parse = parse_maybe
+    }, node_meta)
+}
+let fn parse_ignore(self, input, ctx) {
+    self.node:parse(input, ctx)
+    return {}
+}
+fn module.ignore(node) {
+    let node = typed.check(node, "node") else {
+        error "expected node"
+    }
+    return setmeta({
+        type = "ignore"
+        node = node
+        parse = parse_ignore
+    }, node_meta)
+}
+let fn parse_sub(self, input, ctx) {
+    if let node = ctx[self.name] {
+        return node:parse(input, ctx)
+    }
+    error("layer %q not found":format(self.name))
+}
+fn module.sub(name) {
+    let name = typed.string(name) else {
+        error "expected string"
+    }
+    return setmeta({
+        type = "sub"
+        name = name
+        parse = parse_sub
+    }, node_meta)
+}
+
+let fn parse_seq(self, input, ctx) {
+    let data = []
+    for node in self.nodes:iter() {
+        let res = node:parse(input, ctx)
+        if let err = res.err {
+            return {
+                err = res.err
+            }
+        }
+        if some(res.ok) {
+            data:push(res.ok)
+        }
+    }
+    return {
+        ok = data
+    }
+}
+fn module.seq(nodes) {
+    let nodes = typed.vector(nodes) else {
+        error "expected vector"
+    }
+    return setmeta({
+        type = "seq"
+        nodes = nodes
+        parse = parse_seq
+    }, node_meta)
+}
+let fn parse_opts(self, input, ctx) {
+    let err
+    for node in self.nodes:iter() {
+        let _input = object.copy(input)
+        let res = node:parse(input, ctx)
+        if some(res.ok) {
+            return res
+        }
+        input.idx = _input.idx
+        input.ln = _input.ln
+        input.col = _input.col
+        if !some(err) {
+            err = res.err
+        }
+    }
+    return {
+        err = err
+    }
+}
+fn module.opts(nodes) {
+    let nodes = typed.vector(nodes) else {
+        error "expected vector"
+    }
+    return setmeta({
+        type = "opts"
+        nodes = nodes
+        parse = parse_opts
+    }, node_meta)
+}
+
+let fn parse_layer(self, input, ctx) {
+    let res = self.node:parse(input, ctx)
+    let ok = res.ok else {
+        return res
+    }
+    let obj = {}
+    if let values = typed.vector(ok) {
+        for key in keys(self.keys) {
+            obj[key] = values[self.keys[key]]
+        }
+    }
+    return {
+        ok = obj
+    }
+}
+fn module.layer(node, keys) {
+    let node = typed.check(node, "node") else {
+        error "expected node"
+    }
+    let keys = typed.object(keys) else {
+        error "expected object"
+    }
+    return setmeta({
+        type = "layer"
+        node = node
+        keys = keys
+        parse = parse_layer
+    }, node_meta)
+}
+let fn parse_def(self, input, ctx) {
+    for name in keys(self.layers) {
+        ctx[name] = self.layers[name]
+    }
+    return self.layers[self.start]:parse(input, ctx)
+}
+fn module.def(layers, start, ctx) {
+    let node = typed.check(node, "node") else {
+        error "expected node"
+    }
+    let layers = typed.object(layers) else {
+        error "expected object"
+    }
+    return setmeta({
+        type = "def"
+        layers = layers
+        start = start
+        parse = parse_def
+    }, node_meta)
+}
+
+module.space = module.ignore(module.maybe(module.patt("\\s*")))
+return module

@@ -1,0 +1,29 @@
+let p = require "parser"
+let statement = p.def({
+    let_stat = p.layer(p.seq([
+        p.space
+        p.patt ("let\\s", "\"let\"")
+        p.space
+        p.patt ("[\\w_]+", "word")
+        p.space
+        p.patt ("=", "\"l=\"")
+        p.space
+        p.patt ("\\d+", "number")
+    ]), {
+        ident = 1
+        expr = 3
+    })
+    assign_stat = p.layer(p.seq([
+        p.space
+        p.patt ("[\\w_]+", "word")
+        p.space
+        p.patt ("=", "\"l=\"")
+        p.space
+        p.patt ("\\d+", "number")
+    ]), {
+        ident = 1
+        expr = 3
+    })
+}, "let_stat")
+let text = "let age = 20"
+print(p.parse(text, assign).ok)
