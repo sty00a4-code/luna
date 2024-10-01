@@ -73,6 +73,7 @@
 <li class="toctree-l4"><a class="nav-item toc" href="#objectsetmetao-objectvfn-meta-object-objectvfn">object.setmeta(o: object&lt;V&gt;|fn, meta: object?): object&lt;V&gt;|fn</a></li>
 <li class="toctree-l4"><a class="nav-item toc" href="#objectgetmetao-objectfn-object">object.getmeta(o: object|fn): object?</a></li>
 <li class="toctree-l4"><a class="nav-item toc" href="#objectclearo-object">object.clear(o: object)</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#objectcopyo-object-object">object.copy(o: object): object</a></li>
 <li class="toctree-l4"><a class="nav-item toc" href="#objectboxv-box">object.box(v): box</a></li>
 <li class="toctree-l4"><a class="nav-item toc" href="#objectintv-int-int-box">object.int(v: int): int-box</a></li>
 <li class="toctree-l4"><a class="nav-item toc" href="#objectfloatv-float-float-box">object.float(v: float): float-box</a></li>
@@ -132,6 +133,8 @@
 <p>Returns the meta-object of <code>o</code> if it has any.</p>
 <h4 id="objectclearo-object"><code>object.clear(o: object)</code></h4>
 <p>Clears <code>o</code> of it's values.</p>
+<h4 id="objectcopyo-object-object"><code>object.copy(o: object): object</code></h4>
+<p>Copies <code>o</code>'s fields into a new object.</p>
 <h4 id="objectboxv-box"><code>object.box(v): box</code></h4>
 <p>Returns the value <code>v</code> wrapped around a box. The box holds the inner value to be passed around by reference, without copying the inner value. This allows multiple variables to reference the same value.
 To read the inner value write <code>box.value</code>.
