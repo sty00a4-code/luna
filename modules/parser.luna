@@ -1,4 +1,5 @@
 let module = {}
+EMPTY = {}
 
 let node_meta = {
     __type = "node",
@@ -54,6 +55,11 @@ fn module.parse(text, node) {
     fn input.sub(self) {
         return text:sub(self.idx)
     }
+    fn input.reset(self, old) {
+        self.idx = old.idx
+        self.ln = old.ln
+        self.col = old.col
+    }
     fn input.advance(self, amount) {
         amount = if some(amount) amount else 1
         for _ in range(amount) {
@@ -95,7 +101,7 @@ let fn parse_patt(self, input, ctx) {
     let catch = sub:rmatch(self.pattern)
     if !some(catch) {
         return {
-            err = "expected %q":format(self.name)
+            err = "expected %s":format(if some(self.name) self.name else "?")
         }
     }
     catch = if typed.vector(catch) catch[0] else catch
@@ -106,7 +112,7 @@ let fn parse_patt(self, input, ctx) {
         }
     }
     return {
-        err = "expected %s":format(if self.name self.name else "?")
+        err = "expected %s":format(if some(self.name) self.name else "?")
     }
 }
 fn module.patt(pattern, name) {
@@ -121,28 +127,32 @@ fn module.patt(pattern, name) {
     }, node_meta)
 }
 
-fn module.any(node) {
-    let node = typed.check(node, "node") else {
-        error "expected node"
-    }
-    return setmeta({
-        type = "any"
-        node = node
-    }, node_meta)
-}
-fn module.more(node) {
-    let node = typed.check(node, "node") else {
-        error "expected node"
-    }
-    return setmeta({
-        type = "more"
-        node = node
-    }, node_meta)
-}
+# fn module.any(node) {
+#     let node = typed.check(node, "node") else {
+#         error "expected node"
+#     }
+#     return setmeta({
+#         type = "any"
+#         node = node
+#     }, node_meta)
+# }
+# fn module.more(node) {
+#     let node = typed.check(node, "node") else {
+#         error "expected node"
+#     }
+#     return setmeta({
+#         type = "more"
+#         node = node
+#     }, node_meta)
+# }
 let fn parse_maybe(self, input, ctx) {
+    let old_input = object.copy(input)
     let res = self.node:parse(input, ctx)
-    if some(res.err) {
-        return {}
+    if some(res.err) & !some(res.once) {
+        input:reset(old_input)
+        return {
+            ok = EMPTY
+        }
     }
     return res
 }
@@ -189,14 +199,18 @@ fn module.sub(name) {
 
 let fn parse_seq(self, input, ctx) {
     let data = []
+    let once = false
     for node in self.nodes:iter() {
+        module.space:parse(input, ctx)
         let res = node:parse(input, ctx)
         if let err = res.err {
             return {
                 err = res.err
+                once = once
             }
         }
         if some(res.ok) {
+            once = true
             data:push(res.ok)
         }
     }
@@ -217,14 +231,12 @@ fn module.seq(nodes) {
 let fn parse_opts(self, input, ctx) {
     let err
     for node in self.nodes:iter() {
-        let _input = object.copy(input)
+        let old = object.copy(input)
         let res = node:parse(input, ctx)
-        if some(res.ok) {
+        if !some(res.err) {
             return res
         }
-        input.idx = _input.idx
-        input.ln = _input.ln
-        input.col = _input.col
+        input:reset(old)
         if !some(err) {
             err = res.err
         }
@@ -246,11 +258,12 @@ fn module.opts(nodes) {
 
 let fn parse_layer(self, input, ctx) {
     let res = self.node:parse(input, ctx)
-    let ok = res.ok else {
+    if some(res.err) {
         return res
     }
+    let data = res.ok
     let obj = {}
-    if let values = typed.vector(ok) {
+    if let values = typed.vector(data) {
         for key in keys(self.keys) {
             obj[key] = values[self.keys[key]]
         }
@@ -280,9 +293,6 @@ let fn parse_def(self, input, ctx) {
     return self.layers[self.start]:parse(input, ctx)
 }
 fn module.def(layers, start, ctx) {
-    let node = typed.check(node, "node") else {
-        error "expected node"
-    }
     let layers = typed.object(layers) else {
         error "expected object"
     }
