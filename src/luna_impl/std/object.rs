@@ -1,9 +1,12 @@
 use super::IteratorObject;
 use crate::{
-    function, lang::{
+    function,
+    lang::{
         interpreter::Interpreter,
-        value::{FunctionKind, Object, Value, UserObject, UserObjectError},
-    }, luna_impl::std::OBJECT_MODULE, object, option, set_field, typed, userobject, ExpectedType, ExpectedTypes
+        value::{FunctionKind, Object, UserObject, UserObjectError, Value},
+    },
+    luna_impl::std::OBJECT_MODULE,
+    object, option, set_field, typed, userobject, ExpectedType, ExpectedTypes,
 };
 use std::{cell::RefCell, collections::HashMap, error::Error, rc::Rc};
 
@@ -20,6 +23,7 @@ pub fn define(globals: &mut HashMap<String, Rc<RefCell<Value>>>) {
             "setmeta" = globals["setmeta"].borrow().clone(),
             "getmeta" = globals["getmeta"].borrow().clone(),
             "clear" = function!(_clear),
+            "copy" = function!(_copy),
             "box" = function!(_box),
             "int" = function!(_int),
             "float" = function!(_float),
@@ -126,6 +130,14 @@ pub fn _clear(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Er
     object.fields.clear();
     Ok(Value::default())
 }
+pub fn _copy(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let object = typed!(args: Object);
+    let object = object.borrow();
+    Ok(Value::Object(Rc::new(RefCell::new(Object::new(
+        object.fields.clone(),
+    )))))
+}
 pub fn _range(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
     let mut args = args.into_iter().enumerate();
     let start = typed!(args: Int);
@@ -144,7 +156,6 @@ pub fn _range(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Er
         )),
     )))))
 }
-
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct BoxObject(Value);
@@ -222,7 +233,7 @@ pub fn _int(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Erro
         IntBoxObject(value),
     )))))
 }
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd,)]
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub struct FloatBoxObject(f64);
 userobject! {
     FloatBoxObject : "float-box";
