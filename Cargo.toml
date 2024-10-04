@@ -21,6 +21,7 @@ lto = true
 chrono = "0.4.34"
 libloading = "0.8.3"
 rand = "0.8.5"
+ratatui = "0.28.1"
 regex = "1.10.6"
 
 [[bin]]

@@ -3,6 +3,7 @@ pub extern crate luna_lib;
 use luna_lib::{
     lang::{
         code::{ByteCode, Closure},
+        debugger::Debugger,
         interpreter::Interpreter,
         value::{Function, Value},
     },
@@ -74,11 +75,20 @@ pub fn run(text: &str, args: &LunaArgs) -> Result<Option<Value>, PathLocated<Box
         meta: None,
     }));
     let mut interpreter = Interpreter::default().with_global_path(env::var("LUNA_PATH").ok());
-    interpreter.call(&function, vec![], None);
-    interpreter.run().map_err(|err| {
-        err.map(|err| err.into())
-            .with_path(interpreter.path().unwrap_or("<input>".to_string()))
-    })
+    if args.debugger {
+        let mut debugger = Debugger::new(interpreter);
+        debugger.interpreter.call(&function, vec![], None);
+        debugger.run().map_err(|err| {
+            err.map(|err| err.into())
+                .with_path(debugger.interpreter.path().unwrap_or("<input>".to_string()))
+        })
+    } else {
+        interpreter.call(&function, vec![], None);
+        interpreter.run().map_err(|err| {
+            err.map(|err| err.into())
+                .with_path(interpreter.path().unwrap_or("<input>".to_string()))
+        })
+    }
 }
 
 fn main() {
@@ -183,6 +193,7 @@ pub struct LunaArgs {
     tokens: bool,
     ast: bool,
     code: bool,
+    debugger: bool,
 }
 #[derive(Debug, Clone, PartialEq)]
 pub struct LunaArgsError;
@@ -192,6 +203,7 @@ pub const USAGE: &str = r#"USAGE:
         -t  display lexer tokens
         -a  display parser ast
         -c  display compiler code
+        -d  run with debugger
 "#;
 impl Display for LunaArgsError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -238,6 +250,7 @@ impl TryFrom<Args> for LunaArgs {
             tokens: flags.contains("tokens") || flags.contains("t"),
             ast: flags.contains("ast") || flags.contains("a"),
             code: flags.contains("code") || flags.contains("c"),
+            debugger: flags.contains("debugger") || flags.contains("d"),
         })
     }
 }

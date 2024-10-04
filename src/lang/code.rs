@@ -271,23 +271,23 @@ impl Display for Closure {
         writeln!(f, "registers: {}", self.registers)?;
         writeln!(f, "code, #{} instructions:", self.code.len())?;
         for (addr, bytecode) in self.code.iter().enumerate() {
-            writeln!(f, "\t[{addr:04}] {bytecode}")?;
+            writeln!(f, "    [{addr:04}] {bytecode}")?;
         }
         writeln!(f, "upvalues:")?;
         for (addr, upvalue) in self.upvalues.iter().enumerate() {
             writeln!(
                 f,
-                "\t[{addr}] register: {}, depth: {}",
+                "    [{addr}] register: {}, depth: {}",
                 upvalue.register, upvalue.depth
             )?;
         }
         writeln!(f, "constants:")?;
         for (addr, value) in self.consts.iter().enumerate() {
-            writeln!(f, "\t[{addr}] {}: {:?}", value.typ(), value)?;
+            writeln!(f, "    [{addr}] {}: {:?}", value.typ(), value)?;
         }
         writeln!(f, "closures:")?;
         for (addr, closure) in self.closures.iter().enumerate() {
-            writeln!(f, "\t[{addr}] {:08x?}", closure.as_ptr())?;
+            writeln!(f, "    [{addr}] {:08x?}", closure.as_ptr())?;
         }
         writeln!(f)?;
         for closure in self.closures.iter() {
