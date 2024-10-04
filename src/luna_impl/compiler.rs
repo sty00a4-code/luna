@@ -280,13 +280,11 @@ impl Compilable for Located<Statement> {
             }
             Statement::LetBinding { params, mut exprs } => {
                 for Located { value: param, pos } in params.into_iter() {
-                    compiler_frame_mut!(compiler).push_scope();
                     let src = if exprs.is_empty() {
                         Source::default()
                     } else {
                         exprs.remove(0).compile(compiler)?
                     };
-                    compiler_frame_mut!(compiler).pop_scope();
                     match param {
                         Parameter::Ident(ident) => {
                             let dst =
@@ -346,9 +344,7 @@ impl Compilable for Located<Statement> {
                 expr,
                 else_case,
             } => {
-                compiler_frame_mut!(compiler).push_scope();
                 let cond = expr.compile(compiler)?;
-                compiler_frame_mut!(compiler).pop_scope();
                 match param {
                     Parameter::Ident(ident) => {
                         let dst =
