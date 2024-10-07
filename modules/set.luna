@@ -1,0 +1,55 @@
+let meta = {
+    __type = "set"
+    __str = fn (self) {
+        "{" + self.values:join(", ") + "}"
+    }
+    
+}
+let new
+
+fn meta.__or(self, other) {
+    let s = copy(self.values)
+    for v in other.values:iter() {
+        if !s:contains(v) {
+            s:push(v)
+        }
+    }
+    return new(s)
+}
+fn meta.__and(self, other) {
+    let s = []
+    for v in other.values:iter() {
+        if self.values:contains(v) {
+            s:push(v)
+        }
+    }
+    return new(s)
+}
+fn meta.__sub(self, other) {
+    let s = []
+    for v in other.values:iter() {
+        if !self.values:contains(v) {
+            s:push(v)
+        }
+    }
+    return new(s)
+}
+
+let fn len(self) {
+    return self.values:len()
+}
+let fn contains(self, v) {
+    return self.values:contains(v)
+}
+let fn copy(self) {
+    return self.values:copy()
+}
+fn new(values) {
+    return setmeta({
+        values = values
+        len = len
+        contains = contains
+        copy = copy
+    }, meta)
+}
+return new
