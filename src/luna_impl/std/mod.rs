@@ -66,6 +66,7 @@ pub fn globals() -> HashMap<String, Rc<RefCell<Value>>> {
     set_field!(globals."raw_set" = function!(_raw_set));
     set_field!(globals."iter" = function!(_iter));
     set_field!(globals.FOR_FUNC = function!(_next));
+    set_field!(globals."copy" = function!(_copy));
     int::define(&mut globals);
     float::define(&mut globals);
     bool::define(&mut globals);
@@ -520,5 +521,23 @@ userobject! {
         collect : "collect" {
             self.0.call_collect()
         }
+    }
+}
+
+fn _copy(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    let value = typed!(args);
+    match value {
+        Value::Object(object) => {
+            let object = object.borrow();
+            Ok(Value::Object(Rc::new(RefCell::new(Object::new(
+                object.fields.clone(),
+            )))))
+        }
+        Value::Vector(vector) => {
+            let vector = vector.borrow();
+            Ok(vector.clone().into())
+        }
+        _ => Ok(value)
     }
 }
