@@ -1,0 +1,42 @@
+site_name: Luna Docs
+theme:
+  name: 'ivory'
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Installation: getting_started/installation.md
+    - Environment: getting_started/environment.md
+  - Guide:
+    - Grammar: guide/grammar.md
+    - Statements: guide/statements.md
+    - Expressions: guide/expressions.md
+    - Basic Values: guide/basic-values.md
+    - Variables: guide/variables.md
+    - Objects: guide/objects.md
+    - Functions: guide/functions.md
+  - Standard Modules:
+    - Globals: standard_modules/globals.md
+    - Type Modules:
+      - Int Module: standard_modules/type_modules/int_module.md
+      - Float Module: standard_modules/type_modules/float_module.md
+      - Bool Module: standard_modules/type_modules/bool_module.md
+      - Char Module: standard_modules/type_modules/char_module.md
+      - String Module: standard_modules/type_modules/string_module.md
+      - Vector Module: standard_modules/type_modules/vector_module.md
+      - Object Module: standard_modules/type_modules/object_module.md
+    - Built-in Type Modules:
+      - Iterator: standard_modules/built_in_type_modules/iterator.md
+      - Stdin: standard_modules/built_in_type_modules/stdin.md
+      - Stdout: standard_modules/built_in_type_modules/stdout.md
+      - Stderr: standard_modules/built_in_type_modules/stderr.md
+      - File: standard_modules/built_in_type_modules/file.md
+      - TCP Listener: standard_modules/built_in_type_modules/tcp_listener.md
+      - TCP Stream: standard_modules/built_in_type_modules/tcp_stream.md
+    - Math: standard_modules/math.md
+    - IO: standard_modules/io.md
+    - FS: standard_modules/fs.md
+    - Env: standard_modules/env.md
+    - Net: standard_modules/net.md
+    - OS: standard_modules/os.md
+    - Typed: standard_modules/typed.md
+    - Array: standard_modules/array.md
