@@ -1,0 +1,223 @@
+let meta = {
+    __type = "vec"
+    __str = fn (self) {
+        return "(" + raw_get(self, "values"):join(", ") + ")"
+    }
+}
+let new
+let FIELDS = {
+    x = 0
+    y = 1
+    z = 2
+    w = 3
+}
+fn typed.number(v) {
+    return if typed.int(v) v else (if typed.float(v) v else null)
+}
+
+fn meta.__set(self, k, v) {
+    let values = raw_get(self, "values")
+    if let key = typed.string(k) {
+        if let idx = FIELDS[k] {
+            values[idx] = v
+        }
+        raw_set(self, k, v)
+    } else if let idx = typed.int(k) {
+        values[idx] = v
+    }
+}
+fn meta.__get(self, k) {
+    let values = raw_get(self, "values")
+    if let key = typed.string(k) {
+        if let idx = FIELDS[k] {
+            return values[idx]
+        }
+        return raw_get(self, k)
+    } else if let idx = typed.int(k) {
+        return values[idx]
+    }
+}
+
+let fn iter(self) {
+    return self.values:iter()
+}
+let fn dim(self) {
+    return self.values:len()
+}
+let fn length(self) {
+    let sum = 0
+    for v in self:iter() {
+        sum += v ^ 2
+    }
+    return math.sqrt(sum)
+}
+let fn normal(self) {
+    let len = self:length()
+    let values = []
+    for v in self:iter() {
+        values:push(v / len)
+    }
+    return new(values)
+}
+let fn normalize(self) {
+    let normal = normal(self)
+    self.values = normal.values
+}
+let fn angle(self) {
+    if self:dim() == 2 {
+        return math.atan2(self.x, self.y)
+    }
+}
+let fn dot(self, other) {
+    if !typed.check(other, "vec") {
+        return null
+    }
+    if self:dim() != other:dim() {
+        return null
+    }
+    let product = 0
+    for i in range(self:dim()) {
+        product += self[i] * other[i]
+    }
+    return product
+}
+let fn distance(self, other) {
+    let diff = other - self
+    return diff:length()
+}
+let fn angle_between(self, other) {
+	return math.acos(self:dot(other) / (self:length() * other:length()))
+}
+
+fn meta.__add(self, other) {
+    if !typed.check(other, "vec") {
+        return null
+    }
+    if self:dim() != other:dim() {
+        return null
+    }
+    let new_values = []
+    for i in range(self:dim()) {
+        new_values:push(self[i] + other[i])
+    }
+    return new(new_values)
+}
+fn meta.__sub(self, other) {
+    if !typed.check(other, "vec") {
+        return null
+    }
+    if self:dim() != other:dim() {
+        return null
+    }
+    let new_values = []
+    for i in range(self:dim()) {
+        new_values:push(self[i] - other[i])
+    }
+    return new(new_values)
+}
+fn meta.__mul(self, other) {
+    if let scalar = typed.number(other) {
+        let new_values = []
+        for i in range(self:dim()) {
+            new_values:push(self[i] * other)
+        }
+        return new(new_values)
+    }
+    if !typed.check(other, "vec") {
+        return null
+    }
+    if self:dim() != other:dim() {
+        return null
+    }
+    let new_values = []
+    for i in range(self:dim()) {
+        new_values:push(self[i] * other[i])
+    }
+    return new(new_values)
+}
+fn meta.__div(self, other) {
+    if let scalar = typed.number(other) {
+        let new_values = []
+        for i in range(self:dim()) {
+            new_values:push(self[i] / other)
+        }
+        return new(new_values)
+    }
+    if !typed.check(other, "vec") {
+        return null
+    }
+    if self:dim() != other:dim() {
+        return null
+    }
+    let new_values = []
+    for i in range(self:dim()) {
+        new_values:push(self[i] / other[i])
+    }
+    return new(new_values)
+}
+fn meta.__mod(self, other) {
+    if !typed.check(other, "vec") {
+        return null
+    }
+    if self:dim() != other:dim() {
+        return null
+    }
+    let new_values = []
+    for i in range(self:dim()) {
+        new_values:push(self[i] % other[i])
+    }
+    return new(new_values)
+}
+fn meta.__pow(self, other) {
+    if let scalar = typed.number(other) {
+        let new_values = []
+        for i in range(self:dim()) {
+            new_values:push(self[i] ^ other)
+        }
+        return new(new_values)
+    }
+    if !typed.check(other, "vec") {
+        return null
+    }
+    if self:dim() != other:dim() {
+        return null
+    }
+    let new_values = []
+    for i in range(self:dim()) {
+        new_values:push(self[i] ^ other[i])
+    }
+    return new(new_values)
+}
+fn meta.__eq(self, other) {
+    if !typed.check(other, "vec") {
+        return null
+    }
+    if self:dim() != other:dim() {
+        return null
+    }
+    for i in range(self:dim()) {
+        if self[i] != other[i] {
+            return false
+        }
+    }
+    return true
+}
+fn meta.__ne(self, other) {
+    return !(self == other)
+}
+
+fn new(values) {
+    return setmeta({
+        values = values
+        iter = iter
+        dim = dim
+        length = length
+        normal = normal
+        normalize = normalize
+        angle = angle
+        dot = dot
+        distance = distance
+        angle_between = angle_between
+    }, meta)
+}
+return new
