@@ -1,12 +1,59 @@
 let meta = {
     __type = "set"
     __str = fn (self) {
-        "{" + self.values:join(", ") + "}"
+        return "{" + self.values:join(", ") + "}"
     }
     
 }
 let new
 
+fn meta.__eq(self, other) {
+    if self:len() != other:len() {
+        return false
+    }
+    for v in self.values:iter() {
+        if !other:contains(v) {
+            return false
+        }
+    }
+    return true
+}
+fn meta.__le(self, other) {
+    if self:len() > other:len() {
+        return false
+    }
+    for v in self.values:iter() {
+        if !other:contains(v) {
+            return false
+        }
+    }
+    return true
+}
+fn meta.__ge(self, other) {
+    if other:len() > self:len() {
+        return false
+    }
+    for v in other.values:iter() {
+        if !self:contains(v) {
+            return false
+        }
+    }
+    return true
+}
+fn meta.__pow(self, other) {
+    let s = []
+    for v in other.values:iter() {
+        if !self:contains(v) {
+            s:push(v)
+        }
+    }
+    for v in self.values:iter() {
+        if !other:contains(v) && !s:contains(v) {
+            s:push(v)
+        }
+    }
+    return new(s)
+}
 fn meta.__or(self, other) {
     let s = copy(self.values)
     for v in other.values:iter() {
@@ -16,6 +63,7 @@ fn meta.__or(self, other) {
     }
     return new(s)
 }
+fn meta.__add = meta.__or
 fn meta.__and(self, other) {
     let s = []
     for v in other.values:iter() {
@@ -50,6 +98,8 @@ fn new(values) {
         len = len
         contains = contains
         copy = copy
+        is_sub = meta.__le
+        is_super = meta.__ge
     }, meta)
 }
 return new
