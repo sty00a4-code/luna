@@ -33,6 +33,7 @@ pub fn define(globals: &mut HashMap<String, Rc<RefCell<Value>>>) {
         "acosh" = function!(_acosh),
         "asinh" = function!(_asinh),
         "atanh" = function!(_atanh),
+        "atan2" = function!(_atan2),
         "deg" = function!(_deg),
         "rad" = function!(_rad),
         "random" = function!(_random)
@@ -245,6 +246,31 @@ pub fn _atanh(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Er
         },
         Float => value {
             Ok(Value::Float(value.atanh()))
+        }
+    )
+}
+pub fn _atan2(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    let mut args = args.into_iter().enumerate();
+    option!(args:
+        Int => value {
+            option!(args: 
+                Int => other {
+                    Ok(Value::Float((value as f64).atan2(other as f64)))
+                },
+                Float => other {
+                    Ok(Value::Float((value as f64).atan2(other)))
+                }
+            )
+        },
+        Float => value {
+            option!(args: 
+                Int => other {
+                    Ok(Value::Float(value.atan2(other as f64)))
+                },
+                Float => other {
+                    Ok(Value::Float(value.atan2(other)))
+                }
+            )
         }
     )
 }
