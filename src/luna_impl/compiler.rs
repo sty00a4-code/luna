@@ -661,9 +661,7 @@ impl Compilable for Located<Statement> {
                 let amount = args.len() as u8 + 1;
                 match amount {
                     1 => {
-                        let offset = compiler_frame_mut!(compiler).registers;
                         let arg = head_location.into();
-                        compiler_frame_mut!(compiler).registers = offset;
                         compiler_frame_mut!(compiler).write(
                             ByteCode::CallSingle {
                                 dst: None,
