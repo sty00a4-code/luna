@@ -425,18 +425,30 @@ impl Interpreter {
                             }
                         }
                     }
-                    Value::UserObject(object) => match field {
-                        Value::String(key) => object.borrow_mut().get(&key),
-                        field => {
-                            return Err(Located::new(
-                                RunTimeError::CannotFieldInto {
-                                    head: Value::Object(Default::default()).dynamic_typ(),
-                                    field: field.dynamic_typ(),
-                                },
-                                pos,
-                            ))
+                    Value::UserObject(object) => {
+                        let set = object.borrow().get(META_GET);
+                        if let Some(Value::Function(kind)) = set {
+                            self.call_kind(
+                                kind,
+                                vec![head.clone(), field],
+                                None,
+                                pos.clone(),
+                            )?;
+                            return Ok(None);
                         }
-                    },
+                        match field {
+                            Value::String(key) => object.borrow_mut().get(&key),
+                            field => {
+                                return Err(Located::new(
+                                    RunTimeError::CannotFieldInto {
+                                        head: Value::Object(Default::default()).dynamic_typ(),
+                                        field: field.dynamic_typ(),
+                                    },
+                                    pos,
+                                ))
+                            }
+                        }
+                    }
                     Value::Vector(vector) => match field {
                         Value::Int(index) => {
                             let vector = vector.borrow_mut();

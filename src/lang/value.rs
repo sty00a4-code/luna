@@ -3,11 +3,7 @@ use crate::luna_impl::position::{Located, Position};
 
 use super::code::Closure;
 use std::{
-    cell::RefCell,
-    collections::HashMap,
-    error::Error,
-    fmt::{Debug, Display},
-    rc::Rc,
+    cell::RefCell, collections::HashMap, error::Error, fmt::{Debug, Display}, hash::Hash, rc::Rc
 };
 
 pub const META_NAME: &str = "__name";
@@ -277,6 +273,54 @@ impl PartialEq for Value {
                 Self::Function(FunctionKind::UserFunction(b)),
             ) => std::ptr::eq(a, b),
             _ => false,
+        }
+    }
+}
+impl Eq for Value {}
+impl Hash for Value {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        match self {
+            Value::Null => state.write_u8(0),
+            Value::Int(v) => {
+                state.write_u8(1);
+                v.hash(state);
+            }
+            Value::Float(v) => {
+                state.write_u8(2);
+                (v.to_bits()).hash(state);
+            }
+            Value::Bool(v) => {
+                state.write_u8(3);
+                v.hash(state);
+            }
+            Value::Char(v) => {
+                state.write_u8(4);
+                v.hash(state);
+            }
+            Value::String(v) => {
+                state.write_u8(5);
+                v.hash(state);
+            }
+            Value::Vector(rc) => {
+                state.write_u8(6);
+                (rc.as_ptr()).hash(state);
+            }
+            Value::Object(rc) => {
+                state.write_u8(7);
+                (rc.as_ptr()).hash(state);
+            }
+            Value::UserObject(rc) => {
+                state.write_u8(8);
+                (rc.as_ptr()).hash(state);
+            }
+            Value::Function(FunctionKind::Function(rc)) => {
+                state.write_u8(9);
+                (rc.as_ptr()).hash(state);
+            }
+            Value::Function(FunctionKind::UserFunction(rc)) => {
+                state.write_u8(10);
+                (Rc::as_ptr(rc)).hash(state);
+            }
         }
     }
 }

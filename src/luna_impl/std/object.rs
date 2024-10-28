@@ -8,7 +8,12 @@ use crate::{
     luna_impl::std::OBJECT_MODULE,
     object, option, set_field, typed, userobject, ExpectedType, ExpectedTypes,
 };
-use std::{cell::RefCell, collections::HashMap, error::Error, rc::Rc};
+use std::{
+    cell::RefCell,
+    collections::{HashMap, HashSet},
+    error::Error,
+    rc::Rc,
+};
 
 pub fn define(globals: &mut HashMap<String, Rc<RefCell<Value>>>) {
     set_field!(globals."keys" = function!(_keys));
@@ -29,7 +34,8 @@ pub fn define(globals: &mut HashMap<String, Rc<RefCell<Value>>>) {
             "float" = function!(_float),
             "bool" = function!(_bool),
             "char" = function!(_char),
-            "string" = function!(_string)
+            "string" = function!(_string),
+            "set" = function!(_set)
         }
     );
     set_field!(globals."range" = function!(_range));
@@ -383,5 +389,44 @@ pub fn _string(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn E
 
     Ok(Value::UserObject(Rc::new(RefCell::new(Box::new(
         StringBoxObject(value),
+    )))))
+}
+#[derive(Debug, Clone)]
+pub struct SetObject(HashSet<Value>);
+userobject! {
+    SetObject : "set";
+    self
+    static (self, _i, _a) {
+        clone : "clone" {
+            Ok(Value::UserObject(Rc::new(RefCell::new(Box::new(
+                SetObject(self.0.clone()),
+            )))))
+        }
+    }
+    mut (self, _i, args) {
+        __set : "__set" {
+            let mut args = args.into_iter().enumerate();
+            let value = typed!(args);
+            let set = typed!(args: Bool);
+            if set {
+                self.0.insert(value);
+            } else {
+                self.0.remove(&value);
+            }
+            Ok(Value::default())
+        }
+        __get : "__get" {
+            let mut args = args.into_iter().enumerate();
+            let value = typed!(args);
+            Ok(self.0.get(&value).cloned().unwrap_or_default())
+        }
+        __str : "__str" {
+            Ok(Value::String(format!("{:?}", self.0)))
+        }
+    }
+}
+pub fn _set(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
+    Ok(Value::UserObject(Rc::new(RefCell::new(Box::new(
+        SetObject(HashSet::from_iter(args)),
     )))))
 }
