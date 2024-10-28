@@ -40,3 +40,37 @@ Returns the value `v` wrapped around a box that can only hold an character.
 
 #### `object.string(v: string): string-box`
 Returns the value `v` wrapped around a box that can only hold an string.
+
+#### `object.set(...): set`
+Returns a set with the given values.
+
+## Box
+All the functions in this module can only be self-called on the box user-object, if that function expects a box user-object as the first argument.
+
+#### `<box>.clone(self: box): box`
+Returns a clone of `self`.
+
+### Meta
+
+#### `<box>.__set(self: box, key: "value", value)`
+Sets the inner value of the box to `value`.
+
+#### `<box>.__str(self: box): string`
+Returns the string representation of the box.
+
+## Set
+All the functions in this module can only be self-called on the set user-object, if that function expects a set user-object as the first argument.
+
+#### `<set>.clone(self: set): set`
+Returns a clone of `self`.
+
+### Meta
+
+#### `<set>.__set(self: set, key, value: bool)`
+Adds/Removes the value `key` from the set
+
+#### `<set>.__get(self: set, key: K): K?`
+Returns the value `key` if it's in the set
+
+#### `<set>.__str(self: set): string`
+Returns the string representation of the set.
