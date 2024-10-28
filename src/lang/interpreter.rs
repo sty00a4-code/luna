@@ -426,8 +426,8 @@ impl Interpreter {
                         }
                     }
                     Value::UserObject(object) => {
-                        let set = object.borrow().get(META_GET);
-                        if let Some(Value::Function(kind)) = set {
+                        let get = object.borrow().get(META_GET);
+                        if let Some(Value::Function(kind)) = get {
                             self.call_kind(
                                 kind,
                                 vec![head.clone(), field],

@@ -403,7 +403,10 @@ userobject! {
             )))))
         }
     }
-    mut (self, _i, args) {
+    mut (self, interpreter, args) {
+        __str : "__str" {
+            Ok(Value::String(format!("{:?}", self.0)))
+        }
         __set : "__set" {
             let mut args = args.into_iter().enumerate();
             let value = typed!(args);
@@ -419,9 +422,6 @@ userobject! {
             let mut args = args.into_iter().enumerate();
             let value = typed!(args);
             Ok(self.0.get(&value).cloned().unwrap_or_default())
-        }
-        __str : "__str" {
-            Ok(Value::String(format!("{:?}", self.0)))
         }
     }
 }
