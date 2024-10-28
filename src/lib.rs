@@ -196,6 +196,27 @@ macro_rules! typed {
             .into());
         }
     }};
+    ($args:ident : $type:literal) => {{
+        let (idx, arg) = $args.next().unwrap_or(($args.len(), Value::default()));
+        if let Value::UserObject(value) = arg {
+            if value.borrow().typ() != $type {
+                return Err(ExpectedType {
+                    idx,
+                    expected: $type,
+                    got: value.borrow().typ(),
+                }
+                .into());
+            }
+            value
+        } else {
+            return Err(ExpectedType {
+                idx,
+                expected: $type,
+                got: arg.typ(),
+            }
+            .into());
+        }
+    }};
     ($args:ident : $type:ident ?) => {{
         let (idx, arg) = $args.next().unwrap_or(($args.len(), Value::default()));
         if arg == Value::default() {
