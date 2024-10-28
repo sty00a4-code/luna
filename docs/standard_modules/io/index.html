@@ -67,16 +67,6 @@
     <li class="toctree-l3"><a class="nav-item" href="../type_modules/vector_module/">Vector Module</a></li>
     <li class="toctree-l3"><a class="nav-item" href="../type_modules/object_module/">Object Module</a></li>
 </ul></li>
-    <li class="toctree-l2"><button class="section nav-item hide">Built-in Type Modules</button>
-<ul class="subnav hide">
-    <li class="toctree-l3"><a class="nav-item" href="../built_in_type_modules/iterator/">Iterator</a></li>
-    <li class="toctree-l3"><a class="nav-item" href="../built_in_type_modules/stdin/">Stdin</a></li>
-    <li class="toctree-l3"><a class="nav-item" href="../built_in_type_modules/stdout/">Stdout</a></li>
-    <li class="toctree-l3"><a class="nav-item" href="../built_in_type_modules/stderr/">Stderr</a></li>
-    <li class="toctree-l3"><a class="nav-item" href="../built_in_type_modules/file/">File</a></li>
-    <li class="toctree-l3"><a class="nav-item" href="../built_in_type_modules/tcp_listener/">TCP Listener</a></li>
-    <li class="toctree-l3"><a class="nav-item" href="../built_in_type_modules/tcp_stream/">TCP Stream</a></li>
-</ul></li>
     <li class="toctree-l2"><a class="nav-item" href="../math/">Math</a></li>
     <li class="toctree-l2 current"><a class="nav-item current" href="./">IO</a>
 <ul class="subnav">
@@ -85,6 +75,9 @@
 <li class="toctree-l3"><a class="nav-item toc" href="#iostdin-stdin">io.stdin(): stdin</a></li>
 <li class="toctree-l3"><a class="nav-item toc" href="#iostdout-stdout">io.stdout(): stdout</a></li>
 <li class="toctree-l3"><a class="nav-item toc" href="#iostderr-stderr">io.stderr(): stderr</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#stdin">Stdin</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#stdout">Stdout</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#stderr">Stderr</a></li>
 </ul></li>
     <li class="toctree-l2"><a class="nav-item" href="../fs/">FS</a></li>
     <li class="toctree-l2"><a class="nav-item" href="../env/">Env</a></li>
@@ -122,7 +115,23 @@
 <h4 id="iostdout-stdout"><code>io.stdout(): stdout</code></h4>
 <p>Returns the <em>stdout</em> user-object.</p>
 <h4 id="iostderr-stderr"><code>io.stderr(): stderr</code></h4>
-<p>Returns the <em>stderr</em> user-object.</p></div>
+<p>Returns the <em>stderr</em> user-object.</p>
+<h2 id="stdin">Stdin</h2>
+<p>All the functions in this module can only be self-called on the stdin user-object, if that function expects a stdin user-object as the first argument.</p>
+<h4 id="stdinreadself-stdin-string"><code>&lt;stdin&gt;.read(self: stdin): string?</code></h4>
+<p>Returns the stdin buffer.</p>
+<h2 id="stdout">Stdout</h2>
+<p>All the functions in this module can only be self-called on the stdout user-object, if that function expects a stdout user-object as the first argument.</p>
+<h4 id="stdoutwriteself-stdout-content-string"><code>&lt;stdout&gt;.write(self: stdout, content: string)</code></h4>
+<p>Writes to the stdout buffer.</p>
+<h4 id="stdoutflushself-stdout"><code>&lt;stdout&gt;.flush(self: stdout)</code></h4>
+<p>Flushes to the stdout buffer.</p>
+<h2 id="stderr">Stderr</h2>
+<p>All the functions in this module can only be self-called on the stderr user-object, if that function expects a stderr user-object as the first argument.</p>
+<h4 id="stderrwriteself-stderr-content-string"><code>&lt;stderr&gt;.write(self: stderr, content: string)</code></h4>
+<p>Writes to the stderr buffer.</p>
+<h4 id="stderrflushself-stderr"><code>&lt;stderr&gt;.flush(self: stderr)</code></h4>
+<p>Flushes to the stderr buffer.</p></div>
                 <footer>
     <div class="footer-buttons">
         <div class="previous"><a href="../math/" title="Math"><span>Previous</span></a></div>

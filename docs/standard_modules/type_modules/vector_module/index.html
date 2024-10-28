@@ -77,18 +77,9 @@
 <li class="toctree-l4"><a class="nav-item toc" href="#vectorswapv-vector-i1-int-i1-int">vector.swap(v: vector, i1: int, i1: int)</a></li>
 <li class="toctree-l4"><a class="nav-item toc" href="#vectorcopyv-vectort-vectort">vector.copy(v: vector&lt;T&gt;): vector&lt;T&gt;</a></li>
 <li class="toctree-l4"><a class="nav-item toc" href="#vectorclearv-vector">vector.clear(v: vector)</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#iterator">Iterator</a></li>
 </ul></li>
     <li class="toctree-l3"><a class="nav-item" href="../object_module/">Object Module</a></li>
-</ul></li>
-    <li class="toctree-l2"><button class="section nav-item hide">Built-in Type Modules</button>
-<ul class="subnav hide">
-    <li class="toctree-l3"><a class="nav-item" href="../../built_in_type_modules/iterator/">Iterator</a></li>
-    <li class="toctree-l3"><a class="nav-item" href="../../built_in_type_modules/stdin/">Stdin</a></li>
-    <li class="toctree-l3"><a class="nav-item" href="../../built_in_type_modules/stdout/">Stdout</a></li>
-    <li class="toctree-l3"><a class="nav-item" href="../../built_in_type_modules/stderr/">Stderr</a></li>
-    <li class="toctree-l3"><a class="nav-item" href="../../built_in_type_modules/file/">File</a></li>
-    <li class="toctree-l3"><a class="nav-item" href="../../built_in_type_modules/tcp_listener/">TCP Listener</a></li>
-    <li class="toctree-l3"><a class="nav-item" href="../../built_in_type_modules/tcp_stream/">TCP Stream</a></li>
 </ul></li>
     <li class="toctree-l2"><a class="nav-item" href="../../math/">Math</a></li>
     <li class="toctree-l2"><a class="nav-item" href="../../io/">IO</a></li>
@@ -141,7 +132,17 @@
 <h4 id="vectorcopyv-vectort-vectort"><code>vector.copy(v: vector&lt;T&gt;): vector&lt;T&gt;</code></h4>
 <p>Returns a shallow copy of <code>v</code>.</p>
 <h4 id="vectorclearv-vector"><code>vector.clear(v: vector)</code></h4>
-<p>Clears <code>v</code> of it's values.</p></div>
+<p>Clears <code>v</code> of it's values.</p>
+<h2 id="iterator">Iterator</h2>
+<p>All the functions in this module can only be self-called on the iterator user-object, if that function expects an iterator user-object as the first argument.</p>
+<h4 id="iteratornextiter-iteratorv-v"><code>&lt;iterator&gt;.next(iter: iterator&lt;V&gt;): V?</code></h4>
+<p>Returns the next value in the iteration if any are left.</p>
+<h4 id="iteratoranyiter-iteratorv-cond-fnv-v-boolean"><code>&lt;iterator&gt;.any(iter: iterator&lt;V&gt;, cond: fn(v: V)): boolean</code></h4>
+<p>Returns true if any value of <code>iter</code> makes the <code>cond</code> function return a truthy value.</p>
+<h4 id="iteratoralliter-iteratorv-cond-fnv-v-boolean"><code>&lt;iterator&gt;.all(iter: iterator&lt;V&gt;, cond: fn(v: V)): boolean</code></h4>
+<p>Returns true if all values of <code>iter</code> make the <code>cond</code> function return a truthy value.</p>
+<h4 id="iteratorcollectiter-iteratorv-vectorv"><code>&lt;iterator&gt;.collect(iter: iterator&lt;V&gt;): vector&lt;V&gt;</code></h4>
+<p>Returns a vector of all the values left in the <code>iter</code> iterator.</p></div>
                 <footer>
     <div class="footer-buttons">
         <div class="previous"><a href="../string_module/" title="String Module"><span>Previous</span></a></div>

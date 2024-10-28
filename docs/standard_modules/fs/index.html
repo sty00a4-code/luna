@@ -67,16 +67,6 @@
     <li class="toctree-l3"><a class="nav-item" href="../type_modules/vector_module/">Vector Module</a></li>
     <li class="toctree-l3"><a class="nav-item" href="../type_modules/object_module/">Object Module</a></li>
 </ul></li>
-    <li class="toctree-l2"><button class="section nav-item hide">Built-in Type Modules</button>
-<ul class="subnav hide">
-    <li class="toctree-l3"><a class="nav-item" href="../built_in_type_modules/iterator/">Iterator</a></li>
-    <li class="toctree-l3"><a class="nav-item" href="../built_in_type_modules/stdin/">Stdin</a></li>
-    <li class="toctree-l3"><a class="nav-item" href="../built_in_type_modules/stdout/">Stdout</a></li>
-    <li class="toctree-l3"><a class="nav-item" href="../built_in_type_modules/stderr/">Stderr</a></li>
-    <li class="toctree-l3"><a class="nav-item" href="../built_in_type_modules/file/">File</a></li>
-    <li class="toctree-l3"><a class="nav-item" href="../built_in_type_modules/tcp_listener/">TCP Listener</a></li>
-    <li class="toctree-l3"><a class="nav-item" href="../built_in_type_modules/tcp_stream/">TCP Stream</a></li>
-</ul></li>
     <li class="toctree-l2"><a class="nav-item" href="../math/">Math</a></li>
     <li class="toctree-l2"><a class="nav-item" href="../io/">IO</a></li>
     <li class="toctree-l2 current"><a class="nav-item current" href="./">FS</a>
@@ -84,6 +74,7 @@
 <li class="toctree-l3"><a class="nav-item toc" href="#fsopenpath-string-mode-wra-file">fs.open(path: string, mode: "w"|"r"|"a"): file?</a></li>
 <li class="toctree-l3"><a class="nav-item toc" href="#fslistpath-string-vectorstring">fs.list(path: string): vector&lt;string&gt;</a></li>
 <li class="toctree-l3"><a class="nav-item toc" href="#fstypepath-string-dirfilenull">fs.type(path: string): "dir"|"file"|null</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#file">File</a></li>
 </ul></li>
     <li class="toctree-l2"><a class="nav-item" href="../env/">Env</a></li>
     <li class="toctree-l2"><a class="nav-item" href="../net/">Net</a></li>
@@ -116,7 +107,13 @@
 <h4 id="fslistpath-string-vectorstring"><code>fs.list(path: string): vector&lt;string&gt;</code></h4>
 <p>Returns a vector over the entries within a directory.</p>
 <h4 id="fstypepath-string-dirfilenull"><code>fs.type(path: string): "dir"|"file"|null</code></h4>
-<p>Returns the type of the <code>path</code>.</p></div>
+<p>Returns the type of the <code>path</code>.</p>
+<h2 id="file">File</h2>
+<p>All the functions in this module can only be self-called on the file user-object, if that function expects a file user-object as the first argument.</p>
+<h4 id="filewriteself-file-content-string"><code>&lt;file&gt;.write(self: file, content: string)</code></h4>
+<p>Writes to the file.</p>
+<h4 id="filereadself-file-string"><code>&lt;file&gt;.read(self: file): string</code></h4>
+<p>Returns the content of the file.</p></div>
                 <footer>
     <div class="footer-buttons">
         <div class="previous"><a href="../io/" title="IO"><span>Previous</span></a></div>

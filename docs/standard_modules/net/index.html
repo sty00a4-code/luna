@@ -67,16 +67,6 @@
     <li class="toctree-l3"><a class="nav-item" href="../type_modules/vector_module/">Vector Module</a></li>
     <li class="toctree-l3"><a class="nav-item" href="../type_modules/object_module/">Object Module</a></li>
 </ul></li>
-    <li class="toctree-l2"><button class="section nav-item hide">Built-in Type Modules</button>
-<ul class="subnav hide">
-    <li class="toctree-l3"><a class="nav-item" href="../built_in_type_modules/iterator/">Iterator</a></li>
-    <li class="toctree-l3"><a class="nav-item" href="../built_in_type_modules/stdin/">Stdin</a></li>
-    <li class="toctree-l3"><a class="nav-item" href="../built_in_type_modules/stdout/">Stdout</a></li>
-    <li class="toctree-l3"><a class="nav-item" href="../built_in_type_modules/stderr/">Stderr</a></li>
-    <li class="toctree-l3"><a class="nav-item" href="../built_in_type_modules/file/">File</a></li>
-    <li class="toctree-l3"><a class="nav-item" href="../built_in_type_modules/tcp_listener/">TCP Listener</a></li>
-    <li class="toctree-l3"><a class="nav-item" href="../built_in_type_modules/tcp_stream/">TCP Stream</a></li>
-</ul></li>
     <li class="toctree-l2"><a class="nav-item" href="../math/">Math</a></li>
     <li class="toctree-l2"><a class="nav-item" href="../io/">IO</a></li>
     <li class="toctree-l2"><a class="nav-item" href="../fs/">FS</a></li>
@@ -85,6 +75,8 @@
 <ul class="subnav">
 <li class="toctree-l3"><a class="nav-item toc" href="#netbindaddr-string-port-int-tcp-listener">net.bind(addr: string, port: int): tcp-listener?</a></li>
 <li class="toctree-l3"><a class="nav-item toc" href="#netconnectaddr-string-port-int-tcp-stream">net.connect(addr: string, port: int): tcp-stream?</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#tcp-listener">TCP Listener</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#tcp-stream">TCP Stream</a></li>
 </ul></li>
     <li class="toctree-l2"><a class="nav-item" href="../os/">OS</a></li>
     <li class="toctree-l2"><a class="nav-item" href="../typed/">Typed</a></li>
@@ -113,7 +105,25 @@
 <h4 id="netbindaddr-string-port-int-tcp-listener"><code>net.bind(addr: string, port: int): tcp-listener?</code></h4>
 <p>Creates a new TCP-listener if it can which will be bound to the specified <code>addr</code> and <code>port</code>. If the port is invalid, it will throw an error</p>
 <h4 id="netconnectaddr-string-port-int-tcp-stream"><code>net.connect(addr: string, port: int): tcp-stream?</code></h4>
-<p>Opens a TCP connection to a remote host as a TCP-stream with the address <code>addr</code> and port <code>port</code> if it can.</p></div>
+<p>Opens a TCP connection to a remote host as a TCP-stream with the address <code>addr</code> and port <code>port</code> if it can.</p>
+<h2 id="tcp-listener">TCP Listener</h2>
+<p>All the functions in this module can only be self-called on the tcp-listener user-object, if that function expects a tcp-listener user-object as the first argument.</p>
+<h4 id="tcp-streamaddrself-tcp-stream-string"><code>&lt;tcp-stream&gt;.addr(self: tcp-stream): string?</code></h4>
+<p>Returns the local address of the listener.</p>
+<h4 id="tcp-listeneracceptself-tcp-listener-tcp-stream"><code>&lt;tcp-listener&gt;.accept(self: tcp-listener): tcp-stream?</code></h4>
+<p>Waits for the next incoming connection and returns the tcp-stream, if it doesn't time out.</p>
+<h2 id="tcp-stream">TCP Stream</h2>
+<p>All the functions in this module can only be self-called on the tcp-stream user-object, if that function expects a tcp-stream user-object as the first argument.</p>
+<h4 id="tcp-streamlocal_addrself-tcp-stream-string"><code>&lt;tcp-stream&gt;.local_addr(self: tcp-stream): string?</code></h4>
+<p>Returns the local address of the stream.</p>
+<h4 id="tcp-streampeer_addrself-tcp-stream-string"><code>&lt;tcp-stream&gt;.peer_addr(self: tcp-stream): string?</code></h4>
+<p>Returns the peer address of the stream.</p>
+<h4 id="tcp-streamreadself-tcp-stream-string"><code>&lt;tcp-stream&gt;.read(self: tcp-stream): string?</code></h4>
+<p>Reads from the stream if there is anything to read.</p>
+<h4 id="tcp-streamwriteself-tcp-stream-msg-string-int"><code>&lt;tcp-stream&gt;.write(self: tcp-stream, msg: string): int</code></h4>
+<p>Writes to the stream and returns the amount of bytes sent (0 if message failed to send).</p>
+<h4 id="tcp-streamflushself-tcp-stream"><code>&lt;tcp-stream&gt;.flush(self: tcp-stream)</code></h4>
+<p>Flushes the stream.</p></div>
                 <footer>
     <div class="footer-buttons">
         <div class="previous"><a href="../env/" title="Env"><span>Previous</span></a></div>

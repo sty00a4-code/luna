@@ -80,17 +80,10 @@
 <li class="toctree-l4"><a class="nav-item toc" href="#objectboolv-boolean-boolean-box">object.bool(v: boolean): boolean-box</a></li>
 <li class="toctree-l4"><a class="nav-item toc" href="#objectcharv-char-char-box">object.char(v: char): char-box</a></li>
 <li class="toctree-l4"><a class="nav-item toc" href="#objectstringv-string-string-box">object.string(v: string): string-box</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#objectset-set">object.set(...): set</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#box">Box</a></li>
+<li class="toctree-l4"><a class="nav-item toc" href="#set">Set</a></li>
 </ul></li>
-</ul></li>
-    <li class="toctree-l2"><button class="section nav-item hide">Built-in Type Modules</button>
-<ul class="subnav hide">
-    <li class="toctree-l3"><a class="nav-item" href="../../built_in_type_modules/iterator/">Iterator</a></li>
-    <li class="toctree-l3"><a class="nav-item" href="../../built_in_type_modules/stdin/">Stdin</a></li>
-    <li class="toctree-l3"><a class="nav-item" href="../../built_in_type_modules/stdout/">Stdout</a></li>
-    <li class="toctree-l3"><a class="nav-item" href="../../built_in_type_modules/stderr/">Stderr</a></li>
-    <li class="toctree-l3"><a class="nav-item" href="../../built_in_type_modules/file/">File</a></li>
-    <li class="toctree-l3"><a class="nav-item" href="../../built_in_type_modules/tcp_listener/">TCP Listener</a></li>
-    <li class="toctree-l3"><a class="nav-item" href="../../built_in_type_modules/tcp_stream/">TCP Stream</a></li>
 </ul></li>
     <li class="toctree-l2"><a class="nav-item" href="../../math/">Math</a></li>
     <li class="toctree-l2"><a class="nav-item" href="../../io/">IO</a></li>
@@ -105,7 +98,7 @@
             </nav>
             <div class="repo">
     <div class="previous"><a href="../vector_module/">&laquo; Previous</a></div>
-    <div class="next"><a href="../../built_in_type_modules/iterator/">Next &raquo;</a></div>
+    <div class="next"><a href="../../math/">Next &raquo;</a></div>
 </div>
         </aside>
         <div id="spacer"><button class="arrow"></button></div>
@@ -148,11 +141,47 @@ To change the inner value write <code>box.value = new_value</code>.</p>
 <h4 id="objectcharv-char-char-box"><code>object.char(v: char): char-box</code></h4>
 <p>Returns the value <code>v</code> wrapped around a box that can only hold an character.</p>
 <h4 id="objectstringv-string-string-box"><code>object.string(v: string): string-box</code></h4>
-<p>Returns the value <code>v</code> wrapped around a box that can only hold an string.</p></div>
+<p>Returns the value <code>v</code> wrapped around a box that can only hold an string.</p>
+<h4 id="objectset-set"><code>object.set(...): set</code></h4>
+<p>Returns a set with the given values.</p>
+<h2 id="box">Box</h2>
+<p>All the functions in this module can only be self-called on the box user-object, if that function expects a box user-object as the first argument.</p>
+<h4 id="boxcloneself-box-box"><code>&lt;box&gt;.clone(self: box): box</code></h4>
+<p>Returns a clone of <code>self</code>.</p>
+<h3 id="meta">Meta</h3>
+<h4 id="box__setself-box-key-value-value"><code>&lt;box&gt;.__set(self: box, key: "value", value)</code></h4>
+<p>Sets the inner value of the box to <code>value</code>.</p>
+<h4 id="box__strself-box-string"><code>&lt;box&gt;.__str(self: box): string</code></h4>
+<p>Returns the string representation of the box.</p>
+<h2 id="set">Set</h2>
+<p>All the functions in this module can only be self-called on the set user-object, if that function expects a set user-object as the first argument.</p>
+<h4 id="setcloneself-set-set"><code>&lt;set&gt;.clone(self: set): set</code></h4>
+<p>Returns a clone of <code>self</code>.</p>
+<h3 id="meta_1">Meta</h3>
+<h4 id="set__setself-set-key-value-bool"><code>&lt;set&gt;.__set(self: set, key, value: bool)</code></h4>
+<p>Adds/Removes the value <code>key</code> from the set.</p>
+<h4 id="set__getself-set-key-k-k"><code>&lt;set&gt;.__get(self: set, key: K): K?</code></h4>
+<p>Returns the value <code>key</code> if it's in the set.</p>
+<h4 id="set__orself-set-other-set-set"><code>&lt;set&gt;.__or(self: set, other: set): set</code></h4>
+<p>Returns the union of <code>self</code> with <code>other</code>.</p>
+<h4 id="set__andself-set-other-set-set"><code>&lt;set&gt;.__and(self: set, other: set): set</code></h4>
+<p>Returns the intersection of <code>self</code> with <code>other</code>.</p>
+<h4 id="set__subself-set-other-set-set"><code>&lt;set&gt;.__sub(self: set, other: set): set</code></h4>
+<p>Returns <code>self</code> with <code>other</code> removed.</p>
+<h4 id="set__ltself-set-other-set-boolean"><code>&lt;set&gt;.__lt(self: set, other: set): boolean</code></h4>
+<p>Returns true if <code>self</code> is a subset of <code>other</code>.</p>
+<h4 id="set__gtself-set-other-set-boolean"><code>&lt;set&gt;.__gt(self: set, other: set): boolean</code></h4>
+<p>Returns true if <code>self</code> is a supperset of <code>other</code>.</p>
+<h4 id="set__leself-set-other-set-boolean"><code>&lt;set&gt;.__le(self: set, other: set): boolean</code></h4>
+<p>Returns true if <code>self</code> is a subset of <code>other</code> or the same.</p>
+<h4 id="set__geself-set-other-set-boolean"><code>&lt;set&gt;.__ge(self: set, other: set): boolean</code></h4>
+<p>Returns true if <code>self</code> is a supperset of <code>other</code> or the same.</p>
+<h4 id="set__strself-set-string"><code>&lt;set&gt;.__str(self: set): string</code></h4>
+<p>Returns the string representation of the set.</p></div>
                 <footer>
     <div class="footer-buttons">
         <div class="previous"><a href="../vector_module/" title="Vector Module"><span>Previous</span></a></div>
-        <div class="next"><a href="../../built_in_type_modules/iterator/" title="Iterator"><span>Next</span></a></div>
+        <div class="next"><a href="../../math/" title="Math"><span>Next</span></a></div>
     </div>
     <div class="footer-note">
         <p>
