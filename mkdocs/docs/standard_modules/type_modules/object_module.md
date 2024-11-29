@@ -67,10 +67,31 @@ Returns a clone of `self`.
 ### Meta
 
 #### `<set>.__set(self: set, key, value: bool)`
-Adds/Removes the value `key` from the set
+Adds/Removes the value `key` from the set.
 
 #### `<set>.__get(self: set, key: K): K?`
-Returns the value `key` if it's in the set
+Returns the value `key` if it's in the set.
+
+#### `<set>.__or(self: set, other: set): set`
+Returns the union of `self` with `other`.
+
+#### `<set>.__and(self: set, other: set): set`
+Returns the intersection of `self` with `other`.
+
+#### `<set>.__sub(self: set, other: set): set`
+Returns `self` with `other` removed.
+
+#### `<set>.__lt(self: set, other: set): boolean`
+Returns true if `self` is a subset of `other`.
+
+#### `<set>.__gt(self: set, other: set): boolean`
+Returns true if `self` is a supperset of `other`.
+
+#### `<set>.__le(self: set, other: set): boolean`
+Returns true if `self` is a subset of `other` or the same.
+
+#### `<set>.__ge(self: set, other: set): boolean`
+Returns true if `self` is a supperset of `other` or the same.
 
 #### `<set>.__str(self: set): string`
 Returns the string representation of the set.
