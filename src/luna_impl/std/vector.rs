@@ -1,7 +1,10 @@
 use super::IteratorObject;
 use crate::{
     function,
-    lang::{interpreter::Interpreter, value::{Value, Object, FunctionKind}},
+    lang::{
+        interpreter::Interpreter,
+        value::{FunctionKind, Object, Value},
+    },
     luna_impl::std::VECTOR_MODULE,
     object, set_field, typed, ExpectedType,
 };
