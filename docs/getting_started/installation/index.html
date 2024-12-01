@@ -104,7 +104,7 @@
 <h2 id="linux">Linux</h2>
 <ol>
 <li>Clone the repository <code>gh repo clone sty00a4-code/luna</code> or download the source code</li>
-<li>In the new folder, build the code with <code>cargo bundle --release</code> (gives you the path <code>target/release/bundle/deb/luna_{VERSION}_{CPU}.deb</code>)</li>
+<li>In the new folder, build the code with <code>cargo bundle --release --bin luna</code> (gives you the path <code>target/release/bundle/deb/luna_{VERSION}_{CPU}.deb</code>)</li>
 <li><code>sudo dpkg -i target/release/bundle/deb/luna_{VERSION}_{CPU}.deb</code></li>
 </ol>
 <h2 id="windows">Windows</h2>

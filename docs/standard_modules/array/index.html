@@ -90,6 +90,8 @@
 <li class="toctree-l3"><a class="nav-item toc" href="#arrayf64length-float-init-vectorfloat-arrayf64">array.f64(length: float?, init: vector&lt;float&gt;?): array&lt;f64&gt;</a></li>
 <li class="toctree-l3"><a class="nav-item toc" href="#arrayboollength-bool-init-vectorbool-arraybool">array.bool(length: bool?, init: vector&lt;bool&gt;?): array&lt;bool&gt;</a></li>
 <li class="toctree-l3"><a class="nav-item toc" href="#arraycharlength-char-init-vectorchar-arraychar">array.char(length: char?, init: vector&lt;char&gt;?): array&lt;char&gt;</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#array">Array</a></li>
+<li class="toctree-l3"><a class="nav-item toc" href="#array-iterator">Array Iterator</a></li>
 </ul></li>
 </ul></li>
                 </ul>
@@ -138,7 +140,52 @@
 <h4 id="arrayboollength-bool-init-vectorbool-arraybool"><code>array.bool(length: bool?, init: vector&lt;bool&gt;?): array&lt;bool&gt;</code></h4>
 <p>Creates a new concise array of only <code>bool</code> values.</p>
 <h4 id="arraycharlength-char-init-vectorchar-arraychar"><code>array.char(length: char?, init: vector&lt;char&gt;?): array&lt;char&gt;</code></h4>
-<p>Creates a new concise array of only <code>char</code> values.</p></div>
+<p>Creates a new concise array of only <code>char</code> values.</p>
+<h2 id="array">Array</h2>
+<p>All the functions in these objects can only be self-called on the array user-objects, if that function expects the array user-objects as the first argument.</p>
+<h4 id="arraytiterself-arrayt-array-iteratort"><code>&lt;array&lt;T&gt;&gt;.iter(self: array&lt;T&gt;): array-iterator&lt;T&gt;</code></h4>
+<p>Returns an <code>array-iterator&lt;T&gt;</code> user-object over the containing values</p>
+<h4 id="arraytgetself-arrayt-index-int-default-t-t"><code>&lt;array&lt;T&gt;&gt;.get(self: array&lt;T&gt;, index: int, default: T?): T?</code></h4>
+<p>Returns the value in the array at position <code>index</code>, otherwise it returns <code>default</code>.</p>
+<h4 id="arraytsetself-arrayt-index-int-value-t"><code>&lt;array&lt;T&gt;&gt;.set(self: array&lt;T&gt;, index: int, value: T)</code></h4>
+<p>Sets the value at position <code>index</code> to <code>value</code>.</p>
+<h4 id="arraytpushself-arrayt-value-t"><code>&lt;array&lt;T&gt;&gt;.push(self: array&lt;T&gt;, value: T)</code></h4>
+<p>Pushes <code>value</code> to the end of the array.</p>
+<h4 id="arraytpopself-arrayt-index-int-t"><code>&lt;array&lt;T&gt;&gt;.pop(self: array&lt;T&gt;, index: int?): T?</code></h4>
+<p>Pops the last value off of the array and returns it, or if <code>index</code> is given, removes the value from that position and returns it.</p>
+<h4 id="arraytinsertself-arrayt-index-int-value-t"><code>&lt;array&lt;T&gt;&gt;.insert(self: array&lt;T&gt;, index: int, value: T)</code></h4>
+<p>Inserts <code>value</code> in the array at position <code>index</code>.</p>
+<h4 id="arraytswapself-arrayt-index1-int-index2-int"><code>&lt;array&lt;T&gt;&gt;.swap(self: array&lt;T&gt;, index1: int, index2: int)</code></h4>
+<p>Swaps the two values in the array at position <code>index1</code> and <code>index2</code>.</p>
+<h4 id="arraytlenself-arrayt-int"><code>&lt;array&lt;T&gt;&gt;.len(self: array&lt;T&gt;): int</code></h4>
+<p>Returns the length of the array.</p>
+<h4 id="arraytcontainsself-arrayt-value-t-bool"><code>&lt;array&lt;T&gt;&gt;.contains(self: array&lt;T&gt;, value: T): bool</code></h4>
+<p>Returns true, if <code>value</code> is in the array.</p>
+<h4 id="arraytpositionself-arrayt-value-t-int"><code>&lt;array&lt;T&gt;&gt;.position(self: array&lt;T&gt;, value: T): int?</code></h4>
+<p>Returns the position of <code>value</code>, if it even is in the array.</p>
+<h4 id="arraytjoinself-arrayt-sep-string-string"><code>&lt;array&lt;T&gt;&gt;.join(self: array&lt;T&gt;, sep: string): string</code></h4>
+<p>Returns all the values in the array as a string joined by <code>sep</code>.</p>
+<h4 id="arraytcopyself-arrayt-arrayt"><code>&lt;array&lt;T&gt;&gt;.copy(self: array&lt;T&gt;): array&lt;T&gt;</code></h4>
+<p>Returns a copy of the array.</p>
+<h4 id="arraytclearself-arrayt"><code>&lt;array&lt;T&gt;&gt;.clear(self: array&lt;T&gt;)</code></h4>
+<p>Clears the array.</p>
+<h4 id="only-works-on-integer-arrays">Only works on integer arrays</h4>
+<h4 id="arraytsortself-arrayt"><code>&lt;array&lt;T&gt;&gt;.sort(self: array&lt;T&gt;)</code></h4>
+<p>Sorts the array.</p>
+<h4 id="arraytmaxself-arrayt-t"><code>&lt;array&lt;T&gt;&gt;.max(self: array&lt;T&gt;): T?</code></h4>
+<p>Returns the biggest value of the array.</p>
+<h4 id="arraytminself-arrayt-t"><code>&lt;array&lt;T&gt;&gt;.min(self: array&lt;T&gt;): T?</code></h4>
+<p>Returns the smallest value of the array.</p>
+<h2 id="array-iterator">Array Iterator</h2>
+<p>All the functions in these objects can only be self-called on the array-iterator user-objects, if that function expects the array-iterator user-objects as the first argument.</p>
+<h4 id="array-iteratortnextself-array-iteratort-t"><code>&lt;array-iterator&lt;T&gt;&gt;.next(self: array-iterator&lt;T&gt;): T?</code></h4>
+<p>Returns the next value in the array iterator.</p>
+<h4 id="array-iteratortallself-array-iteratort-f-fn-bool"><code>&lt;array-iterator&lt;T&gt;&gt;.all(self: array-iterator&lt;T&gt;, f: fn): bool</code></h4>
+<p>Returns true, if all of the values in the iterator return true if passed into <code>f</code>.</p>
+<h4 id="array-iteratortanyself-array-iteratort-f-fn-bool"><code>&lt;array-iterator&lt;T&gt;&gt;.any(self: array-iterator&lt;T&gt;, f: fn): bool</code></h4>
+<p>Returns true, if any of the values in the iterator return true if passed into <code>f</code>.</p>
+<h4 id="array-iteratortcollectself-array-iteratort-arrayt"><code>&lt;array-iterator&lt;T&gt;&gt;.collect(self: array-iterator&lt;T&gt;): array&lt;T&gt;</code></h4>
+<p>Returns an array with all the rest of the values of the array iterator in it.</p></div>
                 <footer>
     <div class="footer-buttons">
         <div class="previous"><a href="../typed/" title="Typed"><span>Previous</span></a></div>
