@@ -149,6 +149,14 @@ macro_rules! define_int_array {
                         .map(|pos| pos.into())
                         .unwrap_or_default())
                 }
+                count : "count" {
+                    let mut args = args.into_iter().enumerate();
+                    let value = typed!(args: $luna_typ v => v.cast()?);
+                    Ok(Value::Int(self.array
+                        .iter()
+                        .filter(|v| **v == value)
+                        .count() as i64))
+                }
                 join : "join" {
                     let mut args = args.into_iter().enumerate();
                     let sep = typed!(args: String);

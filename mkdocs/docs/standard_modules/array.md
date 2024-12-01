@@ -76,6 +76,9 @@ Returns true, if `value` is in the array.
 #### `<array<T>>.position(self: array<T>, value: T): int?`
 Returns the position of `value`, if it even is in the array.
 
+#### `<array<T>>.count(self: array<T>, value: T): int`
+Returns the amount of times `value` appears in the array.
+
 #### `<array<T>>.join(self: array<T>, sep: string): string`
 Returns all the values in the array as a string joined by `sep`.
 
