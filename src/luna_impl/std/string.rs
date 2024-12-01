@@ -104,11 +104,10 @@ pub fn _split(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Er
     let mut args = args.into_iter().enumerate();
     let string = typed!(args: String);
     let sep = typed!(args: String);
-
     Ok(string
         .split(&sep)
-        .map(|s| s.to_string())
-        .collect::<Vec<String>>()
+        .filter_map(|s| if !s.is_empty() { Some(Value::String(s.to_string())) } else { None })
+        .collect::<Vec<Value>>()
         .into())
 }
 pub fn _split_amount(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
@@ -119,8 +118,8 @@ pub fn _split_amount(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box
 
     Ok(string
         .splitn(n.unsigned_abs() as usize, &sep)
-        .map(|s| s.to_string())
-        .collect::<Vec<String>>()
+        .filter_map(|s| if !s.is_empty() { Some(Value::String(s.to_string())) } else { None })
+        .collect::<Vec<Value>>()
         .into())
 }
 pub fn _split_at(_: &mut Interpreter, args: Vec<Value>) -> Result<Value, Box<dyn Error>> {
