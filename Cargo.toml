@@ -1,6 +1,6 @@
 [package]
 name = "luna-lib"
-version = "1.5.4"
+version = "1.5.5"
 edition = "2021"
 description = "a light weight interpreted programming language"
 license = "MIT"
