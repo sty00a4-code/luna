@@ -111,9 +111,9 @@ macro_rules! define_int_array {
                     }
                 }
                 collect : "collect" {
-                    Ok(Value::Vector(Rc::new(RefCell::new(
-                        self.0.clone().map(|v| v.into()).collect::<Vec<Value>>(),
-                    ))))
+                    Ok(Value::UserObject(Rc::new(RefCell::new(Box::new($name {
+                            array: self.0.clone().map(|v| v.into()).collect::<Vec<$typ>>()
+                    })))))
                 }
             }
         }
@@ -128,7 +128,7 @@ macro_rules! define_int_array {
                 }
                 get : "get" {
                     let mut args = args.into_iter().enumerate();
-                    let index = typed!(args: $luna_typ);
+                    let index = typed!(args: Int);
                     let default = args.next().map(|(_, v)| v);
                     Ok(self.array.get(index as usize).map(|v| Value::Int(*v as i64)).unwrap_or(default.unwrap_or_default()))
                 }
@@ -334,9 +334,9 @@ macro_rules! define_array {
                     }
                 }
                 collect : "collect" {
-                    Ok(Value::Vector(Rc::new(RefCell::new(
-                        self.0.clone().map(|v| v.into()).collect::<Vec<Value>>(),
-                    ))))
+                    Ok(Value::UserObject(Rc::new(RefCell::new(Box::new($name {
+                            array: self.0.clone().map(|v| v.into()).collect::<Vec<$typ>>()
+                    })))))
                 }
             }
         }
@@ -351,7 +351,7 @@ macro_rules! define_array {
                 }
                 get : "get" {
                     let mut args = args.into_iter().enumerate();
-                    let index = typed!(args: $luna_typ);
+                    let index = typed!(args: Int);
                     let default = args.next().map(|(_, v)| v);
                     Ok(self.array.get(index as usize).map(|v| Value::Int(*v as i64)).unwrap_or(default.unwrap_or_default()))
                 }
