@@ -26,7 +26,7 @@ pub enum LexError {
     ParseIntError(ParseIntError),
     ParseFloatError(ParseFloatError),
 }
-impl<'source> Lexer<'source> {
+impl Lexer<'_> {
     pub fn advance(&mut self) {
         if self.source.peek() == Some(&'\n') {
             self.ln += 1;
@@ -46,7 +46,7 @@ impl<'source> Lexer<'source> {
         Ok(tokens)
     }
 }
-impl<'source> Iterator for Lexer<'source> {
+impl Iterator for Lexer<'_> {
     type Item = Result<Located<Token>, Located<LexError>>;
     fn next(&mut self) -> Option<Self::Item> {
         while self
